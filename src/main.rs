@@ -6,7 +6,6 @@
 #![allow(non_camel_case_types)]
 pub mod game_legion;
 
-use cgmath::Point2;
 pub trait GameImplementation{
     fn update();
     fn get_unit_positions() -> Vec<Point2<f32>>;
@@ -19,6 +18,7 @@ use ggez::{
     graphics::{self, Color},
     Context, GameResult,
 };
+use ggez::mint::Point2;
 
 struct MainState<T : GameImplementation> {
     game: T,

@@ -7,6 +7,5 @@ edition = "2021"
 
 [dependencies]
 ggez = "0.8.0"
-cgmath = "*"
 legion = "0.4.0"
 rand = "*"
