@@ -4,63 +4,123 @@
 #![allow(unused_mut)]
 #![allow(unused_attributes)]
 #![allow(non_camel_case_types)]
+
+use ggez::graphics::{Color, Drawable};
+use ggez::{Context, GameResult};
 pub mod game_legion;
+pub mod rts;
+use game_legion::*;
+use rts::WORLD_SIZE;
 
-pub trait GameImplementation{
-    fn update();
-    fn get_unit_positions() -> Vec<Point2<f32>>;
-    fn get_projectile_positions() -> Vec<Point2<f32>>;
+pub trait GameImplementation {
+    fn update(&mut self, ctx: &mut Context, settings: &GuiSettings);
+    fn get_unit_positions(&self, world_id: usize) -> Vec<glam::Vec2>;
+}
+pub struct GuiSettings {
+    pub push_force: f32,
+    pub drag_coefficient: f32,
+    pub max_speed: f32,
+    pub meet_distance: f32,
 }
 
-use ggez::{
-    event,
-    glam::*,
-    graphics::{self, Color},
-    Context, GameResult,
-};
-use ggez::mint::Point2;
-
-struct MainState<T : GameImplementation> {
+struct MainState<T: GameImplementation> {
     game: T,
-    circle: graphics::Mesh,
+    circle: ggez::graphics::Mesh,
+    egui_backend: ggez_egui::EguiBackend,
+    gui_settings: GuiSettings,
 }
 
-impl<T : GameImplementation> MainState<T> {
+impl<T: GameImplementation> MainState<T> {
     fn new(ctx: &mut Context, game_world: T) -> GameResult<MainState<T>> {
-        let circle = graphics::Mesh::new_circle(
+        let circle = ggez::graphics::Mesh::new_circle(
             ctx,
-            graphics::DrawMode::fill(),
-            vec2(0., 0.),
-            100.0,
+            ggez::graphics::DrawMode::fill(),
+            glam::Vec2::new(0., 0.),
+            10.0,
             2.0,
             Color::WHITE,
         )?;
 
-        Ok(MainState {game_world, circle })
+        Ok(MainState {
+            game: game_world,
+            circle,
+            egui_backend: ggez_egui::EguiBackend::new(ctx),
+            gui_settings: GuiSettings {
+                push_force: 1500.0,
+                drag_coefficient: 1.0,
+                max_speed: 100.0,
+                meet_distance: 50.0
+            },
+        })
     }
 }
 
-impl event::EventHandler<ggez::GameError> for MainState {
-    fn update(&mut self, _ctx: &mut Context) -> GameResult {
-        self.pos_x = self.pos_x % 800.0 + 1.0;
+impl<T: GameImplementation> ggez::event::EventHandler<ggez::GameError> for MainState<T> {
+    fn update(&mut self, ctx: &mut Context) -> GameResult {
+        self.game.update(ctx, &self.gui_settings);
+        let egui_ctx = self.egui_backend.ctx();
+        egui::Window::new("egui-window").show(&egui_ctx, |ui| {
+            ui.add(egui::DragValue::new(&mut self.gui_settings.push_force).speed(1.0));
+            ui.add(egui::DragValue::new(&mut self.gui_settings.drag_coefficient).speed(0.00001));
+            ui.add(egui::DragValue::new(&mut self.gui_settings.max_speed).speed(0.1));
+            ui.add(egui::DragValue::new(&mut self.gui_settings.meet_distance).speed(0.1));
+        });
         Ok(())
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
-        let mut canvas =
-            graphics::Canvas::from_frame(ctx, graphics::Color::from([0.1, 0.2, 0.3, 1.0]));
+        ggez::graphics::clear(ctx, Color::BLACK);
 
-        canvas.draw(&self.circle, Vec2::new(self.pos_x, 380.0));
+        self.game.get_unit_positions(0).iter().for_each(|pos| {
+            ggez::graphics::draw(
+                ctx,
+                &self.circle,
+                ggez::graphics::DrawParam::default().dest(*pos),
+            )
+            .unwrap();
+            // canvas.draw(&self.circle, *pos);
+        });
 
-        canvas.finish(ctx)?;
-
+        // canvas.finish(ctx)?;
+        ggez::graphics::draw(ctx, &self.egui_backend, ([0.0, 0.0],))?;
+        ggez::graphics::present(ctx).unwrap();
         Ok(())
     }
+    fn mouse_button_down_event(
+        &mut self,
+        _ctx: &mut Context,
+        button: ggez::event::MouseButton,
+        _x: f32,
+        _y: f32,
+    ) {
+        self.egui_backend.input.mouse_button_down_event(button);
+    }
+
+    fn mouse_button_up_event(
+        &mut self,
+        _ctx: &mut Context,
+        button: ggez::event::MouseButton,
+        _x: f32,
+        _y: f32,
+    ) {
+        self.egui_backend.input.mouse_button_up_event(button);
+    }
+
+    fn mouse_motion_event(&mut self, _ctx: &mut Context, x: f32, y: f32, _dx: f32, _dy: f32) {
+        self.egui_backend.input.mouse_motion_event(x, y);
+    }
+    // Add key and mouse listeners for ggez_egui:
 }
 
 pub fn main() -> GameResult {
-    let cb = ggez::ContextBuilder::new("super_simple", "ggez");
+    let mut cb = ggez::ContextBuilder::new("super_simple", "ggez");
+
+    cb = cb.window_setup(ggez::conf::WindowSetup::default().title("Ecs Performance Benchmark"));
+    cb = cb.window_mode(ggez::conf::WindowMode::default().dimensions(WORLD_SIZE, WORLD_SIZE));
+    cb = cb.window_mode(ggez::conf::WindowMode::default().resizable(true));
     let (mut ctx, event_loop) = cb.build()?;
-    let state = MainState::new(&mut ctx, )?;
-    event::run(ctx, event_loop, state)
+    let mut world = GameLegion::new();
+    world.generate_world(0);
+    let state = MainState::new(&mut ctx, world)?;
+    ggez::event::run(ctx, event_loop, state)
 }
