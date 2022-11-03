@@ -1,9 +1,5 @@
-use crate::rts::{
-    ColorComp, Comp1, Comp2, Comp3, Position, Spawner, Team, TimedLife, UniverseComp, Velocity,
-    STARTING_VELOCITY, WORLD_SIZE,
-};
-use crate::GameImplementation;
-use crate::GuiSettings;
+use crate::rts::*;
+
 use ggez::graphics::Color;
 use glam::*;
 use legion::systems::CommandBuffer;
@@ -143,8 +139,7 @@ impl GameLegion {
     }
 }
 impl GameImplementation for GameLegion {
-    fn update(&mut self, ctx: &mut ggez::Context, settings: &GuiSettings) {
-        let dt = ggez::timer::delta(ctx).as_secs_f32();
+    fn update(&mut self, dt: f32, settings: &GuiSettings) {
         let mut resources = Resources::default();
         resources.insert(dt);
         resources.insert(settings.clone());

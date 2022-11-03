@@ -56,3 +56,18 @@ pub struct Comp4 {
 pub struct Comp5 {
     pub value: f32,
 }
+
+pub trait GameImplementation {
+    fn update(&mut self, dt: f32, settings: &GuiSettings);
+    fn get_unit_positions(&self, unierse_id: usize) -> Vec<(glam::Vec2, Color)>;
+    fn load_universe(&mut self, universe_id: usize);
+    fn unload_universe(&mut self, unierse_id: usize);
+    fn on_click(&mut self, universe_id: usize, position: Vec2);
+}
+
+#[derive(Clone, Copy, Default)]
+pub struct GuiSettings {
+    pub meet_distance: f32,
+    pub universe: usize,
+    pub requested_universe_count: usize,
+}

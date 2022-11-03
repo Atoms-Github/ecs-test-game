@@ -5,39 +5,23 @@
 #![allow(unused_attributes)]
 #![allow(non_camel_case_types)]
 #![allow(unused_parens)]
-pub mod gamedb;
+
+mod rts_gui;
+
+use ecs_test_game::game_legion::GameLegion;
+use ecs_test_game::rts::{GameImplementation, GuiSettings, WORLD_SIZE};
 use ggez::graphics::{Color, Drawable};
 use ggez::{Context, GameResult};
 use glam::Vec2;
 
-pub mod game_legion;
-pub mod rts;
-
-use game_legion::*;
-use rts::WORLD_SIZE;
-
-pub trait GameImplementation {
-    fn update(&mut self, ctx: &mut Context, settings: &GuiSettings);
-    fn get_unit_positions(&self, unierse_id: usize) -> Vec<(glam::Vec2, Color)>;
-    fn load_universe(&mut self, universe_id: usize);
-    fn unload_universe(&mut self, unierse_id: usize);
-    fn on_click(&mut self, universe_id: usize, position: Vec2);
-}
-#[derive(Clone)]
-pub struct GuiSettings {
-    pub meet_distance: f32,
-    pub universe: usize,
-    pub requested_universe_count: usize,
-}
-
-struct MainState<T: GameImplementation> {
-    game: T,
-    circle: ggez::graphics::Mesh,
-    egui_backend: ggez_egui::EguiBackend,
-    gui_settings: GuiSettings,
-    loaded_universes: usize,
-    draw_time: u128,
-    update_time: u128,
+pub struct MainState<T: GameImplementation> {
+    pub game: T,
+    pub circle: ggez::graphics::Mesh,
+    pub egui_backend: ggez_egui::EguiBackend,
+    pub gui_settings: GuiSettings,
+    pub loaded_universes: usize,
+    pub draw_time: u128,
+    pub update_time: u128,
 }
 
 impl<T: GameImplementation> MainState<T> {
@@ -72,7 +56,8 @@ impl<T: GameImplementation> ggez::event::EventHandler<ggez::GameError> for MainS
         // Save update time:
         let start = std::time::Instant::now();
 
-        self.game.update(ctx, &self.gui_settings);
+        self.game
+            .update(ggez::timer::delta(ctx).as_secs_f32(), &self.gui_settings);
         let egui_ctx = self.egui_backend.ctx();
         egui::Window::new("egui-window").show(&egui_ctx, |ui| {
             ui.label("Meet distance");
@@ -112,19 +97,16 @@ impl<T: GameImplementation> ggez::event::EventHandler<ggez::GameError> for MainS
 
         // Measure time to draw:
         let start = std::time::Instant::now();
-        self.game
-            .get_unit_positions(self.gui_settings.universe)
-            .iter()
-            .for_each(|(pos, color)| {
-                ggez::graphics::draw(
-                    ctx,
-                    &self.circle,
-                    ggez::graphics::DrawParam::default()
-                        .dest(*pos)
-                        .color(*color),
-                )
+        // Batch draw the units:
+        let mut batch = ggez::graphics::MeshBuilder::new();
+        for (position, color) in self.game.get_unit_positions(self.gui_settings.universe) {
+            batch
+                .circle(ggez::graphics::DrawMode::fill(), position, 10.0, 2.0, color)
                 .unwrap();
-            });
+        }
+        let mesh = batch.build(ctx).unwrap();
+        ggez::graphics::draw(ctx, &mesh, (glam::Vec2::new(0., 0.),))?;
+
         let end = std::time::Instant::now();
         self.draw_time = (end - start).as_micros();
 

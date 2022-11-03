@@ -1,5 +1,5 @@
 [package]
-name = "ecs-test-game"
+name = "ecs_test_game"
 version = "0.1.0"
 edition = "2021"
 
@@ -12,3 +12,9 @@ rand = "*"
 egui = "0.18.1"
 ggez-egui = "0.2.1"
 glam = { version = "0.20"}
+criterion = "0.4.0"
+
+[[bench]]
+name = "benchmarks"
+harness = false
+
