@@ -8,8 +8,10 @@
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-use ecs_test_game::game_legion::GameLegion;
+use ecs_test_game::basic_legion::BasicLegion;
+use ecs_test_game::performance_map_legion::PerfMapLegion;
 use ecs_test_game::rts::*;
+use ecs_test_game::sqlite::*;
 use std::time::Duration;
 
 criterion_group!(benches, rts_benchmark);
@@ -19,11 +21,11 @@ fn rts_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("game_update");
     const UNIVERSES: usize = 10;
     group.sample_size(10);
-    group.measurement_time(Duration::from_secs(10));
+    group.measurement_time(Duration::from_secs(3));
     group.warm_up_time(Duration::from_millis(100));
-    group.bench_function("legion", |b| {
+    group.bench_function("BasicLegion", |b| {
         // Init game state
-        let mut world = GameLegion::new();
+        let mut world = BasicLegion::new();
         for i in 0..UNIVERSES {
             world.load_universe(i);
         }
@@ -31,9 +33,20 @@ fn rts_benchmark(c: &mut Criterion) {
             world.update(1. / 60., &GuiSettings::default());
         });
     });
-    group.bench_function("legionagain", |b| {
+    group.bench_function("PerfMapLegion", |b| {
         // Init game state
-        let mut world = GameLegion::new();
+        let mut world = PerfMapLegion::new();
+        for i in 0..UNIVERSES {
+            world.load_universe(i);
+        }
+        b.iter(move || {
+            world.update(1. / 60., &GuiSettings::default());
+        });
+    });
+
+    group.bench_function("Sqlite", |b| {
+        // Init game state
+        let mut world = SqlIte::new();
         for i in 0..UNIVERSES {
             world.load_universe(i);
         }

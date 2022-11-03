@@ -23,7 +23,7 @@ pub struct Velocity {
     pub vel: Vec2,
 }
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Spawner {
+pub struct Shooter {
     pub cooldown: f32,
 }
 

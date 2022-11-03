@@ -6,9 +6,11 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_parens)]
 
-pub mod game_legion;
+pub mod basic_legion;
 pub mod gamedb;
+pub mod performance_map_legion;
 pub mod rts;
+pub mod sqlite;
 
 pub const GREETING: &'static str = "Hallo, Rust library here!";
 pub fn test() {

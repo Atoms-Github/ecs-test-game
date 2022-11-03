@@ -6,7 +6,7 @@ use legion::systems::CommandBuffer;
 use legion::*;
 use rand::Rng;
 
-pub struct GameLegion {
+pub struct BasicLegion {
     world: World,
     schedule: Schedule,
 }
@@ -27,7 +27,7 @@ pub fn make_unit(world: &mut World, pos: Vec2, vel: Vec2, team: usize, universe_
             },
         },
         UniverseComp { id: universe_id },
-        Spawner { cooldown: 0.0 },
+        Shooter { cooldown: 0.0 },
     ));
 
     if rand::thread_rng().gen_bool(0.5) {
@@ -73,7 +73,7 @@ fn shoot(
     #[resource] settings: &GuiSettings,
     pos: &Position,
     team: &Team,
-    spawner: &mut Spawner,
+    spawner: &mut Shooter,
     universe: &UniverseComp,
     buffer: &mut CommandBuffer,
 ) {
@@ -81,7 +81,7 @@ fn shoot(
     if spawner.cooldown > 0.0 {
         return;
     }
-    spawner.cooldown = 0.5;
+    spawner.cooldown = rand::thread_rng().gen_range(0.25..0.75);
     let mut closest_dist = f32::MAX;
     let mut closest_pos = Vec2::ZERO;
     for (other_pos, other_team, other_universe) in other_entities.iter() {
@@ -116,8 +116,8 @@ fn waste_of_time1(pos: &Position, comp1: &mut Comp1) {
 fn waste_of_time2(pos: &Position, comp3: &mut Comp3, comp2: &Comp2) {
     comp3.value += comp2.value;
 }
-impl GameLegion {
-    pub fn new() -> GameLegion {
+impl BasicLegion {
+    pub fn new() -> BasicLegion {
         let mut world = World::default();
         let mut schedule = Schedule::builder();
         schedule.add_system(update_positions_system());
@@ -132,13 +132,13 @@ impl GameLegion {
         for _ in 0..5 {
             schedule.add_system(waste_of_time2_system());
         }
-        GameLegion {
+        BasicLegion {
             world,
             schedule: schedule.build(),
         }
     }
 }
-impl GameImplementation for GameLegion {
+impl GameImplementation for BasicLegion {
     fn update(&mut self, dt: f32, settings: &GuiSettings) {
         let mut resources = Resources::default();
         resources.insert(dt);

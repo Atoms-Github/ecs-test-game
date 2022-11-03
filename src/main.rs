@@ -8,36 +8,33 @@
 
 mod rts_gui;
 
-use ecs_test_game::game_legion::GameLegion;
+use ecs_test_game::basic_legion::BasicLegion;
+use ecs_test_game::performance_map_legion::PerfMapLegion;
 use ecs_test_game::rts::{GameImplementation, GuiSettings, WORLD_SIZE};
 use ggez::graphics::{Color, Drawable};
 use ggez::{Context, GameResult};
 use glam::Vec2;
 
-pub struct MainState<T: GameImplementation> {
-    pub game: T,
-    pub circle: ggez::graphics::Mesh,
+pub struct MainState {
+    pub game: Box<dyn GameImplementation>,
+    pub target_game_type: TargetGameType,
     pub egui_backend: ggez_egui::EguiBackend,
     pub gui_settings: GuiSettings,
     pub loaded_universes: usize,
     pub draw_time: u128,
     pub update_time: u128,
 }
+#[derive(Debug, PartialEq)]
+pub enum TargetGameType {
+    TargetBasicLegion,
+    TargetPerfMapLegion,
+}
 
-impl<T: GameImplementation> MainState<T> {
-    fn new(ctx: &mut Context, game_world: T) -> GameResult<MainState<T>> {
-        let circle = ggez::graphics::Mesh::new_circle(
-            ctx,
-            ggez::graphics::DrawMode::fill(),
-            glam::Vec2::new(0., 0.),
-            10.0,
-            2.0,
-            Color::WHITE,
-        )?;
-
-        Ok(MainState {
-            game: game_world,
-            circle,
+impl MainState {
+    fn new(ctx: &mut Context) -> MainState {
+        MainState {
+            game: Box::new(BasicLegion::new()),
+            target_game_type: TargetGameType::TargetBasicLegion,
             egui_backend: ggez_egui::EguiBackend::new(ctx),
             gui_settings: GuiSettings {
                 meet_distance: 30.0,
@@ -47,17 +44,17 @@ impl<T: GameImplementation> MainState<T> {
             loaded_universes: 0,
             draw_time: 0,
             update_time: 0,
-        })
+        }
     }
 }
 
-impl<T: GameImplementation> ggez::event::EventHandler<ggez::GameError> for MainState<T> {
+impl ggez::event::EventHandler<ggez::GameError> for MainState {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
         // Save update time:
         let start = std::time::Instant::now();
-
-        self.game
-            .update(ggez::timer::delta(ctx).as_secs_f32(), &self.gui_settings);
+        // Update game:
+        let dt = ggez::timer::delta(ctx).as_secs_f32();
+        self.game.update(dt, &self.gui_settings);
         let egui_ctx = self.egui_backend.ctx();
         egui::Window::new("egui-window").show(&egui_ctx, |ui| {
             ui.label("Meet distance");
@@ -77,6 +74,33 @@ impl<T: GameImplementation> ggez::event::EventHandler<ggez::GameError> for MainS
             ));
             ui.label(format!("Draw time: {}us", self.draw_time));
             ui.label(format!("Update time: {}us", self.update_time));
+            let response = egui::ComboBox::from_label("Game type")
+                .selected_text(format!("{:?}", self.target_game_type))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(
+                        &mut self.target_game_type,
+                        TargetGameType::TargetBasicLegion,
+                        "BasicLegion",
+                    );
+                    ui.selectable_value(
+                        &mut self.target_game_type,
+                        TargetGameType::TargetPerfMapLegion,
+                        "PerfMapLegion",
+                    );
+                })
+                .response;
+            if ui.button("Reload").clicked() {
+                println!("Changed game type to {:?}", self.target_game_type);
+                match self.target_game_type {
+                    TargetGameType::TargetBasicLegion => {
+                        self.game = Box::new(BasicLegion::new());
+                    }
+                    TargetGameType::TargetPerfMapLegion => {
+                        self.game = Box::new(PerfMapLegion::new());
+                    }
+                }
+                self.loaded_universes = 0;
+            }
         });
         if self.loaded_universes < self.gui_settings.requested_universe_count {
             self.game.load_universe(self.loaded_universes);
@@ -105,7 +129,7 @@ impl<T: GameImplementation> ggez::event::EventHandler<ggez::GameError> for MainS
                 .unwrap();
         }
         let mesh = batch.build(ctx).unwrap();
-        ggez::graphics::draw(ctx, &mesh, (glam::Vec2::new(0., 0.),))?;
+        ggez::graphics::draw(ctx, &mesh, (Vec2::new(0., 0.),))?;
 
         let end = std::time::Instant::now();
         self.draw_time = (end - start).as_micros();
@@ -150,7 +174,6 @@ pub fn main() -> GameResult {
     cb = cb.window_mode(ggez::conf::WindowMode::default().resizable(true));
 
     let (mut ctx, event_loop) = cb.build()?;
-    let mut world = GameLegion::new();
-    let state = MainState::new(&mut ctx, world)?;
+    let state = MainState::new(&mut ctx);
     ggez::event::run(ctx, event_loop, state)
 }
