@@ -8,23 +8,26 @@
 pub mod gamedb;
 use ggez::graphics::{Color, Drawable};
 use ggez::{Context, GameResult};
+use glam::Vec2;
+
 pub mod game_legion;
 pub mod rts;
+
 use game_legion::*;
 use rts::WORLD_SIZE;
 
-pub const UNIVERSES: usize = 5;
-
 pub trait GameImplementation {
     fn update(&mut self, ctx: &mut Context, settings: &GuiSettings);
-    fn get_unit_positions(&self, world_id: usize) -> Vec<(glam::Vec2, Color)>;
+    fn get_unit_positions(&self, unierse_id: usize) -> Vec<(glam::Vec2, Color)>;
+    fn load_universe(&mut self, universe_id: usize);
+    fn unload_universe(&mut self, unierse_id: usize);
+    fn on_click(&mut self, universe_id: usize, position: Vec2);
 }
+#[derive(Clone)]
 pub struct GuiSettings {
-    pub push_force: f32,
-    pub drag_coefficient: f32,
-    pub max_speed: f32,
     pub meet_distance: f32,
     pub universe: usize,
+    pub requested_universe_count: usize,
 }
 
 struct MainState<T: GameImplementation> {
@@ -32,6 +35,7 @@ struct MainState<T: GameImplementation> {
     circle: ggez::graphics::Mesh,
     egui_backend: ggez_egui::EguiBackend,
     gui_settings: GuiSettings,
+    loaded_universes: usize,
 }
 
 impl<T: GameImplementation> MainState<T> {
@@ -50,12 +54,11 @@ impl<T: GameImplementation> MainState<T> {
             circle,
             egui_backend: ggez_egui::EguiBackend::new(ctx),
             gui_settings: GuiSettings {
-                push_force: 1500.0,
-                drag_coefficient: 1.0,
-                max_speed: 100.0,
                 meet_distance: 30.0,
-                universe: 0
+                universe: 0,
+                requested_universe_count: 10,
             },
+            loaded_universes: 0,
         })
     }
 }
@@ -65,24 +68,45 @@ impl<T: GameImplementation> ggez::event::EventHandler<ggez::GameError> for MainS
         self.game.update(ctx, &self.gui_settings);
         let egui_ctx = self.egui_backend.ctx();
         egui::Window::new("egui-window").show(&egui_ctx, |ui| {
+            ui.label("Meet distance");
             ui.add(egui::DragValue::new(&mut self.gui_settings.meet_distance).speed(0.1));
+            ui.label("Universe");
             ui.add(egui::DragValue::new(&mut self.gui_settings.universe).speed(0.1));
+            ui.label("Requested universe count");
+            ui.add(
+                egui::DragValue::new(&mut self.gui_settings.requested_universe_count).speed(0.1),
+            );
+            // Add ui for self.loaded_universes
+            ui.label(format!("Loaded universes: {}", self.loaded_universes));
         });
+        if self.loaded_universes < self.gui_settings.requested_universe_count {
+            self.game.load_universe(self.loaded_universes);
+            self.loaded_universes += 1;
+        }
+        if self.loaded_universes > self.gui_settings.requested_universe_count {
+            self.game.unload_universe(self.loaded_universes);
+            self.loaded_universes -= 1;
+        }
         Ok(())
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         ggez::graphics::clear(ctx, Color::BLACK);
 
-        self.game.get_unit_positions(self.gui_settings.universe).iter().for_each(|(pos, color)| {
-            ggez::graphics::draw(
-                ctx,
-                &self.circle,
-                ggez::graphics::DrawParam::default().dest(*pos).color(*color),
-            )
-            .unwrap();
-            // canvas.draw(&self.circle, *pos);
-        });
+        self.game
+            .get_unit_positions(self.gui_settings.universe)
+            .iter()
+            .for_each(|(pos, color)| {
+                ggez::graphics::draw(
+                    ctx,
+                    &self.circle,
+                    ggez::graphics::DrawParam::default()
+                        .dest(*pos)
+                        .color(*color),
+                )
+                .unwrap();
+                // canvas.draw(&self.circle, *pos);
+            });
 
         // canvas.finish(ctx)?;
         ggez::graphics::draw(ctx, &self.egui_backend, ([0.0, 0.0],))?;
@@ -97,6 +121,8 @@ impl<T: GameImplementation> ggez::event::EventHandler<ggez::GameError> for MainS
         _y: f32,
     ) {
         self.egui_backend.input.mouse_button_down_event(button);
+        self.game
+            .on_click(self.gui_settings.universe, Vec2::new(_x as f32, _y as f32));
     }
 
     fn mouse_button_up_event(
@@ -124,9 +150,6 @@ pub fn main() -> GameResult {
 
     let (mut ctx, event_loop) = cb.build()?;
     let mut world = GameLegion::new();
-    for universe_id in 0..UNIVERSES {
-        world.generate_world(universe_id);
-    }
     let state = MainState::new(&mut ctx, world)?;
     ggez::event::run(ctx, event_loop, state)
 }

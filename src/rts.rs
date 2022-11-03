@@ -2,7 +2,7 @@ use ggez::graphics::Color;
 use glam::{f32, Vec2};
 
 pub const WORLD_SIZE: f32 = 700.0;
-pub const STARTING_VELOCITY: f32 = 20.0;
+pub const STARTING_VELOCITY: f32 = 30.0;
 
 // a component is any type that is 'static, sized, send and sync
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -14,7 +14,6 @@ pub struct ColorComp {
     pub color: Color,
 }
 
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Team {
     pub team: usize,
@@ -25,7 +24,7 @@ pub struct Velocity {
 }
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Spawner {
-    pub cooldown: f32
+    pub cooldown: f32,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -57,5 +56,3 @@ pub struct Comp4 {
 pub struct Comp5 {
     pub value: f32,
 }
-
-
