@@ -36,6 +36,8 @@ struct MainState<T: GameImplementation> {
     egui_backend: ggez_egui::EguiBackend,
     gui_settings: GuiSettings,
     loaded_universes: usize,
+    draw_time: u128,
+    update_time: u128,
 }
 
 impl<T: GameImplementation> MainState<T> {
@@ -59,12 +61,17 @@ impl<T: GameImplementation> MainState<T> {
                 requested_universe_count: 10,
             },
             loaded_universes: 0,
+            draw_time: 0,
+            update_time: 0,
         })
     }
 }
 
 impl<T: GameImplementation> ggez::event::EventHandler<ggez::GameError> for MainState<T> {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
+        // Save update time:
+        let start = std::time::Instant::now();
+
         self.game.update(ctx, &self.gui_settings);
         let egui_ctx = self.egui_backend.ctx();
         egui::Window::new("egui-window").show(&egui_ctx, |ui| {
@@ -78,6 +85,13 @@ impl<T: GameImplementation> ggez::event::EventHandler<ggez::GameError> for MainS
             );
             // Add ui for self.loaded_universes
             ui.label(format!("Loaded universes: {}", self.loaded_universes));
+            ui.label(format!("FPS: {}", ggez::timer::fps(ctx)));
+            ui.label(format!(
+                "Time delta: {}ms",
+                ggez::timer::delta(ctx).as_millis()
+            ));
+            ui.label(format!("Draw time: {}us", self.draw_time));
+            ui.label(format!("Update time: {}us", self.update_time));
         });
         if self.loaded_universes < self.gui_settings.requested_universe_count {
             self.game.load_universe(self.loaded_universes);
@@ -87,12 +101,17 @@ impl<T: GameImplementation> ggez::event::EventHandler<ggez::GameError> for MainS
             self.game.unload_universe(self.loaded_universes);
             self.loaded_universes -= 1;
         }
+        // Save update time:
+        self.update_time = start.elapsed().as_micros();
+
         Ok(())
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         ggez::graphics::clear(ctx, Color::BLACK);
 
+        // Measure time to draw:
+        let start = std::time::Instant::now();
         self.game
             .get_unit_positions(self.gui_settings.universe)
             .iter()
@@ -105,10 +124,10 @@ impl<T: GameImplementation> ggez::event::EventHandler<ggez::GameError> for MainS
                         .color(*color),
                 )
                 .unwrap();
-                // canvas.draw(&self.circle, *pos);
             });
+        let end = std::time::Instant::now();
+        self.draw_time = (end - start).as_micros();
 
-        // canvas.finish(ctx)?;
         ggez::graphics::draw(ctx, &self.egui_backend, ([0.0, 0.0],))?;
         ggez::graphics::present(ctx).unwrap();
         Ok(())
