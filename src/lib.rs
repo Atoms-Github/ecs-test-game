@@ -7,10 +7,10 @@
 #![allow(unused_parens)]
 
 pub mod basic_legion;
-pub mod gamedb;
+pub mod gamesqlite;
 pub mod performance_map_legion;
 pub mod rts;
-pub mod sqlite;
+pub mod verslowsql;
 
 pub const GREETING: &'static str = "Hallo, Rust library here!";
 pub fn test() {

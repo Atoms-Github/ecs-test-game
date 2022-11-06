@@ -9,8 +9,10 @@
 mod rts_gui;
 
 use ecs_test_game::basic_legion::BasicLegion;
+use ecs_test_game::gamesqlite::SqlIte;
 use ecs_test_game::performance_map_legion::PerfMapLegion;
 use ecs_test_game::rts::{GameImplementation, GuiSettings, WORLD_SIZE};
+use ecs_test_game::verslowsql::VerySlowSQL;
 use ggez::graphics::{Color, Drawable};
 use ggez::{Context, GameResult};
 use glam::Vec2;
@@ -28,18 +30,21 @@ pub struct MainState {
 pub enum TargetGameType {
     TargetBasicLegion,
     TargetPerfMapLegion,
+    TargetSqlite,
+    TargetVerySlowSQL,
 }
 
 impl MainState {
     fn new(ctx: &mut Context) -> MainState {
         MainState {
-            game: Box::new(BasicLegion::new()),
-            target_game_type: TargetGameType::TargetBasicLegion,
+            game: Box::new(VerySlowSQL::new()),
+            target_game_type: TargetGameType::TargetVerySlowSQL,
             egui_backend: ggez_egui::EguiBackend::new(ctx),
             gui_settings: GuiSettings {
-                meet_distance: 30.0,
+                meet_distance: 10.0,
                 universe: 0,
-                requested_universe_count: 10,
+                requested_universe_count: 1,
+                entity_count: 100,
             },
             loaded_universes: 0,
             draw_time: 0,
@@ -65,6 +70,9 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             ui.add(
                 egui::DragValue::new(&mut self.gui_settings.requested_universe_count).speed(0.1),
             );
+            ui.label("Entity count");
+            ui.add(egui::DragValue::new(&mut self.gui_settings.entity_count).speed(0.1));
+
             // Add ui for self.loaded_universes
             ui.label(format!("Loaded universes: {}", self.loaded_universes));
             ui.label(format!("FPS: {}", ggez::timer::fps(ctx)));
@@ -87,10 +95,19 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
                         TargetGameType::TargetPerfMapLegion,
                         "PerfMapLegion",
                     );
+                    ui.selectable_value(
+                        &mut self.target_game_type,
+                        TargetGameType::TargetSqlite,
+                        "Sqlite",
+                    );
+                    ui.selectable_value(
+                        &mut self.target_game_type,
+                        TargetGameType::TargetVerySlowSQL,
+                        "VerySlowSQL",
+                    );
                 })
                 .response;
             if ui.button("Reload").clicked() {
-                println!("Changed game type to {:?}", self.target_game_type);
                 match self.target_game_type {
                     TargetGameType::TargetBasicLegion => {
                         self.game = Box::new(BasicLegion::new());
@@ -98,17 +115,24 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
                     TargetGameType::TargetPerfMapLegion => {
                         self.game = Box::new(PerfMapLegion::new());
                     }
+                    TargetGameType::TargetSqlite => {
+                        self.game = Box::new(SqlIte::new());
+                    }
+                    TargetGameType::TargetVerySlowSQL => {
+                        self.game = Box::new(VerySlowSQL::new());
+                    }
                 }
                 self.loaded_universes = 0;
             }
         });
         if self.loaded_universes < self.gui_settings.requested_universe_count {
-            self.game.load_universe(self.loaded_universes);
+            self.game
+                .load_universe(self.loaded_universes, self.gui_settings.entity_count);
             self.loaded_universes += 1;
         }
         if self.loaded_universes > self.gui_settings.requested_universe_count {
-            self.game.unload_universe(self.loaded_universes);
             self.loaded_universes -= 1;
+            self.game.unload_universe(self.loaded_universes);
         }
         // Save update time:
         self.update_time = start.elapsed().as_micros();
@@ -128,8 +152,10 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
                 .circle(ggez::graphics::DrawMode::fill(), position, 10.0, 2.0, color)
                 .unwrap();
         }
-        let mesh = batch.build(ctx).unwrap();
-        ggez::graphics::draw(ctx, &mesh, (Vec2::new(0., 0.),))?;
+        let mesh = batch.build(ctx);
+        if let Ok(existing_mesh) = mesh {
+            ggez::graphics::draw(ctx, &existing_mesh, (Vec2::new(0., 0.),))?;
+        }
 
         let end = std::time::Instant::now();
         self.draw_time = (end - start).as_micros();

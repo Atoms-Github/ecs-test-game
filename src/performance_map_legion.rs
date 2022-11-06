@@ -179,8 +179,8 @@ impl GameImplementation for PerfMapLegion {
         positions
     }
 
-    fn load_universe(&mut self, universe_id: usize) {
-        for i in 0..100 {
+    fn load_universe(&mut self, universe_id: usize, entity_count: i64) {
+        for i in 0..entity_count {
             let pos = Vec2::new(
                 rand::random::<f32>() * WORLD_SIZE,
                 rand::random::<f32>() * WORLD_SIZE,

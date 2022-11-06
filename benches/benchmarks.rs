@@ -9,9 +9,10 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 use ecs_test_game::basic_legion::BasicLegion;
+use ecs_test_game::gamesqlite::*;
 use ecs_test_game::performance_map_legion::PerfMapLegion;
 use ecs_test_game::rts::*;
-use ecs_test_game::sqlite::*;
+use ecs_test_game::verslowsql::VerySlowSQL;
 use std::time::Duration;
 
 criterion_group!(benches, rts_benchmark);
@@ -44,6 +45,16 @@ fn rts_benchmark(c: &mut Criterion) {
         });
     });
 
+    group.bench_function("VerySlowSQL", |b| {
+        // Init game state
+        let mut world = VerySlowSQL::new();
+        for i in 0..UNIVERSES {
+            world.load_universe(i);
+        }
+        b.iter(move || {
+            world.update(1. / 60., &GuiSettings::default());
+        });
+    });
     group.bench_function("Sqlite", |b| {
         // Init game state
         let mut world = SqlIte::new();
