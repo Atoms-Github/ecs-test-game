@@ -11,8 +11,8 @@ mod rts_gui;
 use ecs_test_game::basic_legion::BasicLegion;
 use ecs_test_game::gamesqlite::SqlIte;
 use ecs_test_game::performance_map_legion::PerfMapLegion;
+use ecs_test_game::relation_per_component::RelationPerComponent;
 use ecs_test_game::rts::{GameImplementation, GuiSettings, WORLD_SIZE};
-use ecs_test_game::verslowsql::VerySlowSQL;
 use ggez::graphics::{Color, Drawable};
 use ggez::{Context, GameResult};
 use glam::Vec2;
@@ -31,20 +31,20 @@ pub enum TargetGameType {
     TargetBasicLegion,
     TargetPerfMapLegion,
     TargetSqlite,
-    TargetVerySlowSQL,
+    TargetRelationPerComp,
 }
 
 impl MainState {
     fn new(ctx: &mut Context) -> MainState {
         MainState {
-            game: Box::new(VerySlowSQL::new()),
-            target_game_type: TargetGameType::TargetVerySlowSQL,
+            game: Box::new(RelationPerComponent::new()),
+            target_game_type: TargetGameType::TargetRelationPerComp,
             egui_backend: ggez_egui::EguiBackend::new(ctx),
             gui_settings: GuiSettings {
                 meet_distance: 10.0,
                 universe: 0,
                 requested_universe_count: 1,
-                entity_count: 100,
+                entity_count: 1000,
             },
             loaded_universes: 0,
             draw_time: 0,
@@ -102,8 +102,8 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
                     );
                     ui.selectable_value(
                         &mut self.target_game_type,
-                        TargetGameType::TargetVerySlowSQL,
-                        "VerySlowSQL",
+                        TargetGameType::TargetRelationPerComp,
+                        "RelationPerComp",
                     );
                 })
                 .response;
@@ -118,8 +118,8 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
                     TargetGameType::TargetSqlite => {
                         self.game = Box::new(SqlIte::new());
                     }
-                    TargetGameType::TargetVerySlowSQL => {
-                        self.game = Box::new(VerySlowSQL::new());
+                    TargetGameType::TargetRelationPerComp => {
+                        self.game = Box::new(RelationPerComponent::new());
                     }
                 }
                 self.loaded_universes = 0;

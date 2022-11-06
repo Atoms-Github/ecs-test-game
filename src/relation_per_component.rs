@@ -9,13 +9,13 @@ use legion::*;
 use rand::Rng;
 use sqlite::*;
 
-pub struct VerySlowSQL {
+pub struct RelationPerComponent {
     connection: Connection,
     current_ent_id: i64,
 }
 
-impl VerySlowSQL {
-    pub fn new() -> VerySlowSQL {
+impl RelationPerComponent {
+    pub fn new() -> RelationPerComponent {
         let connection = open(":memory:").unwrap();
         // Create a table with a single column of entity IDs, which is the primary ID
         connection
@@ -87,13 +87,13 @@ impl VerySlowSQL {
         )",
             )
             .unwrap();
-        VerySlowSQL {
+        RelationPerComponent {
             connection,
             current_ent_id: 0,
         }
     }
 }
-impl GameImplementation for VerySlowSQL {
+impl GameImplementation for RelationPerComponent {
     fn update(&mut self, dt: f32, settings: &GuiSettings) {
         let mut resources = Resources::default();
         // Start transaction:

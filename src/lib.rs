@@ -7,12 +7,9 @@
 #![allow(unused_parens)]
 
 pub mod basic_legion;
+pub mod db_interface;
 pub mod gamesqlite;
 pub mod performance_map_legion;
+pub mod relation_per_component;
 pub mod rts;
-pub mod verslowsql;
-
-pub const GREETING: &'static str = "Hallo, Rust library here!";
-pub fn test() {
-    println!("Test");
-}
+pub mod strat;
