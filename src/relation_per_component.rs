@@ -107,6 +107,8 @@ impl GameImplementation for RelationPerComponent {
                 position_y = position_y + velocity_y * ?
             FROM velocity
             WHERE position.id = velocity.id;",
+
+
             )
             .unwrap()
             .bind(1, dt as f64)
@@ -137,6 +139,7 @@ impl GameImplementation for RelationPerComponent {
             .unwrap()
             .next()
             .unwrap();
+
 
         self.connection.execute("COMMIT").unwrap();
     }
@@ -310,6 +313,16 @@ impl GameImplementation for RelationPerComponent {
         self.connection
             .prepare(
                 "DELETE FROM shooter WHERE id IN (SELECT id FROM universe WHERE universe_id = ?)",
+            )
+            .unwrap()
+            .bind(1, universe_id as i64)
+            .unwrap()
+            .next()
+            .unwrap();
+
+        self.connection
+            .prepare(
+                "INSERT into ENTITIES (shooter entity) WHERE UNITs are near units",
             )
             .unwrap()
             .bind(1, universe_id as i64)

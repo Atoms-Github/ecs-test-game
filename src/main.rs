@@ -19,7 +19,7 @@ use glam::Vec2;
 
 pub struct MainState {
     pub game: Box<dyn GameImplementation>,
-    pub target_game_type: TargetGameType,
+    pub target_brain_type: TargetBrainType,
     pub egui_backend: ggez_egui::EguiBackend,
     pub gui_settings: GuiSettings,
     pub loaded_universes: usize,
@@ -27,24 +27,28 @@ pub struct MainState {
     pub update_time: u128,
 }
 #[derive(Debug, PartialEq)]
-pub enum TargetGameType {
+pub enum TargetBrainType {
     TargetBasicLegion,
     TargetPerfMapLegion,
     TargetSqlite,
     TargetRelationPerComp,
+}
+pub enum BenchmarkType {
+    Macro,
+    MicroVelocityStacking{sparcity: f32, duplicity: f32},
 }
 
 impl MainState {
     fn new(ctx: &mut Context) -> MainState {
         MainState {
             game: Box::new(RelationPerComponent::new()),
-            target_game_type: TargetGameType::TargetRelationPerComp,
+            target_brain_type: TargetBrainType::TargetRelationPerComp,
             egui_backend: ggez_egui::EguiBackend::new(ctx),
             gui_settings: GuiSettings {
                 meet_distance: 10.0,
                 universe: 0,
                 requested_universe_count: 1,
-                entity_count: 1000,
+                entity_count: 100,
             },
             loaded_universes: 0,
             draw_time: 0,
@@ -61,7 +65,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
         let dt = ggez::timer::delta(ctx).as_secs_f32();
         self.game.update(dt, &self.gui_settings);
         let egui_ctx = self.egui_backend.ctx();
-        egui::Window::new("egui-window").show(&egui_ctx, |ui| {
+        egui::Window::new("Settings").show(&egui_ctx, |ui| {
             ui.label("Meet distance");
             ui.add(egui::DragValue::new(&mut self.gui_settings.meet_distance).speed(0.1));
             ui.label("Universe");
@@ -82,43 +86,43 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             ));
             ui.label(format!("Draw time: {}us", self.draw_time));
             ui.label(format!("Update time: {}us", self.update_time));
-            let response = egui::ComboBox::from_label("Game type")
-                .selected_text(format!("{:?}", self.target_game_type))
+            let response = egui::ComboBox::from_label("Brain type")
+                .selected_text(format!("{:?}", self.target_brain_type))
                 .show_ui(ui, |ui| {
                     ui.selectable_value(
-                        &mut self.target_game_type,
-                        TargetGameType::TargetBasicLegion,
+                        &mut self.target_brain_type,
+                        TargetBrainType::TargetBasicLegion,
                         "BasicLegion",
                     );
                     ui.selectable_value(
-                        &mut self.target_game_type,
-                        TargetGameType::TargetPerfMapLegion,
+                        &mut self.target_brain_type,
+                        TargetBrainType::TargetPerfMapLegion,
                         "PerfMapLegion",
                     );
                     ui.selectable_value(
-                        &mut self.target_game_type,
-                        TargetGameType::TargetSqlite,
+                        &mut self.target_brain_type,
+                        TargetBrainType::TargetSqlite,
                         "Sqlite",
                     );
                     ui.selectable_value(
-                        &mut self.target_game_type,
-                        TargetGameType::TargetRelationPerComp,
+                        &mut self.target_brain_type,
+                        TargetBrainType::TargetRelationPerComp,
                         "RelationPerComp",
                     );
                 })
                 .response;
             if ui.button("Reload").clicked() {
-                match self.target_game_type {
-                    TargetGameType::TargetBasicLegion => {
+                match self.target_brain_type {
+                    TargetBrainType::TargetBasicLegion => {
                         self.game = Box::new(BasicLegion::new());
                     }
-                    TargetGameType::TargetPerfMapLegion => {
+                    TargetBrainType::TargetPerfMapLegion => {
                         self.game = Box::new(PerfMapLegion::new());
                     }
-                    TargetGameType::TargetSqlite => {
+                    TargetBrainType::TargetSqlite => {
                         self.game = Box::new(SqlIte::new());
                     }
-                    TargetGameType::TargetRelationPerComp => {
+                    TargetBrainType::TargetRelationPerComp => {
                         self.game = Box::new(RelationPerComponent::new());
                     }
                 }
@@ -193,6 +197,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
 }
 
 pub fn main() -> GameResult {
+
     let mut cb = ggez::ContextBuilder::new("super_simple", "ggez");
 
     cb = cb.window_setup(ggez::conf::WindowSetup::default().title("Ecs Performance Benchmark"));
@@ -203,3 +208,23 @@ pub fn main() -> GameResult {
     let state = MainState::new(&mut ctx);
     ggez::event::run(ctx, event_loop, state)
 }
+
+// use libc::{c_char, c_void};
+// use std::ptr::{null, null_mut};
+//
+// #[global_allocator]
+// static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
+//
+// extern "C" fn write_cb(_: *mut c_void, message: *const c_char) {
+//     print!("{}", String::from_utf8_lossy(unsafe {
+//         std::ffi::CStr::from_ptr(message as *const i8).to_bytes()
+//     }));
+// }
+//
+// fn mem_print() {
+//     unsafe { jemalloc_sys::malloc_stats_print(Some(write_cb), null_mut(), null()) }
+// }
+//     mem_print();
+//     let _heap = Vec::<u8>::with_capacity (1024 * 128);
+//     mem_print();
+

@@ -12,7 +12,7 @@ pub struct DbSqlIte {
     pub conn: sqlite::Connection,
 }
 pub struct DbDuckDb {
-    pub conn: duckdb::Connection,
+    // pub conn: duckdb::Connection,
 }
 impl DbSys for DbSqlIte {
     fn execute(&mut self, query: &str) {

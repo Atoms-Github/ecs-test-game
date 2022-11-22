@@ -13,9 +13,12 @@ egui = "0.18.1"
 ggez-egui = "0.2.1"
 glam = { version = "0.20"}
 criterion = { version = "0.4.0", features = ["html_reports", "plotters"] }
-
+heapsize = "0.4.2"
 sqlite = "0.27.3"
-duckdb = "0.5.1"
+#jemallocator = "0.5"
+#jemalloc-sys = {version = "0.5", features = ["stats"]}
+#libc = "0.2"
+#duckdb = {version = "0.5.1", features = ["bundled"]}
 
 [[bench]]
 name = "benchmarks"

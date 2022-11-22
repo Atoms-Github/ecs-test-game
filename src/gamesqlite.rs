@@ -91,6 +91,8 @@ impl GameImplementation for SqlIte {
             .execute("UPDATE entities SET shooter_cooldown = 0.5 WHERE shooter_cooldown < 0")
             .unwrap();
 
+
+
         self.connection.execute("COMMIT").unwrap();
     }
 
