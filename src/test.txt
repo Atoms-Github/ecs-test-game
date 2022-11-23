@@ -1,2 +1,0 @@
-TCP Reno implements the fast retransmit mechanism, but there are still situations when the sender needs to wait for timeout expiration before retransmission even in case of a single packet loss. Explain when this situation happens. (up to 60 words)
-Answer:

@@ -6,10 +6,11 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_parens)]
 
-pub mod basic_legion;
+mod brains;
+mod challenges;
 pub mod db_interface;
-pub mod gamesqlite;
-pub mod performance_map_legion;
-pub mod relation_per_component;
-pub mod rts;
-pub mod strat;
+mod test_controller;
+mod thread_controller;
+pub mod utils;
+
+pub type Point = glam::Vec2;

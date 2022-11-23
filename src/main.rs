@@ -6,8 +6,6 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_parens)]
 
-mod rts_gui;
-
 use ecs_test_game::basic_legion::BasicLegion;
 use ecs_test_game::gamesqlite::SqlIte;
 use ecs_test_game::performance_map_legion::PerfMapLegion;
@@ -35,7 +33,7 @@ pub enum TargetBrainType {
 }
 pub enum BenchmarkType {
     Macro,
-    MicroVelocityStacking{sparcity: f32, duplicity: f32},
+    MicroVelocityStacking { sparcity: f32, duplicity: f32 },
 }
 
 impl MainState {
@@ -197,7 +195,6 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
 }
 
 pub fn main() -> GameResult {
-
     let mut cb = ggez::ContextBuilder::new("super_simple", "ggez");
 
     cb = cb.window_setup(ggez::conf::WindowSetup::default().title("Ecs Performance Benchmark"));
@@ -208,23 +205,3 @@ pub fn main() -> GameResult {
     let state = MainState::new(&mut ctx);
     ggez::event::run(ctx, event_loop, state)
 }
-
-// use libc::{c_char, c_void};
-// use std::ptr::{null, null_mut};
-//
-// #[global_allocator]
-// static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
-//
-// extern "C" fn write_cb(_: *mut c_void, message: *const c_char) {
-//     print!("{}", String::from_utf8_lossy(unsafe {
-//         std::ffi::CStr::from_ptr(message as *const i8).to_bytes()
-//     }));
-// }
-//
-// fn mem_print() {
-//     unsafe { jemalloc_sys::malloc_stats_print(Some(write_cb), null_mut(), null()) }
-// }
-//     mem_print();
-//     let _heap = Vec::<u8>::with_capacity (1024 * 128);
-//     mem_print();
-

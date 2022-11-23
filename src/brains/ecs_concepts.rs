@@ -1,0 +1,1 @@
+pub type UniverseID = usize;
