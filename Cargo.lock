@@ -1065,6 +1065,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f43e957e744be03f5801a55472f593d43fabdebf25a4585db250f04d86b1675f"
 dependencies = [
  "mint",
+ "rand",
 ]
 
 [[package]]

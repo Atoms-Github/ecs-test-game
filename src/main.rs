@@ -6,49 +6,49 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_parens)]
 
-use ecs_test_game::basic_legion::BasicLegion;
-use ecs_test_game::gamesqlite::SqlIte;
-use ecs_test_game::performance_map_legion::PerfMapLegion;
-use ecs_test_game::relation_per_component::RelationPerComponent;
-use ecs_test_game::rts::{GameImplementation, GuiSettings, WORLD_SIZE};
 use ggez::graphics::{Color, Drawable};
 use ggez::{Context, GameResult};
+use ggez::input::mouse::position;
 use glam::Vec2;
+use ecs_test_game::brains::Brain;
+use ecs_test_game::{MAP_SIZE, test_controller};
+use ecs_test_game::brains::legion_sequential::BrainLegionSequential;
+use ecs_test_game::challenges::Challenge;
+use ecs_test_game::challenges::rts::RtsChallenge;
+use ecs_test_game::test_controller::TestController;
+use ecs_test_game::ui::ui_settings::{BrainType, ChallengeType, GuiSettings};
+
 
 pub struct MainState {
-    pub game: Box<dyn GameImplementation>,
-    pub target_brain_type: TargetBrainType,
+    pub test_controller: TestController,
     pub egui_backend: ggez_egui::EguiBackend,
     pub gui_settings: GuiSettings,
-    pub loaded_universes: usize,
     pub draw_time: u128,
     pub update_time: u128,
-}
-#[derive(Debug, PartialEq)]
-pub enum TargetBrainType {
-    TargetBasicLegion,
-    TargetPerfMapLegion,
-    TargetSqlite,
-    TargetRelationPerComp,
-}
-pub enum BenchmarkType {
-    Macro,
-    MicroVelocityStacking { sparcity: f32, duplicity: f32 },
 }
 
 impl MainState {
     fn new(ctx: &mut Context) -> MainState {
+        let brain = Box::new(BrainLegionSequential::new());
+        let brain2 = Box::new(BrainLegionSequential::new());
+        let challenge = Box::new(RtsChallenge{
+            units_count: 100,
+        });
+        let challenge2 = Box::new(RtsChallenge{
+            units_count: 100,
+        });
         MainState {
-            game: Box::new(RelationPerComponent::new()),
-            target_brain_type: TargetBrainType::TargetRelationPerComp,
+            test_controller: TestController::new(brain2, challenge2),
             egui_backend: ggez_egui::EguiBackend::new(ctx),
             gui_settings: GuiSettings {
+
                 meet_distance: 10.0,
-                universe: 0,
-                requested_universe_count: 1,
+                view_universe: 0,
+                universe_count: 1,
                 entity_count: 100,
+                brain_type: BrainType::LegionSequential,
+                challenge_type: ChallengeType::Rts
             },
-            loaded_universes: 0,
             draw_time: 0,
             update_time: 0,
         }
@@ -61,22 +61,22 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
         let start = std::time::Instant::now();
         // Update game:
         let dt = ggez::timer::delta(ctx).as_secs_f32();
-        self.game.update(dt, &self.gui_settings);
         let egui_ctx = self.egui_backend.ctx();
         egui::Window::new("Settings").show(&egui_ctx, |ui| {
             ui.label("Meet distance");
             ui.add(egui::DragValue::new(&mut self.gui_settings.meet_distance).speed(0.1));
             ui.label("Universe");
-            ui.add(egui::DragValue::new(&mut self.gui_settings.universe).speed(0.1));
+            ui.add(egui::DragValue::new(&mut self.gui_settings.view_universe).speed(0.1));
             ui.label("Requested universe count");
             ui.add(
-                egui::DragValue::new(&mut self.gui_settings.requested_universe_count).speed(0.1),
+                egui::DragValue::new(&mut self.gui_settings.universe_count).speed(0.1),
             );
             ui.label("Entity count");
             ui.add(egui::DragValue::new(&mut self.gui_settings.entity_count).speed(0.1));
 
-            // Add ui for self.loaded_universes
-            ui.label(format!("Loaded universes: {}", self.loaded_universes));
+            // Add ui for self.universe_count:
+
+
             ui.label(format!("FPS: {}", ggez::timer::fps(ctx)));
             ui.label(format!(
                 "Time delta: {}ms",
@@ -85,58 +85,27 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             ui.label(format!("Draw time: {}us", self.draw_time));
             ui.label(format!("Update time: {}us", self.update_time));
             let response = egui::ComboBox::from_label("Brain type")
-                .selected_text(format!("{:?}", self.target_brain_type))
+                .selected_text(format!("{:?}", self.gui_settings.brain_type))
                 .show_ui(ui, |ui| {
                     ui.selectable_value(
-                        &mut self.target_brain_type,
-                        TargetBrainType::TargetBasicLegion,
-                        "BasicLegion",
-                    );
-                    ui.selectable_value(
-                        &mut self.target_brain_type,
-                        TargetBrainType::TargetPerfMapLegion,
-                        "PerfMapLegion",
-                    );
-                    ui.selectable_value(
-                        &mut self.target_brain_type,
-                        TargetBrainType::TargetSqlite,
-                        "Sqlite",
-                    );
-                    ui.selectable_value(
-                        &mut self.target_brain_type,
-                        TargetBrainType::TargetRelationPerComp,
-                        "RelationPerComp",
+                        &mut self.gui_settings.brain_type,
+                        BrainType::LegionSequential,
+                        "Legion sequential",
                     );
                 })
                 .response;
             if ui.button("Reload").clicked() {
-                match self.target_brain_type {
-                    TargetBrainType::TargetBasicLegion => {
-                        self.game = Box::new(BasicLegion::new());
-                    }
-                    TargetBrainType::TargetPerfMapLegion => {
-                        self.game = Box::new(PerfMapLegion::new());
-                    }
-                    TargetBrainType::TargetSqlite => {
-                        self.game = Box::new(SqlIte::new());
-                    }
-                    TargetBrainType::TargetRelationPerComp => {
-                        self.game = Box::new(RelationPerComponent::new());
-                    }
-                }
-                self.loaded_universes = 0;
+                let new_brain = match self.gui_settings.brain_type {
+                    BrainType::LegionSequential => Box::new(BrainLegionSequential::new()),
+                };
+                let new_challenge = match self.gui_settings.challenge_type {
+                    ChallengeType::Rts => Box::new(RtsChallenge {
+                        units_count: self.gui_settings.entity_count,
+                    }),
+                };
+                self.test_controller = TestController::new(new_brain, new_challenge);
             }
         });
-        if self.loaded_universes < self.gui_settings.requested_universe_count {
-            self.game
-                .load_universe(self.loaded_universes, self.gui_settings.entity_count);
-            self.loaded_universes += 1;
-        }
-        if self.loaded_universes > self.gui_settings.requested_universe_count {
-            self.loaded_universes -= 1;
-            self.game.unload_universe(self.loaded_universes);
-        }
-        // Save update time:
         self.update_time = start.elapsed().as_micros();
 
         Ok(())
@@ -149,11 +118,12 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
         let start = std::time::Instant::now();
         // Batch draw the units:
         let mut batch = ggez::graphics::MeshBuilder::new();
-        for (position, color) in self.game.get_unit_positions(self.gui_settings.universe) {
+        for (position, color) in self.test_controller.brain.get_entities() {
             batch
                 .circle(ggez::graphics::DrawMode::fill(), position, 10.0, 2.0, color)
                 .unwrap();
         }
+
         let mesh = batch.build(ctx);
         if let Ok(existing_mesh) = mesh {
             ggez::graphics::draw(ctx, &existing_mesh, (Vec2::new(0., 0.),))?;
@@ -174,8 +144,6 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
         _y: f32,
     ) {
         self.egui_backend.input.mouse_button_down_event(button);
-        self.game
-            .on_click(self.gui_settings.universe, Vec2::new(_x as f32, _y as f32));
     }
 
     fn mouse_button_up_event(
@@ -198,7 +166,7 @@ pub fn main() -> GameResult {
     let mut cb = ggez::ContextBuilder::new("super_simple", "ggez");
 
     cb = cb.window_setup(ggez::conf::WindowSetup::default().title("Ecs Performance Benchmark"));
-    cb = cb.window_mode(ggez::conf::WindowMode::default().dimensions(WORLD_SIZE, WORLD_SIZE));
+    cb = cb.window_mode(ggez::conf::WindowMode::default().dimensions(MAP_SIZE, MAP_SIZE));
     cb = cb.window_mode(ggez::conf::WindowMode::default().resizable(true));
 
     let (mut ctx, event_loop) = cb.build()?;

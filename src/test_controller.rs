@@ -2,52 +2,40 @@ use crate::brains::Brain;
 use crate::challenges::Challenge;
 use std::collections::HashMap;
 
-pub struct TestController<B, C>
+pub struct TestController
 {
-    pub brain: B,
-    pub challenge: C,
+    pub brain: Box<dyn Brain>,
+    pub challenge: Box<dyn Challenge>,
     pub timings: HashMap<&'static str, u128>,
     pub ticks: u32,
-}
-impl<B: Brain + Clone, C: Challenge + Clone> Clone for TestController<B, C> {
-    fn clone(&self) -> Self {
-        Self {
-            brain: self.brain.clone(),
-            challenge: self.challenge.clone(),
-            timings: self.timings.clone(),
-            ticks: self.ticks,
-        }
-    }
+    pub universe_count: usize,
 }
 
-impl<B, C> TestController<B, C>
-where
-    B: Brain,
-    C: Challenge,
+
+
+impl TestController
 {
-    pub fn new(brain: B, challenge: C) -> Self {
-        Self {
+    pub fn new(brain: Box<dyn Brain>, challenge: Box<dyn Challenge>) -> TestController
+    {
+        TestController {
             brain,
             challenge,
             timings: HashMap::new(),
             ticks: 0,
+            universe_count: 1
         }
-    }
-    fn register_time(&mut self, key: &'static str, time: u128) {
-        let entry = self.timings.entry(key).or_insert(0);
-        *entry += time;
-    }
-
-    pub fn init(&mut self) {
+}
+    fn init(&mut self) {
         let time = crate::utils::time_it(|| {
-            self.challenge.init(&mut self.brain);
+            self.challenge.init(&mut *self.brain, self.universe_count);
         });
+        self.brain.init_systems(&self.challenge.get_tick_systems());
         self.register_time("init", time);
     }
 
-    pub fn tick(&mut self) {
+    fn tick(&mut self) {
         let systems = self.challenge.get_tick_systems();
-        if B::get_tick_all_at_once() {
+        if self.brain.get_tick_all_at_once() {
             let time = crate::utils::time_it(|| {
                 self.brain.tick_systems();
             });
@@ -62,4 +50,10 @@ where
         }
         self.ticks += 1;
     }
+    fn register_time(&mut self, key: &'static str, time: u128) {
+        let entry = self.timings.entry(key).or_insert(0);
+        *entry += time;
+
+    }
+
 }

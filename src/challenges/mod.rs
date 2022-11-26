@@ -1,8 +1,9 @@
 use crate::brains::{Brain, SystemType};
 
-mod rts;
+pub mod rts;
 
 pub trait Challenge {
-    fn init<B: Brain>(&mut self, brain: &mut B);
-    fn get_tick_systems() -> Vec<SystemType>;
+    fn init(&mut self, brain: &mut dyn Brain, universe_count: usize);
+    fn get_tick_systems(&self) -> Vec<SystemType>;
+    fn clone_box(&self) -> Box<dyn Challenge>;
 }

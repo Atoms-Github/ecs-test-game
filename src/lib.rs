@@ -6,11 +6,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_parens)]
 
-mod brains;
-mod challenges;
+pub mod brains;
+pub mod challenges;
 pub mod db_interface;
-mod test_controller;
-mod thread_controller;
+pub mod test_controller;
+pub mod thread_controller;
 pub mod utils;
+pub mod ui;
 
 pub type Point = glam::Vec2;
+pub const MAP_SIZE: f32 = 800.0;
