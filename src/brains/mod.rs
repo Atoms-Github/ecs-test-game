@@ -19,8 +19,8 @@ pub trait Brain {
     fn init_systems(&mut self, systems: &Vec<SystemType>);
 
     fn get_tick_all_at_once(&self) -> bool;
-    fn tick_systems(&mut self);
-    fn tick_system(&mut self, system: &SystemType);
+    fn tick_systems(&mut self, delta: f32);
+    fn tick_system(&mut self, system: &SystemType, delta: f32);
     
     fn get_name(&self) -> String;
 }

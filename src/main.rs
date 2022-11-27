@@ -84,7 +84,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             ));
             ui.label(format!("Draw time: {}us", self.draw_time));
             ui.label(format!("Update time: {}us", self.update_time));
-            let response = egui::ComboBox::from_label("Brain type")
+            egui::ComboBox::from_label("Brain type")
                 .selected_text(format!("{:?}", self.gui_settings.brain_type))
                 .show_ui(ui, |ui| {
                     ui.selectable_value(
@@ -94,6 +94,17 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
                     );
                 })
                 .response;
+            egui::ComboBox::from_label("Challenge type")
+                .selected_text(format!("{:?}", self.gui_settings.challenge_type))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(
+                        &mut self.gui_settings.challenge_type,
+                        ChallengeType::Rts,
+                        "Rts",
+                    );
+                })
+                .response;
+
             if ui.button("Reload").clicked() {
                 let new_brain = match self.gui_settings.brain_type {
                     BrainType::LegionSequential => Box::new(BrainLegionSequential::new()),
@@ -104,10 +115,11 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
                     }),
                 };
                 self.test_controller = TestController::new(new_brain, new_challenge);
+                self.test_controller.init();
             }
         });
         self.update_time = start.elapsed().as_micros();
-
+        self.test_controller.tick( dt);
         Ok(())
     }
 
@@ -122,6 +134,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             batch
                 .circle(ggez::graphics::DrawMode::fill(), position, 10.0, 2.0, color)
                 .unwrap();
+
         }
 
         let mesh = batch.build(ctx);
@@ -159,7 +172,6 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
     fn mouse_motion_event(&mut self, _ctx: &mut Context, x: f32, y: f32, _dx: f32, _dy: f32) {
         self.egui_backend.input.mouse_motion_event(x, y);
     }
-    // Add key and mouse listeners for ggez_egui:
 }
 
 pub fn main() -> GameResult {
@@ -170,6 +182,7 @@ pub fn main() -> GameResult {
     cb = cb.window_mode(ggez::conf::WindowMode::default().resizable(true));
 
     let (mut ctx, event_loop) = cb.build()?;
-    let state = MainState::new(&mut ctx);
+    let mut state = MainState::new(&mut ctx);
+    state.test_controller.init();
     ggez::event::run(ctx, event_loop, state)
 }

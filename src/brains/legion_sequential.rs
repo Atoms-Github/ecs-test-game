@@ -21,7 +21,7 @@ impl Brain for BrainLegionSequential{
             Team{team},
             UniverseComp{ universe_id},
             ColorComp{color: team_to_color(team)},
-            Shooter{cooldown: 0.0},
+            Shooter{ cooldown: 0.0},
         ));
     }
 
@@ -57,22 +57,22 @@ impl Brain for BrainLegionSequential{
         false
     }
 
-    fn tick_systems(&mut self) {
+    fn tick_systems(&mut self, delta: f32) {
         // None
     }
 
-    fn tick_system(&mut self, system: &SystemType) {
+    fn tick_system(&mut self, system: &SystemType, delta: f32) {
         match  system{
             SystemType::VELOCITY => {
                 let mut query = <(&mut Position, &Velocity)>::query();
                 for (mut pos, vel) in query.iter_mut(&mut self.world) {
-                    pos.pos += vel.vel;
+                    pos.pos += vel.vel * delta;
                 }
             }
             SystemType::ACCELERATION => {
                 let mut query = <(&mut Velocity, &Acceleration)>::query();
                 for (mut vel, acc) in query.iter_mut(&mut self.world) {
-                    vel.vel += acc.acc;
+                    vel.vel += acc.acc * delta;
                 }
             }
             SystemType::MAP_EDGE => {
@@ -99,7 +99,7 @@ impl Brain for BrainLegionSequential{
             SystemType::UPDATE_TIMED_LIFE => {
                 let mut query = <(&mut TimedLife)>::query();
                 for (mut timed_life) in query.iter_mut(&mut self.world) {
-                    timed_life.time_left -= 1.0;
+                    timed_life.time_left -= delta;
                 }
             }
             SystemType::SHOOT => {
@@ -127,8 +127,7 @@ impl Brain for BrainLegionSequential{
                                 Velocity{vel},
                                 Team{team: team.team},
                                 ColorComp{color: Color::new(1.0, 1.0, 1.0, 1.0)},
-                                Shooter{cooldown: 10.0},
-                                TimedLife{time_left: 100.0},
+                                TimedLife{time_left: 1.0},
                             ));
                         }
 
@@ -138,14 +137,11 @@ impl Brain for BrainLegionSequential{
                 // Process cooldown
                 let mut query = <(&mut Shooter)>::query();
                 for (mut shooter) in query.iter_mut(&mut self.world) {
-                    shooter.cooldown -= 1.0;
-                    if shooter.cooldown < 0.0 {
-                        shooter.cooldown = 0.0;
+                    if shooter.cooldown <= 0.0 {
+                        shooter.cooldown = 3.0;
                     }
-
+                    shooter.cooldown -= delta;
                 }
-
-
             }
             SystemType::DELETE_EXPIRED => {
                 let mut command_buffer = CommandBuffer::new(&self.world);
@@ -185,7 +181,7 @@ fn make_projectile(buffer: &mut CommandBuffer, pos: Vec2, target: Vec2, universe
             color: Color::new(1.0, 1.0, 1.0, 1.0),
         },
         TimedLife { time_left: 1.0 },
-        UniverseComp { universe_id: universe_id },
+        UniverseComp { universe_id },
     ));
 }
 #[system(for_each)]

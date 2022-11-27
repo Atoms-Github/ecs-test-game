@@ -25,7 +25,7 @@ impl TestController
             universe_count: 1
         }
 }
-    fn init(&mut self) {
+    pub fn init(&mut self) {
         let time = crate::utils::time_it(|| {
             self.challenge.init(&mut *self.brain, self.universe_count);
         });
@@ -33,17 +33,17 @@ impl TestController
         self.register_time("init", time);
     }
 
-    fn tick(&mut self) {
+    pub fn tick(&mut self, delta: f32) {
         let systems = self.challenge.get_tick_systems();
         if self.brain.get_tick_all_at_once() {
             let time = crate::utils::time_it(|| {
-                self.brain.tick_systems();
+                self.brain.tick_systems(delta);
             });
             self.register_time("ALL_SYSTEMS", time);
         } else {
             for system in systems {
                 let time = crate::utils::time_it(|| {
-                    self.brain.tick_system(&system);
+                    self.brain.tick_system(&system, delta);
                 });
                 self.register_time(system.as_string(), time);
             }
