@@ -1,14 +1,17 @@
-use crate::rts::*;
-
+use crate::brains::com::*;
+use crate::brains::{Brain, SystemType};
+use crate::ui::ui_settings::GuiSettings;
+use crate::Point;
+use core::panicking::panic;
 use ggez::graphics::Color;
 use glam::*;
 use legion::systems::CommandBuffer;
 use legion::*;
 use rand::Rng;
 
-pub struct BrainLegionSequential {
+pub struct BrainLegionScheduled {
     world: World,
-    schedule: Schedule,
+    schedule: Option<Schedule>,
 }
 
 // A function for making a new unit
@@ -116,32 +119,62 @@ fn waste_of_time1(pos: &Position, comp1: &mut Comp1) {
 fn waste_of_time2(pos: &Position, comp3: &mut Comp3, comp2: &Comp2) {
     comp3.value += comp2.value;
 }
-impl BrainLegionSequential {
-    pub fn new() -> BrainLegionSequential {
+impl BrainLegionScheduled {
+    pub fn new() -> Self {
         let mut world = World::default();
+        Self {
+            world,
+            schedule: None,
+        }
+    }
+}
+impl Brain for BrainLegionScheduled {
+    fn add_entity_unit(
+        &mut self,
+        position: Point,
+        velocity: Point,
+        team: usize,
+        universe_id: usize,
+    ) {
+        todo!()
+    }
+
+    fn add_entity_vel_dot(&mut self, position: Point, velocity: Point) {
+        todo!()
+    }
+
+    fn add_entity_positional_dummy(&mut self, position: Point) {
+        todo!()
+    }
+
+    fn get_entities(&mut self, universe_id: usize) -> Vec<(Point, Color)> {
+        let mut query = <(Read<Position>, Read<ColorComp>, Read<UniverseComp>)>::query();
+        let mut positions = Vec::new();
+        for position in query.iter(&self.world) {
+            if position.2.id == universe_id {
+                positions.push((position.0.pos, position.1.color));
+            }
+        }
+        positions
+    }
+
+    fn init_systems(&mut self, systems: &Vec<SystemType>) {
         let mut schedule = Schedule::builder();
+
         schedule.add_system(update_positions_system());
         schedule.add_system(map_edge_system());
         schedule.add_system(update_timed_life_system());
         schedule.add_system(shoot_system());
         schedule.add_system(delete_expired_system());
-
-        for _ in 0..5 {
-            schedule.add_system(waste_of_time1_system());
-        }
-        for _ in 0..5 {
-            schedule.add_system(waste_of_time2_system());
-        }
-        BrainLegionSequential {
-            world,
-            schedule: schedule.build(),
-        }
     }
-}
-impl GameImplementation for BrainLegionSequential {
-    fn update(&mut self, dt: f32, settings: &GuiSettings) {
+
+    fn get_tick_all_at_once(&self) -> bool {
+        true
+    }
+
+    fn tick_systems(&mut self, delta: f32, settings: GuiSettings) {
         let mut resources = Resources::default();
-        resources.insert(dt);
+        resources.insert(delta);
         resources.insert(settings.clone());
 
         let mut other_entities = Vec::new();
@@ -154,55 +187,11 @@ impl GameImplementation for BrainLegionSequential {
         self.schedule.execute(&mut self.world, &mut resources);
     }
 
-    fn get_unit_positions(&self, universe_id: usize) -> Vec<(Vec2, Color)> {
-        let mut query = <(Read<Position>, Read<ColorComp>, Read<UniverseComp>)>::query();
-        let mut positions = Vec::new();
-        for position in query.iter(&self.world) {
-            if position.2.id == universe_id {
-                positions.push((position.0.pos, position.1.color));
-            }
-        }
-        positions
+    fn tick_system(&mut self, system: &SystemType, delta: f32) {
+        panic!("Should run multi")
     }
 
-    fn load_universe(&mut self, universe_id: usize, entity_count: i64) {
-        for i in 0..entity_count {
-            let pos = Vec2::new(
-                rand::random::<f32>() * WORLD_SIZE,
-                rand::random::<f32>() * WORLD_SIZE,
-            );
-            let vel = Vec2::new(
-                rand::random::<f32>() * STARTING_VELOCITY,
-                rand::random::<f32>() * STARTING_VELOCITY,
-            );
-            let team = rand::random::<usize>() % 3;
-            make_unit(&mut self.world, pos, vel, team, universe_id);
-        }
-    }
-
-    fn unload_universe(&mut self, unierse_id: usize) {
-        let mut query = <(Read<UniverseComp>, Entity)>::query();
-        let command_buffer = &mut CommandBuffer::new(&self.world);
-        for (universe, entity) in query.iter(&self.world) {
-            if universe.id == unierse_id {
-                command_buffer.remove(*entity);
-            }
-        }
-        command_buffer.flush(&mut self.world, &mut Resources::default());
-    }
-
-    fn on_click(&mut self, universe_id: usize, position: Vec2) {
-        // Move all entities in the blue team in this universe towards the clicked point
-        let mut query = <(
-            Read<Position>,
-            Read<Team>,
-            Read<UniverseComp>,
-            Write<Velocity>,
-        )>::query();
-        for (pos, team, universe, mut vel) in query.iter_mut(&mut self.world) {
-            if team.team == 1 && universe.id == universe_id {
-                vel.vel = (position - pos.pos).normalize() * STARTING_VELOCITY;
-            }
-        }
+    fn get_name(&self) -> String {
+        String::from("Legion scheduled")
     }
 }

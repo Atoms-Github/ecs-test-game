@@ -40,7 +40,7 @@ impl Brain for BrainLegionSequential{
         ));
     }
 
-    fn get_entities(&mut self) -> Vec<(Point, Color)> {
+    fn get_entities(&mut self, universe_id: usize) -> Vec<(Point, Color)> {
         let mut entities = Vec::new();
         let mut query = <(&Position, &ColorComp)>::query();
         for (pos, color) in query.iter(&self.world) {
@@ -50,15 +50,15 @@ impl Brain for BrainLegionSequential{
     }
 
     fn init_systems(&mut self, systems: &Vec<SystemType>) {
-        // None
+        panic!("Should run singles")
     }
 
     fn get_tick_all_at_once(&self) -> bool {
         false
     }
 
-    fn tick_systems(&mut self, delta: f32) {
-        // None
+    fn tick_systems(&mut self, delta: f32, settings: GuiSettings) {
+        panic!("Should run singles")
     }
 
     fn tick_system(&mut self, system: &SystemType, delta: f32) {
@@ -183,7 +183,6 @@ fn make_projectile(buffer: &mut CommandBuffer, pos: Vec2, target: Vec2, universe
         TimedLife { time_left: 1.0 },
         UniverseComp { universe_id },
     ));
-}
 #[system(for_each)]
 fn shoot(
     #[resource] dt: &f32,

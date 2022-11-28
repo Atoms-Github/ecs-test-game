@@ -37,7 +37,7 @@ impl TestController
         let systems = self.challenge.get_tick_systems();
         if self.brain.get_tick_all_at_once() {
             let time = crate::utils::time_it(|| {
-                self.brain.tick_systems(delta);
+                self.brain.tick_systems(delta, );
             });
             self.register_time("ALL_SYSTEMS", time);
         } else {
