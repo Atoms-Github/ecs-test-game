@@ -8,62 +8,41 @@
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-use ecs_test_game::basic_legion::BasicLegion;
-use ecs_test_game::gamesqlite::*;
-use ecs_test_game::performance_map_legion::PerfMapLegion;
-use ecs_test_game::relation_per_component::RelationPerComponent;
-use ecs_test_game::rts::*;
 use std::time::Duration;
+use ecs_test_game::brains::legion_sequential::BrainLegionSequential;
+use ecs_test_game::challenges::rts::ChallengeRts;
+use ecs_test_game::test_controller::TestController;
+use ecs_test_game::ui::ui_settings::BrainType::LegionScheduled;
+use ecs_test_game::ui::ui_settings::ChallengeType::Rts;
+use ecs_test_game::ui::ui_settings::GuiSettings;
 
 criterion_group!(benches, rts_benchmark);
 criterion_main!(benches);
 
 fn rts_benchmark(c: &mut Criterion) {
-    let mut group = c.benchmark_group("game_update");
-    const UNIVERSES: usize = 10;
-    const ENTITY_COUNT: i64 = 100;
+    let mut group = c.benchmark_group("rts");
+    const ENTITY_COUNT: usize = 100;
     group.sample_size(10);
     group.measurement_time(Duration::from_secs(3));
     group.warm_up_time(Duration::from_millis(100));
-    group.bench_function("BasicLegion", |b| {
-        // Init game state
-        let mut world = BasicLegion::new();
-        for i in 0..UNIVERSES {
-            world.load_universe(i, ENTITY_COUNT);
-        }
+    group.bench_function("Legion Scheduled", |b| {
+        let brain = Box::new(BrainLegionSequential::new());
+        let challenge = Box::new(ChallengeRts {
+            units_count: ENTITY_COUNT,
+        });
+        let mut test_controller = TestController::new(brain, challenge);
         b.iter(move || {
-            world.update(1. / 60., &GuiSettings::default());
+            test_controller.tick(0.16, &GuiSettings::new());
         });
     });
-    group.bench_function("PerfMapLegion", |b| {
-        // Init game state
-        let mut world = PerfMapLegion::new();
-        for i in 0..UNIVERSES {
-            world.load_universe(i, ENTITY_COUNT);
-        }
-        b.iter(move || {
-            world.update(1. / 60., &GuiSettings::default());
+    group.bench_function("Legion Sequential", |b| {
+        let brain = Box::new(BrainLegionSequential::new());
+        let challenge = Box::new(ChallengeRts {
+            units_count: ENTITY_COUNT,
         });
-    });
-
-    group.bench_function("VerySlowSQL", |b| {
-        // Init game state
-        let mut world = RelationPerComponent::new();
-        for i in 0..UNIVERSES {
-            world.load_universe(i, ENTITY_COUNT);
-        }
+        let mut test_controller = TestController::new(brain, challenge);
         b.iter(move || {
-            world.update(1. / 60., &GuiSettings::default());
-        });
-    });
-    group.bench_function("Sqlite", |b| {
-        // Init game state
-        let mut world = SqlIte::new();
-        for i in 0..UNIVERSES {
-            world.load_universe(i, ENTITY_COUNT);
-        }
-        b.iter(move || {
-            world.update(1. / 60., &GuiSettings::default());
+            test_controller.tick(0.16, &GuiSettings::new());
         });
     });
 }

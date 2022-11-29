@@ -10,7 +10,6 @@ extern crate core;
 
 pub mod brains;
 pub mod challenges;
-pub mod db_interface;
 pub mod test_controller;
 pub mod thread_controller;
 pub mod ui;

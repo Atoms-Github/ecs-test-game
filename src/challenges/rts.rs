@@ -4,10 +4,10 @@ use crate::brains::{Brain, SystemType};
 use crate::challenges::Challenge;
 use crate::{MAP_SIZE, Point};
 #[derive(Clone)]
-pub struct RtsChallenge {
+pub struct ChallengeRts {
     pub units_count: usize,
 }
-impl Challenge for RtsChallenge {
+impl Challenge for ChallengeRts {
     fn init(&mut self, brain: &mut dyn Brain, universe_count: usize) {
         let mut rand = rand::thread_rng();
 
@@ -23,9 +23,9 @@ impl Challenge for RtsChallenge {
         }
     }
     fn get_tick_systems(&self) -> Vec<SystemType> {
-        return vec![SystemType::ACCELERATION, SystemType::VELOCITY
-            , SystemType::MAP_EDGE, SystemType::UPDATE_TIMED_LIFE
-            , SystemType::SHOOT, SystemType::DELETE_EXPIRED];
+        return vec![SystemType::Acceleration, SystemType::Velocity
+                    , SystemType::MapEdge, SystemType::UpdateTimedLife
+                    , SystemType::Shoot, SystemType::DeleteExpired];
     }
     fn clone_box(&self) -> Box<dyn Challenge> {
         Box::new(self.clone())

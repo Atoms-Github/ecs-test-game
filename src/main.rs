@@ -12,9 +12,13 @@ use ggez::input::mouse::position;
 use glam::Vec2;
 use ecs_test_game::brains::Brain;
 use ecs_test_game::{MAP_SIZE, test_controller};
+use ecs_test_game::brains::legion_scheduled::BrainLegionScheduled;
 use ecs_test_game::brains::legion_sequential::BrainLegionSequential;
+use ecs_test_game::brains::sql_brains::BrainDatabase;
+use ecs_test_game::brains::sql_brains::duckdb::DuckDB;
 use ecs_test_game::challenges::Challenge;
-use ecs_test_game::challenges::rts::RtsChallenge;
+use ecs_test_game::challenges::get_nearest::ChallengeGetNearest;
+use ecs_test_game::challenges::rts::ChallengeRts;
 use ecs_test_game::test_controller::TestController;
 use ecs_test_game::ui::ui_settings::{BrainType, ChallengeType, GuiSettings};
 
@@ -29,29 +33,44 @@ pub struct MainState {
 
 impl MainState {
     fn new(ctx: &mut Context) -> MainState {
-        let brain = Box::new(BrainLegionSequential::new());
-        let brain2 = Box::new(BrainLegionSequential::new());
-        let challenge = Box::new(RtsChallenge{
-            units_count: 100,
-        });
-        let challenge2 = Box::new(RtsChallenge{
-            units_count: 100,
-        });
-        MainState {
-            test_controller: TestController::new(brain2, challenge2),
-            egui_backend: ggez_egui::EguiBackend::new(ctx),
-            gui_settings: GuiSettings {
-
+        let settings = GuiSettings {
                 meet_distance: 10.0,
                 view_universe: 0,
                 universe_count: 1,
                 entity_count: 100,
-                brain_type: BrainType::LegionSequential,
-                challenge_type: ChallengeType::Rts
-            },
+                brain_type: BrainType::SqlDuck,
+                challenge_type: ChallengeType::Rts};
+
+        MainState {
+            test_controller: Self::gen_test_controller(&settings),
+            egui_backend: ggez_egui::EguiBackend::new(ctx),
+            gui_settings: settings,
             draw_time: 0,
             update_time: 0,
         }
+    }
+    fn gen_test_controller(settings: &GuiSettings) -> TestController {
+        let new_brain: Box<dyn Brain> = match settings.brain_type {
+            BrainType::LegionSequential => Box::new(BrainLegionSequential::new()),
+            BrainType::LegionScheduled => Box::new(BrainLegionScheduled::new()),
+            BrainType::SqlDuck => Box::new(BrainDatabase::<DuckDB>::new()),
+        };
+        let new_challenge: Box<dyn Challenge> = match settings.challenge_type {
+            ChallengeType::Rts => Box::new(ChallengeRts {
+                units_count: settings.entity_count,
+            }),
+            ChallengeType::GetNearest => Box::new(ChallengeGetNearest {
+                units_count: settings.entity_count,
+            }),
+        };
+
+        let mut controller = TestController::new(new_brain, new_challenge);
+        controller.init();
+        controller
+    }
+
+    fn reload(&mut self) {
+        self.test_controller = Self::gen_test_controller(&self.gui_settings);
     }
 }
 
@@ -84,13 +103,25 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             ));
             ui.label(format!("Draw time: {}us", self.draw_time));
             ui.label(format!("Update time: {}us", self.update_time));
+
             egui::ComboBox::from_label("Brain type")
+
                 .selected_text(format!("{:?}", self.gui_settings.brain_type))
                 .show_ui(ui, |ui| {
                     ui.selectable_value(
                         &mut self.gui_settings.brain_type,
                         BrainType::LegionSequential,
                         "Legion sequential",
+                    );
+                    ui.selectable_value(
+                        &mut self.gui_settings.brain_type,
+                        BrainType::LegionScheduled,
+                        "Legion scheduled",
+                    );
+                    ui.selectable_value(
+                        &mut self.gui_settings.brain_type,
+                        BrainType::SqlDuck,
+                        "Sql duck",
                     );
                 })
                 .response;
@@ -102,24 +133,25 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
                         ChallengeType::Rts,
                         "Rts",
                     );
+                    ui.selectable_value(
+                        &mut self.gui_settings.challenge_type,
+                        ChallengeType::GetNearest,
+                        "Get Nearest",
+                    );
+
+
                 })
                 .response;
 
             if ui.button("Reload").clicked() {
-                let new_brain = match self.gui_settings.brain_type {
-                    BrainType::LegionSequential => Box::new(BrainLegionSequential::new()),
-                };
-                let new_challenge = match self.gui_settings.challenge_type {
-                    ChallengeType::Rts => Box::new(RtsChallenge {
-                        units_count: self.gui_settings.entity_count,
-                    }),
-                };
-                self.test_controller = TestController::new(new_brain, new_challenge);
-                self.test_controller.init();
+                self.reload();
+            }
+            if ui.button("Save Graph").clicked() {
+                self.test_controller.save_graph("graph.png");
             }
         });
         self.update_time = start.elapsed().as_micros();
-        self.test_controller.tick( dt);
+        self.test_controller.tick(dt, &self.gui_settings);
         Ok(())
     }
 
@@ -130,7 +162,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
         let start = std::time::Instant::now();
         // Batch draw the units:
         let mut batch = ggez::graphics::MeshBuilder::new();
-        for (position, color) in self.test_controller.brain.get_entities() {
+        for (position, color) in self.test_controller.brain.get_entities(self.gui_settings.view_universe) {
             batch
                 .circle(ggez::graphics::DrawMode::fill(), position, 10.0, 2.0, color)
                 .unwrap();
@@ -183,6 +215,5 @@ pub fn main() -> GameResult {
 
     let (mut ctx, event_loop) = cb.build()?;
     let mut state = MainState::new(&mut ctx);
-    state.test_controller.init();
     ggez::event::run(ctx, event_loop, state)
 }

@@ -21,36 +21,30 @@ pub trait Brain {
         universe_id: usize,
     );
     fn add_entity_vel_dot(&mut self, position: Point, velocity: Point);
-    fn add_entity_positional_dummy(&mut self, position: Point);
+    fn add_entity_positional_dummy(&mut self, position: Point, color: Color);
 
     fn get_entities(&mut self, universe_id: usize) -> Vec<(Point, Color)>;
 
     fn init_systems(&mut self, systems: &Vec<SystemType>);
 
     fn get_tick_all_at_once(&self) -> bool;
-    fn tick_systems(&mut self, delta: f32, settings: GuiSettings);
+    fn tick_systems(&mut self, delta: f32, settings: &GuiSettings);
     fn tick_system(&mut self, system: &SystemType, delta: f32);
 
     fn get_name(&self) -> String;
 }
 #[derive(Debug, PartialEq, Clone)]
 pub enum SystemType {
-    VELOCITY,
-    ACCELERATION,
-    MAP_EDGE,
-    UPDATE_TIMED_LIFE,
-    SHOOT,
-    DELETE_EXPIRED,
+    Velocity,
+    Acceleration,
+    MapEdge,
+    UpdateTimedLife,
+    Shoot,
+    DeleteExpired,
+    PaintNearest,
 }
-impl SystemType {
-    pub fn as_string(&self) -> &'static str {
-        match self {
-            SystemType::VELOCITY => "velocity",
-            SystemType::MAP_EDGE => "map_edge",
-            SystemType::UPDATE_TIMED_LIFE => "update_timed_life",
-            SystemType::SHOOT => "shoot",
-            SystemType::DELETE_EXPIRED => "delete_expired",
-            SystemType::ACCELERATION => "acceleration",
-        }
+impl SystemType{
+    pub fn get_name(&self) -> String {
+        return format!("{:?}", self);
     }
 }
