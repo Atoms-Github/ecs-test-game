@@ -23,11 +23,9 @@ impl<'a> SqlBrain for DuckDB<'a>{
         self.conn.prepare_cached(statement).unwrap().execute(params_from_iter(params)).unwrap();
     }
 
-    fn get_entities(&mut self, universe_id: usize)  -> Vec<ExportEntity> {
-        // query table by rows
-        let mut stmt = self.conn.prepare("SELECT position_x, position_y, color_r FROM entities").unwrap();
+    fn get_entities(&mut self, universe_id: usize, query_posxy_col: &str) -> Vec<ExportEntity> {
+        let mut stmt = self.conn.prepare(query_posxy_col).unwrap();
         let person_iter = stmt.query_map([], |row| {
-
             Ok(ExportEntity {
                 pos: Point::new(row.get(0).unwrap(), row.get(1).unwrap()),
                 color: Color{

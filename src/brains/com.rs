@@ -1,5 +1,6 @@
 use ggez::graphics::Color;
 use crate::Point;
+use crate::ui::ui_settings::GuiSettings;
 
 // a component is any type that is 'static, sized, send and sync
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -11,9 +12,12 @@ pub struct ColorComp {
     pub color: Color,
 }
 impl ColorComp{
-    pub fn blend(&mut self, other: &ColorComp){
-        self.color.r = ((self.color.r + other.color.r) / 3.0 + 0.5) % 1.0;
-        dbg!(self.color.r);
+    pub fn blend(&mut self, other: &ColorComp, settings: &GuiSettings){
+
+        if settings.blend_speed != 0.0{
+
+            self.color.r = (self.color.r + other.color.r / (settings.blend_speed + 1.0)) % 1.0;
+        }
     }
 }
 pub struct ExportEntity{

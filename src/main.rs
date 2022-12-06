@@ -14,7 +14,7 @@ use ecs_test_game::brains::Brain;
 use ecs_test_game::{MAP_SIZE, test_controller};
 use ecs_test_game::brains::legion_scheduled::BrainLegionScheduled;
 use ecs_test_game::brains::legion_sequential::BrainLegionSequential;
-use ecs_test_game::brains::sql_brains::BrainDatabase;
+use ecs_test_game::brains::sql_mass_relations::BrainSqlMassRelations;
 use ecs_test_game::brains::sql_brains::duckdb::DuckDB;
 use ecs_test_game::challenges::Challenge;
 use ecs_test_game::challenges::get_nearest::ChallengeGetNearest;
@@ -33,13 +33,7 @@ pub struct MainState {
 
 impl MainState {
     fn new(ctx: &mut Context) -> MainState {
-        let settings = GuiSettings {
-                meet_distance: 10.0,
-                view_universe: 0,
-                universe_count: 1,
-                entity_count: 100,
-                brain_type: BrainType::SqlDuck,
-                challenge_type: ChallengeType::Rts};
+        let settings = GuiSettings::new();
 
         MainState {
             test_controller: Self::gen_test_controller(&settings),
@@ -53,7 +47,7 @@ impl MainState {
         let new_brain: Box<dyn Brain> = match settings.brain_type {
             BrainType::LegionSequential => Box::new(BrainLegionSequential::new()),
             BrainType::LegionScheduled => Box::new(BrainLegionScheduled::new()),
-            BrainType::SqlDuck => Box::new(BrainDatabase::<DuckDB>::new()),
+            BrainType::SqlDuck => Box::new(BrainSqlMassRelations::<DuckDB>::new(false)),
         };
         let new_challenge: Box<dyn Challenge> = match settings.challenge_type {
             ChallengeType::Rts => Box::new(ChallengeRts {
@@ -90,6 +84,8 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             ui.add(
                 egui::DragValue::new(&mut self.gui_settings.universe_count).speed(0.1),
             );
+            ui.label("Blend Speed");
+            ui.add(egui::DragValue::new(&mut self.gui_settings.blend_speed).speed(0.5));
             ui.label("Entity count");
             ui.add(egui::DragValue::new(&mut self.gui_settings.entity_count).speed(0.1));
 

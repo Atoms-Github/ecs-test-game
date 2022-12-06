@@ -61,11 +61,11 @@ impl Brain for BrainLegionSequential{
         panic!("Should run singles")
     }
 
-    fn tick_system(&mut self, system: &SystemType, delta: f32) {
+    fn tick_system(&mut self, system: &SystemType, delta: f32, settings: &GuiSettings) {
         match  system{
             SystemType::PaintNearest => {
                 let mut buffer = CommandBuffer::new(&self.world);
-                let mut query = <(&Entity, &PositionComp, &ColorComp)>::query();
+                let mut query = <(Entity, &PositionComp, &ColorComp)>::query();
                 let mut query_inner = <(&PositionComp, &ColorComp)>::query();
                 let mut nearest = None;
                 let mut nearest_distance = 10000000.0;
@@ -79,7 +79,7 @@ impl Brain for BrainLegionSequential{
                             nearest = Some(color2);
                         }
                     }
-                    color.blend(nearest.unwrap());
+                    color.blend(nearest.unwrap(), settings);
                     buffer.add_component(*entity, color);
                 }
                 buffer.flush(&mut self.world, &mut Resources::default());

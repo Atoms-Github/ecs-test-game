@@ -97,6 +97,7 @@ fn shoot(
 #[system(for_each)]
 fn paint_nearest(
     #[resource] other_entities: &Vec<(PositionComp, ColorComp)>,
+    #[resource] settings: &GuiSettings,
     pos: &PositionComp,
     color: &mut ColorComp,
 ) {
@@ -111,7 +112,7 @@ fn paint_nearest(
             closest_color = &other_color;
         }
     }
-    color.blend(closest_color);
+    color.blend(closest_color, &settings);
 }
 // Delete entities that have expired
 #[system(for_each)]
@@ -205,12 +206,13 @@ impl Brain for BrainLegionScheduled {
             other_entities.push((*pos, *team, *universe));
         }
         resources.insert(other_entities);
+        resources.insert(settings.clone());
 
         let schedule = self.schedule.as_mut().unwrap();
         schedule.execute(&mut self.world, &mut resources);
     }
 
-    fn tick_system(&mut self, system: &SystemType, delta: f32) {
+    fn tick_system(&mut self, system: &SystemType, delta: f32, settings: &GuiSettings) {
         panic!("Should run multi")
     }
 

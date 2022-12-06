@@ -11,6 +11,7 @@ pub mod ecs_concepts;
 pub mod legion_scheduled;
 pub mod legion_sequential;
 pub mod sql_brains;
+pub mod sql_mass_relations;
 
 pub trait Brain {
     fn add_entity_unit(
@@ -29,7 +30,7 @@ pub trait Brain {
 
     fn get_tick_all_at_once(&self) -> bool;
     fn tick_systems(&mut self, delta: f32, settings: &GuiSettings);
-    fn tick_system(&mut self, system: &SystemType, delta: f32);
+    fn tick_system(&mut self, system: &SystemType, delta: f32, settings: &GuiSettings);
 
     fn get_name(&self) -> String;
 }

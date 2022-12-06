@@ -43,7 +43,7 @@ impl TestController
         } else {
             for system in systems {
                 let time = crate::utils::time_it(|| {
-                    self.brain.tick_system(&system, delta);
+                    self.brain.tick_system(&system, delta, settings);
                 });
                 self.register_time(system.get_name(), time);
             }
