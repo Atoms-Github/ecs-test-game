@@ -6,22 +6,22 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_parens)]
 
-use ggez::graphics::{Color, Drawable};
-use ggez::{Context, GameResult};
-use ggez::input::mouse::position;
-use glam::Vec2;
-use ecs_test_game::brains::Brain;
-use ecs_test_game::{MAP_SIZE, test_controller};
 use ecs_test_game::brains::legion_scheduled::BrainLegionScheduled;
 use ecs_test_game::brains::legion_sequential::BrainLegionSequential;
-use ecs_test_game::brains::sql_mass_relations::BrainSqlMassRelations;
 use ecs_test_game::brains::sql_brains::duckdb::DuckDB;
-use ecs_test_game::challenges::Challenge;
+use ecs_test_game::brains::sql_flat_table::BrainSqlFlatTable;
+use ecs_test_game::brains::Brain;
 use ecs_test_game::challenges::get_nearest::ChallengeGetNearest;
 use ecs_test_game::challenges::rts::ChallengeRts;
+use ecs_test_game::challenges::spacial_array::ChallengeSpatialArray;
+use ecs_test_game::challenges::Challenge;
 use ecs_test_game::test_controller::TestController;
 use ecs_test_game::ui::ui_settings::{BrainType, ChallengeType, GuiSettings};
-
+use ecs_test_game::{test_controller, MAP_SIZE};
+use ggez::graphics::{Color, Drawable};
+use ggez::input::mouse::position;
+use ggez::{Context, GameResult};
+use glam::Vec2;
 
 pub struct MainState {
     pub test_controller: TestController,
@@ -47,19 +47,20 @@ impl MainState {
         let new_brain: Box<dyn Brain> = match settings.brain_type {
             BrainType::LegionSequential => Box::new(BrainLegionSequential::new()),
             BrainType::LegionScheduled => Box::new(BrainLegionScheduled::new()),
-            BrainType::SqlDuck => Box::new(BrainSqlMassRelations::<DuckDB>::new(false)),
+            BrainType::SqlDuck => Box::new(BrainSqlFlatTable::<DuckDB>::new(false)),
         };
         let new_challenge: Box<dyn Challenge> = match settings.challenge_type {
-            ChallengeType::Rts => Box::new(ChallengeRts {
-                units_count: settings.entity_count,
-            }),
-            ChallengeType::GetNearest => Box::new(ChallengeGetNearest {
-                units_count: settings.entity_count,
+            ChallengeType::Rts => Box::new(ChallengeRts {}),
+            ChallengeType::GetNearest => Box::new(ChallengeGetNearest {}),
+            ChallengeType::SpacialArray => Box::new(ChallengeSpatialArray {
+                has_velocity_fraction: 0.7,
+                dupe_entity_fraction: 0.2,
+                unique_velocity_fraction: 1.0,
             }),
         };
 
         let mut controller = TestController::new(new_brain, new_challenge);
-        controller.init();
+        controller.init(settings);
         controller
     }
 
@@ -81,16 +82,13 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             ui.label("Universe");
             ui.add(egui::DragValue::new(&mut self.gui_settings.view_universe).speed(0.1));
             ui.label("Requested universe count");
-            ui.add(
-                egui::DragValue::new(&mut self.gui_settings.universe_count).speed(0.1),
-            );
+            ui.add(egui::DragValue::new(&mut self.gui_settings.universe_count).speed(0.1));
             ui.label("Blend Speed");
             ui.add(egui::DragValue::new(&mut self.gui_settings.blend_speed).speed(0.5));
             ui.label("Entity count");
             ui.add(egui::DragValue::new(&mut self.gui_settings.entity_count).speed(0.1));
 
             // Add ui for self.universe_count:
-
 
             ui.label(format!("FPS: {}", ggez::timer::fps(ctx)));
             ui.label(format!(
@@ -101,7 +99,6 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             ui.label(format!("Update time: {}us", self.update_time));
 
             egui::ComboBox::from_label("Brain type")
-
                 .selected_text(format!("{:?}", self.gui_settings.brain_type))
                 .show_ui(ui, |ui| {
                     ui.selectable_value(
@@ -134,8 +131,11 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
                         ChallengeType::GetNearest,
                         "Get Nearest",
                     );
-
-
+                    ui.selectable_value(
+                        &mut self.gui_settings.challenge_type,
+                        ChallengeType::SpacialArray,
+                        "Spacial Array",
+                    );
                 })
                 .response;
 
@@ -158,11 +158,14 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
         let start = std::time::Instant::now();
         // Batch draw the units:
         let mut batch = ggez::graphics::MeshBuilder::new();
-        for (position, color) in self.test_controller.brain.get_entities(self.gui_settings.view_universe) {
+        for (position, color) in self
+            .test_controller
+            .brain
+            .get_entities(self.gui_settings.view_universe)
+        {
             batch
                 .circle(ggez::graphics::DrawMode::fill(), position, 10.0, 2.0, color)
                 .unwrap();
-
         }
 
         let mesh = batch.build(ctx);

@@ -1,20 +1,20 @@
-use ggez::input::mouse::position;
-use rand::Rng;
 use crate::brains::{Brain, SystemType};
 use crate::challenges::Challenge;
-use crate::{MAP_SIZE, Point};
+use crate::ui::ui_settings::GuiSettings;
+use crate::{Point, MAP_SIZE};
+use ggez::input::mouse::position;
+use rand::Rng;
+
 #[derive(Clone)]
-pub struct ChallengeRts {
-    pub units_count: usize,
-}
+pub struct ChallengeRts {}
 impl Challenge for ChallengeRts {
-    fn init(&mut self, brain: &mut dyn Brain, universe_count: usize) {
+    fn init(&mut self, brain: &mut dyn Brain, universe_count: usize, settings: &GuiSettings) {
         let mut rand = rand::thread_rng();
 
-        const SPEED : f32 = 30.0;
+        const SPEED: f32 = 30.0;
         // Create units. Distribute them evenly across universes.
         let mut universe_id = 0;
-        for _ in 0..self.units_count {
+        for _ in 0..settings.entity_count {
             let position = Point::new(rand.gen_range(0.0..MAP_SIZE), rand.gen_range(0.0..MAP_SIZE));
             let velocity = Point::new(rand.gen_range(-SPEED..SPEED), rand.gen_range(-SPEED..SPEED));
             let team = rand.gen_range(0..3);
@@ -23,9 +23,14 @@ impl Challenge for ChallengeRts {
         }
     }
     fn get_tick_systems(&self) -> Vec<SystemType> {
-        return vec![SystemType::Acceleration, SystemType::Velocity
-                    , SystemType::MapEdge, SystemType::UpdateTimedLife
-                    , SystemType::Shoot, SystemType::DeleteExpired];
+        return vec![
+            SystemType::Acceleration,
+            SystemType::Velocity,
+            SystemType::MapEdge,
+            SystemType::UpdateTimedLife,
+            SystemType::Shoot,
+            SystemType::DeleteExpired,
+        ];
     }
     fn clone_box(&self) -> Box<dyn Challenge> {
         Box::new(self.clone())

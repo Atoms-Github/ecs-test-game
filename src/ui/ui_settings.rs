@@ -17,19 +17,19 @@ impl GuiSettings {
             blend_speed: 10.0,
             entity_count: 100,
             brain_type: BrainType::LegionSequential,
-            challenge_type: ChallengeType::GetNearest,
+            challenge_type: ChallengeType::SpacialArray,
         }
     }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum BrainType{
+pub enum BrainType {
     LegionSequential,
     LegionScheduled,
     SqlDuck,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum ChallengeType{
+pub enum ChallengeType {
     Rts,
     GetNearest,
+    SpacialArray,
 }
-

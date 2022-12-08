@@ -1,44 +1,52 @@
+use crate::brains::com::*;
+use crate::brains::com::{
+    ColorComp, PositionComp, ShooterComp, TeamComp, TimedLifeComp, UniverseComp, VelocityComp,
+};
+use crate::brains::{Brain, SystemType};
+use crate::ui::ui_settings::GuiSettings;
+use crate::utils::FromTeam;
+use crate::{Point, MAP_SIZE};
 use egui::pos2;
 use ggez::graphics::Color;
 use glam::*;
 use legion::systems::CommandBuffer;
 use legion::*;
 use rand::Rng;
-use crate::brains::com::*;
-use crate::brains::{Brain, SystemType};
-use crate::brains::com::{ColorComp, PositionComp, ShooterComp, TeamComp, TimedLifeComp, UniverseComp, VelocityComp};
-use crate::{MAP_SIZE, Point};
-use crate::ui::ui_settings::GuiSettings;
-use crate::utils::{FromTeam};
 
 pub struct BrainLegionSequential {
     world: World,
 }
-impl Brain for BrainLegionSequential{
-    fn add_entity_unit(&mut self, position: Point, velocity: Point, team: usize, universe_id: usize) {
+impl Brain for BrainLegionSequential {
+    fn add_entity_unit(
+        &mut self,
+        position: Point,
+        velocity: Point,
+        team: usize,
+        universe_id: usize,
+    ) {
         self.world.push((
-            PositionComp {pos: position},
-            VelocityComp {vel: velocity},
-            TeamComp {team},
-            UniverseComp{ universe_id},
-            ColorComp{color: Color::from_team(team)},
-            ShooterComp { cooldown: 0.0},
+            PositionComp { pos: position },
+            VelocityComp { vel: velocity },
+            TeamComp { team },
+            UniverseComp { universe_id },
+            ColorComp {
+                color: Color::from_team(team),
+            },
+            ShooterComp { cooldown: 0.0 },
         ));
     }
 
-    fn add_entity_vel_dot(&mut self, position: Point, velocity: Point) {
-        self.world.push((
-            PositionComp {pos: position},
-            VelocityComp {vel: velocity},
-            ColorComp{color: Color::new(1.0, 1.0, 1.0, 1.0)},
-        ));
-    }
-
-    fn add_entity_positional_dummy(&mut self, position: Point, color: Color) {
-        self.world.push((
-            PositionComp {pos: position},
-            ColorComp{color},
-        ));
+    fn add_entity(&mut self, position: Point, velocity: Option<Point>, color: Color) {
+        if let Some(velocity) = velocity {
+            self.world.push((
+                PositionComp { pos: position },
+                VelocityComp { vel: velocity },
+                ColorComp { color },
+            ));
+        } else {
+            self.world
+                .push((PositionComp { pos: position }, ColorComp { color }));
+        }
     }
 
     fn get_entities(&mut self, universe_id: usize) -> Vec<(Point, Color)> {
@@ -50,8 +58,7 @@ impl Brain for BrainLegionSequential{
         entities
     }
 
-    fn init_systems(&mut self, systems: &Vec<SystemType>) {
-    }
+    fn init_systems(&mut self, systems: &Vec<SystemType>) {}
 
     fn get_tick_all_at_once(&self) -> bool {
         false
@@ -62,7 +69,7 @@ impl Brain for BrainLegionSequential{
     }
 
     fn tick_system(&mut self, system: &SystemType, delta: f32, settings: &GuiSettings) {
-        match  system{
+        match system {
             SystemType::PaintNearest => {
                 let mut buffer = CommandBuffer::new(&self.world);
                 let mut query = <(Entity, &PositionComp, &ColorComp)>::query();
@@ -130,14 +137,15 @@ impl Brain for BrainLegionSequential{
                         if let Some(enemy_pos) = near_enemy {
                             let vel = (enemy_pos - pos.pos).normalize() * 50.0;
                             command_buffer.push((
-                                PositionComp {pos: pos.pos},
-                                VelocityComp {vel},
-                                TeamComp {team: team.team},
-                                ColorComp{color: Color::new(1.0, 1.0, 1.0, 1.0)},
-                                TimedLifeComp {time_left: 1.0},
+                                PositionComp { pos: pos.pos },
+                                VelocityComp { vel },
+                                TeamComp { team: team.team },
+                                ColorComp {
+                                    color: Color::new(1.0, 1.0, 1.0, 1.0),
+                                },
+                                TimedLifeComp { time_left: 1.0 },
                             ));
                         }
-
                     }
                 }
                 command_buffer.flush(&mut self.world, &mut Resources::default());
@@ -152,7 +160,7 @@ impl Brain for BrainLegionSequential{
             }
             SystemType::DeleteExpired => {
                 let mut command_buffer = CommandBuffer::new(&self.world);
-                let mut query = <(Entity,&TimedLifeComp)>::query();
+                let mut query = <(Entity, &TimedLifeComp)>::query();
                 for (entity, timed_life) in query.iter(&self.world) {
                     if timed_life.time_left <= 0.0 {
                         command_buffer.remove(*entity);
@@ -169,7 +177,7 @@ impl Brain for BrainLegionSequential{
 }
 impl BrainLegionSequential {
     pub fn new() -> Self {
-        Self{
+        Self {
             world: Default::default(),
         }
     }

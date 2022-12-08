@@ -1,4 +1,5 @@
 use ggez::graphics::Color;
+use glam::Vec2;
 use rand::Rng;
 
 pub fn time_it<F>(to_time: F) -> u128
@@ -13,6 +14,12 @@ where
 
 pub trait GenRandom {
     fn gen_random() -> Self;
+}
+impl GenRandom for Vec2{
+    fn gen_random() -> Self {
+        let mut rand = rand::thread_rng();
+        Vec2::new(rand.gen_range(0.0..1.0), rand.gen_range(0.0..1.0))
+    }
 }
 pub trait FromTeam {
     fn from_team(team: usize) -> Self;

@@ -1,14 +1,14 @@
-use std::borrow::{Borrow, BorrowMut};
 use crate::brains::com::*;
 use crate::brains::{Brain, SystemType};
 use crate::ui::ui_settings::GuiSettings;
-use crate::{MAP_SIZE, Point};
+use crate::utils::FromTeam;
+use crate::{Point, MAP_SIZE};
 use ggez::graphics::Color;
 use glam::*;
 use legion::systems::CommandBuffer;
 use legion::*;
 use rand::Rng;
-use crate::utils::FromTeam;
+use std::borrow::{Borrow, BorrowMut};
 
 pub struct BrainLegionScheduled {
     world: World,
@@ -141,25 +141,17 @@ impl Brain for BrainLegionScheduled {
         make_unit(&mut self.world, position, velocity, team, universe_id);
     }
 
-
-    fn add_entity_vel_dot(&mut self, position: Point, velocity: Point) {
-        self.world.push((
-            PositionComp { pos: position },
-            VelocityComp { vel: velocity },
-            ColorComp {
-                color: Color::new(1.0, 1.0, 1.0, 1.0),
-            },
-        ));
-    }
-
-    fn add_entity_positional_dummy(&mut self, position: Point, color: Color) {
-        self.world.push((
-            PositionComp { pos: position },
-            ColorComp {
-                color,
-            },
-        ));
-
+    fn add_entity(&mut self, position: Point, velocity: Option<Point>, color: Color) {
+        if let Some(velocity) = velocity {
+            self.world.push((
+                PositionComp { pos: position },
+                VelocityComp { vel: velocity },
+                ColorComp { color },
+            ));
+        } else {
+            self.world
+                .push((PositionComp { pos: position }, ColorComp { color }));
+        }
     }
 
     fn get_entities(&mut self, universe_id: usize) -> Vec<(Point, Color)> {
@@ -171,7 +163,6 @@ impl Brain for BrainLegionScheduled {
             }
         }
         entities
-
     }
 
     fn init_systems(&mut self, systems: &Vec<SystemType>) {
@@ -185,7 +176,6 @@ impl Brain for BrainLegionScheduled {
                 SystemType::Shoot => schedule.add_system(shoot_system()),
                 SystemType::DeleteExpired => schedule.add_system(delete_expired_system()),
                 SystemType::PaintNearest => schedule.add_system(paint_nearest_system()),
-
             };
         }
         self.schedule = Some(schedule.build());

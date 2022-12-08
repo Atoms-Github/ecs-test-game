@@ -1,14 +1,14 @@
 pub mod duckdb;
 
-use std::backtrace::Backtrace;
-use ggez::graphics::Color;
-use crate::brains::{Brain, SystemType};
 use crate::brains::com::ExportEntity;
-use crate::Point;
+use crate::brains::{Brain, SystemType};
 use crate::ui::ui_settings::GuiSettings;
 use crate::utils::FromTeam;
+use crate::Point;
+use ggez::graphics::Color;
+use std::backtrace::Backtrace;
 
-pub trait SqlBrain{
+pub trait SqlInterface {
     type PreppedStatement;
     fn new() -> Self;
     fn execute(&mut self, statement: &str, params: Vec<f32>);

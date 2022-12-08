@@ -11,7 +11,7 @@ pub mod ecs_concepts;
 pub mod legion_scheduled;
 pub mod legion_sequential;
 pub mod sql_brains;
-pub mod sql_mass_relations;
+pub mod sql_flat_table;
 
 pub trait Brain {
     fn add_entity_unit(
@@ -21,8 +21,7 @@ pub trait Brain {
         team: usize,
         universe_id: usize,
     );
-    fn add_entity_vel_dot(&mut self, position: Point, velocity: Point);
-    fn add_entity_positional_dummy(&mut self, position: Point, color: Color);
+    fn add_entity(&mut self, position: Point, velocity: Option<Point>, color: Color);
 
     fn get_entities(&mut self, universe_id: usize) -> Vec<(Point, Color)>;
 
@@ -44,7 +43,7 @@ pub enum SystemType {
     DeleteExpired,
     PaintNearest,
 }
-impl SystemType{
+impl SystemType {
     pub fn get_name(&self) -> String {
         return format!("{:?}", self);
     }

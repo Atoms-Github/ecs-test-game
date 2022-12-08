@@ -1,11 +1,10 @@
 use crate::brains::Brain;
 use crate::challenges::Challenge;
-use std::collections::HashMap;
 use crate::ui::ui_settings::GuiSettings;
 use plotters::prelude::*;
+use std::collections::HashMap;
 
-pub struct TestController
-{
+pub struct TestController {
     pub brain: Box<dyn Brain>,
     pub challenge: Box<dyn Challenge>,
     pub timings: HashMap<String, u128>,
@@ -13,22 +12,21 @@ pub struct TestController
     pub universe_count: usize,
 }
 
-impl TestController
-{
-    pub fn new(brain: Box<dyn Brain>, challenge: Box<dyn Challenge>) -> TestController
-    {
+impl TestController {
+    pub fn new(brain: Box<dyn Brain>, challenge: Box<dyn Challenge>) -> TestController {
         TestController {
             brain,
             challenge,
             timings: HashMap::new(),
             ticks: 0,
-            universe_count: 1
+            universe_count: 1,
         }
-}
-    pub fn init(&mut self) {
+    }
+    pub fn init(&mut self, settings: &GuiSettings) {
         self.brain.init_systems(&self.challenge.get_tick_systems());
         let time = crate::utils::time_it(|| {
-            self.challenge.init(&mut *self.brain, self.universe_count);
+            self.challenge
+                .init(&mut *self.brain, self.universe_count, settings);
         });
         self.register_time(String::from("init"), time);
     }
@@ -62,9 +60,8 @@ impl TestController
             .margin(5)
             .x_label_area_size(30)
             .y_label_area_size(30)
-            .build_cartesian_2d(0..self.ticks, 0..100000000).unwrap();
+            .build_cartesian_2d(0..self.ticks, 0..100000000)
+            .unwrap();
         chart.configure_mesh().draw().unwrap();
-
     }
-
 }
