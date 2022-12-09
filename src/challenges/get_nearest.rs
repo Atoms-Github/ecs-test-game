@@ -16,8 +16,8 @@ impl Challenge for ChallengeGetNearest {
         let mut universe_id = 0;
         for _ in 0..settings.entity_count {
             let position = Point::new(rand.gen_range(0.0..MAP_SIZE), rand.gen_range(0.0..MAP_SIZE));
-            let color = Color::new(rand.gen_range(0.0..1.0), 0.0, 0.0, 1.0);
-            brain.add_entity(position, None, color)
+            let blue = rand.gen_range(0.0..1.0);
+            brain.add_entity(position, None, blue)
         }
     }
     fn get_tick_systems(&self) -> Vec<SystemType> {

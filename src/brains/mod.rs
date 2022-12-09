@@ -7,10 +7,9 @@ use ggez::graphics::Color;
 use crate::ui::ui_settings::GuiSettings;
 use crate::Point;
 
+pub mod brain_legion;
 pub mod com;
 pub mod ecs_concepts;
-pub mod legion_scheduled;
-pub mod legion_sequential;
 pub mod sql_brains;
 pub mod sql_interfaces;
 
@@ -22,7 +21,7 @@ pub trait Brain {
         team: usize,
         universe_id: usize,
     );
-    fn add_entity(&mut self, position: Point, velocity: Option<Point>, color: Color);
+    fn add_entity(&mut self, position: Point, velocity: Option<Point>, blue: f32);
 
     fn get_entities(&mut self, universe_id: usize) -> Vec<ExportEntity>;
 

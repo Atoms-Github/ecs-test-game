@@ -25,18 +25,18 @@ impl Challenge for ChallengeSpatialArray {
 
         let mut random = StdRng::seed_from_u64(10);
 
-        let mut existing_entities: Vec<(Point, Option<Point>, Color)> = vec![];
+        let mut existing_entities: Vec<(Point, Option<Point>, f32)> = vec![];
         let mut existing_velocities = vec![];
         let unique_velocities =
             (self.unique_velocity_fraction * settings.entity_count as f64) as usize;
         while existing_entities.len() < settings.entity_count {
             if random.gen_bool(self.dupe_entity_fraction) && !existing_entities.is_empty() {
-                let (position, velocity, colour) =
+                let (position, velocity, blue) =
                     existing_entities.choose(&mut random).unwrap().clone();
-                brain.add_entity(position, velocity, colour);
+                brain.add_entity(position, velocity, blue);
             } else {
                 let position = Point::gen_random() * MAP_SIZE;
-                let color = Color::gen_random();
+                let blue = rand.gen_range(0.0..1.0);
                 let mut velocity = None;
                 if random.gen_bool(self.has_velocity_fraction) {
                     if existing_velocities.len() < unique_velocities {
@@ -47,8 +47,8 @@ impl Challenge for ChallengeSpatialArray {
                         velocity = Some(*existing_velocities.choose(&mut random).clone().unwrap());
                     };
                 }
-                brain.add_entity(position, velocity, color);
-                existing_entities.push((position, velocity, color));
+                brain.add_entity(position, velocity, blue);
+                existing_entities.push((position, velocity, blue));
             }
         }
     }

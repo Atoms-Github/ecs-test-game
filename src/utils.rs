@@ -15,7 +15,7 @@ where
 pub trait GenRandom {
     fn gen_random() -> Self;
 }
-impl GenRandom for Vec2{
+impl GenRandom for Vec2 {
     fn gen_random() -> Self {
         let mut rand = rand::thread_rng();
         Vec2::new(rand.gen_range(0.0..1.0), rand.gen_range(0.0..1.0))
@@ -24,14 +24,12 @@ impl GenRandom for Vec2{
 pub trait FromTeam {
     fn from_team(team: usize) -> Self;
 }
-impl FromTeam for Color {
-    fn from_team(team: usize) -> Self {
-        match team {
-            0 => Color::new(1.0, 0.0, 0.0, 1.0),
-            1 => Color::new(0.0, 1.0, 0.0, 1.0),
-            2 => Color::new(0.0, 0.0, 1.0, 1.0),
-            _ => Color::new(0.0, 0.0, 0.0, 1.0),
-        }
+pub fn color_from_team(team: usize) -> f32 {
+    match team {
+        0 => 0.0,
+        1 => 0.5,
+        2 => 1.0,
+        _ => 0.0,
     }
 }
 

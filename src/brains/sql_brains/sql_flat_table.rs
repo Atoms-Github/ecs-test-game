@@ -3,7 +3,7 @@ use crate::brains::sql_brains::brain_sql::CommandPlanSql;
 use crate::brains::sql_interfaces::{SqlInterface, SqlStatement};
 use crate::brains::{Brain, SystemType};
 use crate::ui::ui_settings::GuiSettings;
-use crate::utils::FromTeam;
+use crate::utils::{color_from_team, FromTeam};
 use crate::{Point, MAP_SIZE};
 use duckdb::ffi::system;
 use ggez::graphics::Color;
@@ -86,9 +86,9 @@ impl CommandPlanSql for BrainSqlFlatTable {
         team: usize,
         universe_id: usize,
     ) -> SqlStatement {
-        let red = Color::from_team(team).r;
+        let blue = color_from_team(team);
         return SqlStatement::new(
-            "INSERT INTO entity_unit (position_x, position_y, velocity_x, velocity_y, team, universe_id, red, shooter_cooldown) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO entities (position_x, position_y, velocity_x, velocity_y, team, universe_id, blue, shooter_cooldown) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             vec![
                 position.x,
                 position.y,
@@ -96,35 +96,28 @@ impl CommandPlanSql for BrainSqlFlatTable {
                 velocity.y,
                 team as f32,
                 universe_id as f32,
-                red,
+                blue,
                 0.0,
             ],
         );
     }
 
-    fn add_entity(
-        &mut self,
-        position: Point,
-        velocity: Option<Point>,
-        color: Color,
-    ) -> SqlStatement {
+    fn add_entity(&mut self, position: Point, velocity: Option<Point>, blue: f32) -> SqlStatement {
         return if let Some(velocity) = velocity {
             SqlStatement::new(
-                "INSERT INTO entity (position_x, position_y, velocity_x, velocity_y, red, green, blue) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO entities (position_x, position_y, velocity_x, velocity_y, blue) VALUES (?, ?, ?, ?, ?)",
                 vec![
                     position.x,
                     position.y,
                     velocity.x,
                     velocity.y,
-                    color.r,
-                    color.g,
-                    color.b,
+                    blue,
                 ],
             )
         } else {
             SqlStatement::new(
-                "INSERT INTO entity (position_x, position_y, red, green, blue) VALUES (?, ?, ?, ?, ?)",
-                vec![position.x, position.y, color.r, color.g, color.b],
+                "INSERT INTO entities (position_x, position_y, blue) VALUES (?, ?, ?)",
+                vec![position.x, position.y, blue],
             )
         };
     }

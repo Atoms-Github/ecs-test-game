@@ -33,12 +33,7 @@ impl<'a> SqlInterface for InterfaceDuckDB<'a> {
             .query_map([], |row| {
                 Ok(ExportEntity {
                     position: Point::new(row.get(0).unwrap(), row.get(1).unwrap()),
-                    color: Color {
-                        r: row.get(2).unwrap(),
-                        g: 0.5,
-                        b: 0.5,
-                        a: 1.0,
-                    },
+                    blue: row.get(2).unwrap(),
                 })
             })
             .unwrap();

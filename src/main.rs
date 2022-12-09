@@ -6,8 +6,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_parens)]
 
-use ecs_test_game::brains::legion_scheduled::BrainLegion;
-use ecs_test_game::brains::legion_sequential::BrainLegionSequential;
+use ecs_test_game::brains::brain_legion::BrainLegion;
 use ecs_test_game::brains::sql_brains::brain_sql::BrainSql;
 use ecs_test_game::brains::sql_brains::sql_flat_table::BrainSqlFlatTable;
 use ecs_test_game::brains::sql_interfaces::duckdb::InterfaceDuckDB;
@@ -24,6 +23,7 @@ use ggez::graphics::{Color, Drawable};
 use ggez::input::mouse::position;
 use ggez::{Context, GameResult};
 use glam::Vec2;
+use std::io::read_to_string;
 
 pub struct MainState {
     pub test_controller: TestController,
@@ -81,68 +81,14 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
         let dt = ggez::timer::delta(ctx).as_secs_f32();
         let egui_ctx = self.egui_backend.ctx();
         egui::Window::new("Settings").show(&egui_ctx, |ui| {
-            ui.label("Meet distance");
-            ui.add(egui::DragValue::new(&mut self.gui_settings.meet_distance).speed(0.1));
-            ui.label("Universe");
-            ui.add(egui::DragValue::new(&mut self.gui_settings.view_universe).speed(0.1));
-            ui.label("Requested universe count");
-            ui.add(egui::DragValue::new(&mut self.gui_settings.universe_count).speed(0.1));
-            ui.label("Blend Speed");
-            ui.add(egui::DragValue::new(&mut self.gui_settings.blend_speed).speed(0.5));
-            ui.label("Entity count");
-            ui.add(egui::DragValue::new(&mut self.gui_settings.entity_count).speed(0.1));
-            ui.label("All at once");
-            ui.checkbox(&mut self.gui_settings.all_at_once, "All at once");
-
-            // Add ui for self.universe_count:
-
+            ui.label(format!("Draw time: {}us", self.draw_time));
+            ui.label(format!("Update time: {}us", self.update_time));
             ui.label(format!("FPS: {}", ggez::timer::fps(ctx)));
             ui.label(format!(
                 "Time delta: {}ms",
                 ggez::timer::delta(ctx).as_millis()
             ));
-            ui.label(format!("Draw time: {}us", self.draw_time));
-            ui.label(format!("Update time: {}us", self.update_time));
-
-            egui::ComboBox::from_label("Brain type")
-                .selected_text(format!("{:?}", self.gui_settings.brain_type))
-                .show_ui(ui, |ui| {
-                    ui.selectable_value(
-                        &mut self.gui_settings.brain_type,
-                        BrainType::Legion,
-                        "Legion",
-                    );
-                    ui.selectable_value(
-                        &mut self.gui_settings.brain_type,
-                        BrainType::SqlDuck,
-                        "Sql duck",
-                    );
-                })
-                .response;
-            egui::ComboBox::from_label("Challenge type")
-                .selected_text(format!("{:?}", self.gui_settings.challenge_type))
-                .show_ui(ui, |ui| {
-                    ui.selectable_value(
-                        &mut self.gui_settings.challenge_type,
-                        ChallengeType::Rts,
-                        "Rts",
-                    );
-                    ui.selectable_value(
-                        &mut self.gui_settings.challenge_type,
-                        ChallengeType::GetNearest,
-                        "Get Nearest",
-                    );
-                    ui.selectable_value(
-                        &mut self.gui_settings.challenge_type,
-                        ChallengeType::SpacialArray,
-                        "Spacial Array",
-                    );
-                })
-                .response;
-
-            if ui.button("Reload").clicked() {
-                self.reload();
-            }
+            self.gui_settings.draw(ui);
             if ui.button("Save Graph").clicked() {
                 self.test_controller.save_graph("graph.png");
             }
@@ -170,7 +116,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
                     entity.position,
                     5.0,
                     0.1,
-                    Color::WHITE,
+                    Color::from((1.0, 1.0, entity.blue, 1.0)),
                 )
                 .unwrap();
         }

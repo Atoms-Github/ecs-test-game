@@ -1,7 +1,7 @@
 use crate::brains::com::*;
 use crate::brains::{Brain, SystemType};
 use crate::ui::ui_settings::GuiSettings;
-use crate::utils::FromTeam;
+use crate::utils::{color_from_team, FromTeam};
 use crate::{Point, MAP_SIZE};
 use ggez::graphics::Color;
 use glam::*;
@@ -22,7 +22,7 @@ pub fn make_unit(world: &mut World, pos: Vec2, vel: Vec2, team: usize, universe_
         VelocityComp { vel },
         TeamComp { team },
         ColorComp {
-            color: Color::from_team(team),
+            blue: color_from_team(team),
         },
         UniverseComp { universe_id },
         ShooterComp { cooldown: 0.0 },
@@ -35,9 +35,7 @@ fn make_projectile(buffer: &mut CommandBuffer, pos: Vec2, target: Vec2, universe
     buffer.push((
         PositionComp { pos },
         VelocityComp { vel },
-        ColorComp {
-            color: Color::new(1.0, 1.0, 1.0, 1.0),
-        },
+        ColorComp { blue: 0.8 },
         TimedLifeComp { time_left: 1.0 },
         UniverseComp { universe_id },
     ));
@@ -106,14 +104,12 @@ fn paint_nearest(
     color: &mut ColorComp,
 ) {
     let mut closest_dist = f32::MAX;
-    let mut closest_color = &ColorComp {
-        color: Color::new(0.0, 0.0, 0.0, 1.0),
-    };
+    let mut closest_color = &ColorComp { blue: 0.0 };
     for (other_pos, other_color) in pos_color.iter() {
         let dist = (pos.pos - other_pos.pos).length();
         if dist < closest_dist {
             closest_dist = dist;
-            closest_color = &other_color;
+            closest_color = other_color;
         }
     }
     color.blend(closest_color, &settings);
@@ -148,16 +144,20 @@ impl Brain for BrainLegion {
         make_unit(&mut self.world, position, velocity, team, universe_id);
     }
 
-    fn add_entity(&mut self, position: Point, velocity: Option<Point>, color: Color) {
+    fn add_entity(&mut self, position: Point, velocity: Option<Point>, blue: f32) {
         if let Some(velocity) = velocity {
             self.world.push((
                 PositionComp { pos: position },
                 VelocityComp { vel: velocity },
-                ColorComp { color },
+                ColorComp { blue: blue },
+                UniverseComp { universe_id: 0 },
             ));
         } else {
-            self.world
-                .push((PositionComp { pos: position }, ColorComp { color }));
+            self.world.push((
+                PositionComp { pos: position },
+                ColorComp { blue },
+                UniverseComp { universe_id: 0 },
+            ));
         }
     }
 
@@ -168,7 +168,7 @@ impl Brain for BrainLegion {
             if universe.universe_id == universe_id {
                 entities.push(ExportEntity {
                     position: pos.pos,
-                    color: color.color,
+                    blue: color.blue,
                 });
             }
         }

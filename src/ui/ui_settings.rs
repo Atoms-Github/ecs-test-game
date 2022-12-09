@@ -1,3 +1,6 @@
+use egui::Ui;
+use ggez::GameResult;
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct GuiSettings {
     pub meet_distance: f32,
@@ -21,6 +24,46 @@ impl GuiSettings {
             challenge_type: ChallengeType::SpacialArray,
             all_at_once: false,
         }
+    }
+    pub fn draw(&mut self, ui: &mut Ui) {
+        ui.label("Meet distance");
+        ui.add(egui::DragValue::new(&mut self.meet_distance).speed(0.1));
+        ui.label("Universe");
+        ui.add(egui::DragValue::new(&mut self.view_universe).speed(0.1));
+        ui.label("Requested universe count");
+        ui.add(egui::DragValue::new(&mut self.universe_count).speed(0.1));
+        ui.label("Blend Speed");
+        ui.add(egui::DragValue::new(&mut self.blend_speed).speed(0.5));
+        ui.label("Entity count");
+        ui.add(egui::DragValue::new(&mut self.entity_count).speed(0.1));
+        ui.label("All at once");
+        ui.checkbox(&mut self.all_at_once, "All at once");
+
+        // Add ui for self.universe_count:
+
+        let resp_brain = egui::ComboBox::from_label("Brain type")
+            .selected_text(format!("{:?}", self.brain_type))
+            .show_ui(ui, |ui| {
+                ui.selectable_value(&mut self.brain_type, BrainType::Legion, "Legion");
+                ui.selectable_value(&mut self.brain_type, BrainType::SqlDuck, "Sql duck");
+            })
+            .response;
+        let resp_challenge = egui::ComboBox::from_label("Challenge type")
+            .selected_text(format!("{:?}", self.challenge_type))
+            .show_ui(ui, |ui| {
+                ui.selectable_value(&mut self.challenge_type, ChallengeType::Rts, "Rts");
+                ui.selectable_value(
+                    &mut self.challenge_type,
+                    ChallengeType::GetNearest,
+                    "Get Nearest",
+                );
+                ui.selectable_value(
+                    &mut self.challenge_type,
+                    ChallengeType::SpacialArray,
+                    "Spacial Array",
+                );
+            })
+            .response;
     }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

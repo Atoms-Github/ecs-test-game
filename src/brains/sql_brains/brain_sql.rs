@@ -24,12 +24,7 @@ pub trait CommandPlanSql {
         team: usize,
         universe_id: usize,
     ) -> SqlStatement;
-    fn add_entity(
-        &mut self,
-        position: Point,
-        velocity: Option<Point>,
-        color: Color,
-    ) -> SqlStatement;
+    fn add_entity(&mut self, position: Point, velocity: Option<Point>, blue: f32) -> SqlStatement;
     fn get_ents_xyc(&mut self, universe_id: usize) -> SqlStatement;
     fn init_systems(&mut self, systems: &Vec<SystemType>) -> Vec<SqlStatement>;
 }
@@ -56,8 +51,8 @@ impl<C: CommandPlanSql, D: SqlInterface> Brain for BrainSql<C, D> {
         self.database.execute(command);
     }
 
-    fn add_entity(&mut self, position: Point, velocity: Option<Point>, color: Color) {
-        let command = self.command_plan.add_entity(position, velocity, color);
+    fn add_entity(&mut self, position: Point, velocity: Option<Point>, blue: f32) {
+        let command = self.command_plan.add_entity(position, velocity, blue);
         self.database.execute(command);
     }
 
