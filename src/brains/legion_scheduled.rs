@@ -154,7 +154,7 @@ impl Brain for BrainLegionScheduled {
         }
     }
 
-    fn get_entities(&mut self, universe_id: usize) -> Vec<(Point, Color)> {
+    fn get_entities(&mut self, universe_id: usize) -> Vec<ExportEntity> {
         let mut query = <(Read<PositionComp>, Read<ColorComp>, Read<UniverseComp>)>::query();
         let mut entities = Vec::new();
         for (pos, color, universe) in query.iter(&self.world) {
@@ -165,7 +165,7 @@ impl Brain for BrainLegionScheduled {
         entities
     }
 
-    fn init_systems(&mut self, systems: &Vec<SystemType>) {
+    fn init(&mut self, systems: &Vec<SystemType>) {
         let mut schedule = Schedule::builder();
         for system in systems.iter() {
             match system {
@@ -181,11 +181,7 @@ impl Brain for BrainLegionScheduled {
         self.schedule = Some(schedule.build());
     }
 
-    fn get_tick_all_at_once(&self) -> bool {
-        true
-    }
-
-    fn tick_systems(&mut self, delta: f32, settings: &GuiSettings) {
+    fn tick_systems(&mut self, delta: f32, settings: &GuiSettings, systems: &Vec<SystemType>) {
         let mut resources = Resources::default();
         resources.insert(delta);
         resources.insert(settings.clone());

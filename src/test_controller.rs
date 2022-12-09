@@ -23,7 +23,7 @@ impl TestController {
         }
     }
     pub fn init(&mut self, settings: &GuiSettings) {
-        self.brain.init_systems(&self.challenge.get_tick_systems());
+        self.brain.init(&self.challenge.get_tick_systems());
         let time = crate::utils::time_it(|| {
             self.challenge
                 .init(&mut *self.brain, self.universe_count, settings);
@@ -33,7 +33,8 @@ impl TestController {
 
     pub fn tick(&mut self, delta: f32, settings: &GuiSettings) {
         let systems = self.challenge.get_tick_systems();
-        if self.brain.get_tick_all_at_once() {
+
+        if settings.all_at_once {
             let time = crate::utils::time_it(|| {
                 self.brain.tick_systems(delta, settings);
             });

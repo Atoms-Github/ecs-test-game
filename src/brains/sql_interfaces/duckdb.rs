@@ -1,5 +1,5 @@
 use crate::brains::com::ExportEntity;
-use crate::brains::sql_brains::SqlInterface;
+use crate::brains::sql_interfaces::{SqlInterface, SqlStatement};
 use crate::Point;
 use duckdb::{params, params_from_iter, Connection, ParamsFromIter, Statement};
 use ggez::graphics::Color;
@@ -19,7 +19,7 @@ impl<'a> SqlInterface for DuckDB<'a> {
         }
     }
 
-    fn execute(&mut self, statement: &str, params: Vec<f32>) {
+    fn execute(&mut self, statement: SqlStatement) {
         self.conn
             .prepare_cached(statement)
             .unwrap()
@@ -27,7 +27,7 @@ impl<'a> SqlInterface for DuckDB<'a> {
             .unwrap();
     }
 
-    fn get_entities(&mut self, universe_id: usize, query_posxy_col: &str) -> Vec<ExportEntity> {
+    fn get_entities(&mut self, query_xyc: SqlStatement) -> Vec<ExportEntity> {
         let mut stmt = self.conn.prepare(query_posxy_col).unwrap();
         let person_iter = stmt
             .query_map([], |row| {

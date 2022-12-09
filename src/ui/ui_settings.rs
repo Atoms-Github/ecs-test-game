@@ -7,6 +7,7 @@ pub struct GuiSettings {
     pub blend_speed: f32,
     pub brain_type: BrainType,
     pub challenge_type: ChallengeType,
+    pub all_at_once: bool,
 }
 impl GuiSettings {
     pub fn new() -> GuiSettings {
@@ -18,6 +19,7 @@ impl GuiSettings {
             entity_count: 100,
             brain_type: BrainType::LegionSequential,
             challenge_type: ChallengeType::SpacialArray,
+            all_at_once: false,
         }
     }
 }

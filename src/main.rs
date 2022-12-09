@@ -8,8 +8,8 @@
 
 use ecs_test_game::brains::legion_scheduled::BrainLegionScheduled;
 use ecs_test_game::brains::legion_sequential::BrainLegionSequential;
-use ecs_test_game::brains::sql_brains::duckdb::DuckDB;
-use ecs_test_game::brains::sql_flat_table::BrainSqlFlatTable;
+use ecs_test_game::brains::sql_brains::sql_flat_table::BrainSqlFlatTable;
+use ecs_test_game::brains::sql_interfaces::duckdb::DuckDB;
 use ecs_test_game::brains::Brain;
 use ecs_test_game::challenges::get_nearest::ChallengeGetNearest;
 use ecs_test_game::challenges::rts::ChallengeRts;
