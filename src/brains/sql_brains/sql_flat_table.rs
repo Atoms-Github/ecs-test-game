@@ -1,23 +1,84 @@
 use crate::brains::com::ExportEntity;
-use crate::brains::sql_brains::sql_brain::SqlCommandPlan;
+use crate::brains::sql_brains::brain_sql::CommandPlanSql;
 use crate::brains::sql_interfaces::{SqlInterface, SqlStatement};
 use crate::brains::{Brain, SystemType};
 use crate::ui::ui_settings::GuiSettings;
 use crate::utils::FromTeam;
 use crate::{Point, MAP_SIZE};
+use duckdb::ffi::system;
 use ggez::graphics::Color;
 
 pub struct BrainSqlFlatTable {}
+impl BrainSqlFlatTable {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 
-impl SqlCommandPlan for BrainSqlFlatTable {
+impl CommandPlanSql for BrainSqlFlatTable {
     fn systems(
         &mut self,
         sys: &SystemType,
         delta: f32,
         settings: &GuiSettings,
     ) -> Vec<SqlStatement> {
+        let mut statements: Vec<SqlStatement> = match sys {
+            SystemType::Velocity => {
+                vec![
+                    SqlStatement::new("UPDATE entities SET pos_x = pos_x + velocity_x * ? WHERE velocity_x IS NOT NULL;", vec![delta]),
+                    SqlStatement::new("UPDATE entities SET pos_y = pos_y + velocity_y * ? WHERE velocity_y IS NOT NULL;", vec![delta]),
+                ]
+            }
+            SystemType::UpdateTimedLife => {
+                vec![SqlStatement::new(
+                    "UPDATE entities SET timed_life = timed_life - ?;",
+                    vec![delta],
+                )]
+            }
+            SystemType::Shoot => {
+                vec![SqlStatement::new(
+                    "UPDATE entities SET shooter_cooldown = shooter_cooldown - ?;",
+                    vec![delta],
+                )]
+            }
+            SystemType::Acceleration => {
+                vec![
+                    SqlStatement::new("UPDATE entities SET velocity_x = velocity_x + acceleration_x * ? WHERE acceleration_x IS NOT NULL;", vec![delta]),
+                    SqlStatement::new("UPDATE entities SET velocity_y = velocity_y + acceleration_y * ? WHERE acceleration_y IS NOT NULL;", vec![delta]),
+                ]
+            }
+            SystemType::MapEdge => {
+                vec![
+                    SqlStatement::new(
+                        "UPDATE entities SET pos_x = pos_x - ? WHERE pos_x > ?;",
+                        vec![MAP_SIZE, MAP_SIZE],
+                    ),
+                    SqlStatement::new(
+                        "UPDATE entities SET pos_x = pos_x + ? WHERE pos_x < 0;",
+                        vec![MAP_SIZE],
+                    ),
+                    SqlStatement::new(
+                        "UPDATE entities SET pos_y = pos_y - ? WHERE pos_y > ?;",
+                        vec![MAP_SIZE, MAP_SIZE],
+                    ),
+                    SqlStatement::new(
+                        "UPDATE entities SET pos_y = pos_y + ? WHERE pos_y < 0;",
+                        vec![MAP_SIZE],
+                    ),
+                ]
+            }
+            SystemType::DeleteExpired => {
+                vec![SqlStatement::new(
+                    "DELETE FROM entities WHERE timed_life < 0;",
+                    vec![],
+                )]
+            }
+            SystemType::PaintNearest => {
+                vec![]
+            }
+        };
+        return statements;
     }
-
     fn add_entity_unit(
         &mut self,
         position: Point,
@@ -25,7 +86,20 @@ impl SqlCommandPlan for BrainSqlFlatTable {
         team: usize,
         universe_id: usize,
     ) -> SqlStatement {
-        todo!()
+        let red = Color::from_team(team).r;
+        return SqlStatement::new(
+            "INSERT INTO entity_unit (position_x, position_y, velocity_x, velocity_y, team, universe_id, red, shooter_cooldown) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            vec![
+                position.x,
+                position.y,
+                velocity.x,
+                velocity.y,
+                team as f32,
+                universe_id as f32,
+                red,
+                0.0,
+            ],
+        );
     }
 
     fn add_entity(
@@ -34,77 +108,48 @@ impl SqlCommandPlan for BrainSqlFlatTable {
         velocity: Option<Point>,
         color: Color,
     ) -> SqlStatement {
-        todo!()
+        return if let Some(velocity) = velocity {
+            SqlStatement::new(
+                "INSERT INTO entity (position_x, position_y, velocity_x, velocity_y, red, green, blue) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                vec![
+                    position.x,
+                    position.y,
+                    velocity.x,
+                    velocity.y,
+                    color.r,
+                    color.g,
+                    color.b,
+                ],
+            )
+        } else {
+            SqlStatement::new(
+                "INSERT INTO entity (position_x, position_y, red, green, blue) VALUES (?, ?, ?, ?, ?)",
+                vec![position.x, position.y, color.r, color.g, color.b],
+            )
+        };
     }
 
     fn get_ents_xyc(&mut self, universe_id: usize) -> SqlStatement {
-        todo!()
+        let command = "SELECT pos_x, pos_y, color_r FROM entities";
+        return SqlStatement::new(command, vec![]);
     }
 
     fn init_systems(&mut self, systems: &Vec<SystemType>) -> Vec<SqlStatement> {
-        todo!()
-    }
-}
-impl<T: SqlInterface> Brain for BrainSqlFlatTable<T> {
-    fn add_entity_unit(
-        &mut self,
-        position: Point,
-        velocity: Point,
-        team: usize,
-        universe_id: usize,
-    ) {
-        let red = Color::from_team(team).r;
-        self.database.execute();
-    }
-
-    fn add_entity(&mut self, position: Point, velocity: Option<Point>, color: Color) {}
-
-    fn get_entities(&mut self, universe_id: usize) -> Vec<ExportEntity> {
-        return self
-            .database
-            .get_entities()
-            .iter()
-            .map(|e| (e.pos, e.color))
-            .collect();
-    }
-
-    fn init(&mut self, systems: &Vec<SystemType>) {
-        self.database.execute();
-    }
-
-    fn tick_system(&mut self, system: &SystemType, delta: f32, settings: &GuiSettings) {
-        match system {
-            SystemType::Velocity => {
-                self.database.execute();
-                self.database.execute();
-                // Update pos for every entity that has velocity
-            }
-            SystemType::UpdateTimedLife => {
-                self.database.execute();
-            }
-            SystemType::Shoot => {
-                self.database.execute();
-            }
-            SystemType::Acceleration => {
-                self.database.execute();
-                self.database.execute();
-            }
-            SystemType::MapEdge => {
-                // If the entity is outside the map, move it to the other side
-                self.database.execute();
-                self.database.execute();
-                self.database.execute();
-                self.database.execute();
-            }
-
-            SystemType::DeleteExpired => {
-                self.database.execute();
-            }
-            SystemType::PaintNearest => {}
-        }
-    }
-
-    fn get_name(&self) -> String {
-        "BrainDatabase".to_string()
+        return vec![SqlStatement::new(
+            "CREATE TABLE entities (
+            pos_x REAL,
+            pos_y REAL,
+            velocity_x REAL,
+            velocity_y REAL,
+            acceleration_x REAL,
+            acceleration_y REAL,
+            color_r REAL,
+            team INTEGER,
+            universe_id INTEGER,
+            shooter_cooldown REAL,
+            timed_life REAL
+        )",
+            vec![],
+        )];
     }
 }

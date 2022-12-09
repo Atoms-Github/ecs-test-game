@@ -17,7 +17,7 @@ impl GuiSettings {
             universe_count: 1,
             blend_speed: 10.0,
             entity_count: 100,
-            brain_type: BrainType::LegionSequential,
+            brain_type: BrainType::Legion,
             challenge_type: ChallengeType::SpacialArray,
             all_at_once: false,
         }
@@ -25,8 +25,7 @@ impl GuiSettings {
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum BrainType {
-    LegionSequential,
-    LegionScheduled,
+    Legion,
     SqlDuck,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

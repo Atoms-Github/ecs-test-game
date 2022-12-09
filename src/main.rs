@@ -6,10 +6,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_parens)]
 
-use ecs_test_game::brains::legion_scheduled::BrainLegionScheduled;
+use ecs_test_game::brains::legion_scheduled::BrainLegion;
 use ecs_test_game::brains::legion_sequential::BrainLegionSequential;
+use ecs_test_game::brains::sql_brains::brain_sql::BrainSql;
 use ecs_test_game::brains::sql_brains::sql_flat_table::BrainSqlFlatTable;
-use ecs_test_game::brains::sql_interfaces::duckdb::DuckDB;
+use ecs_test_game::brains::sql_interfaces::duckdb::InterfaceDuckDB;
+use ecs_test_game::brains::sql_interfaces::SqlInterface;
 use ecs_test_game::brains::Brain;
 use ecs_test_game::challenges::get_nearest::ChallengeGetNearest;
 use ecs_test_game::challenges::rts::ChallengeRts;
@@ -45,9 +47,11 @@ impl MainState {
     }
     fn gen_test_controller(settings: &GuiSettings) -> TestController {
         let new_brain: Box<dyn Brain> = match settings.brain_type {
-            BrainType::LegionSequential => Box::new(BrainLegionSequential::new()),
-            BrainType::LegionScheduled => Box::new(BrainLegionScheduled::new()),
-            BrainType::SqlDuck => Box::new(BrainSqlFlatTable::<DuckDB>::new(false)),
+            BrainType::Legion => Box::new(BrainLegion::new()),
+            BrainType::SqlDuck => Box::new(BrainSql::new(
+                BrainSqlFlatTable::new(),
+                InterfaceDuckDB::new(),
+            )),
         };
         let new_challenge: Box<dyn Challenge> = match settings.challenge_type {
             ChallengeType::Rts => Box::new(ChallengeRts {}),
@@ -87,6 +91,8 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             ui.add(egui::DragValue::new(&mut self.gui_settings.blend_speed).speed(0.5));
             ui.label("Entity count");
             ui.add(egui::DragValue::new(&mut self.gui_settings.entity_count).speed(0.1));
+            ui.label("All at once");
+            ui.checkbox(&mut self.gui_settings.all_at_once, "All at once");
 
             // Add ui for self.universe_count:
 
@@ -103,13 +109,8 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
                 .show_ui(ui, |ui| {
                     ui.selectable_value(
                         &mut self.gui_settings.brain_type,
-                        BrainType::LegionSequential,
-                        "Legion sequential",
-                    );
-                    ui.selectable_value(
-                        &mut self.gui_settings.brain_type,
-                        BrainType::LegionScheduled,
-                        "Legion scheduled",
+                        BrainType::Legion,
+                        "Legion",
                     );
                     ui.selectable_value(
                         &mut self.gui_settings.brain_type,
@@ -158,13 +159,19 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
         let start = std::time::Instant::now();
         // Batch draw the units:
         let mut batch = ggez::graphics::MeshBuilder::new();
-        for (position, color) in self
+        for entity in self
             .test_controller
             .brain
             .get_entities(self.gui_settings.view_universe)
         {
             batch
-                .circle(ggez::graphics::DrawMode::fill(), position, 10.0, 2.0, color)
+                .circle(
+                    ggez::graphics::DrawMode::fill(),
+                    entity.position,
+                    5.0,
+                    0.1,
+                    Color::WHITE,
+                )
                 .unwrap();
         }
 

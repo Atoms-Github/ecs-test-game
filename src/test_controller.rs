@@ -36,7 +36,7 @@ impl TestController {
 
         if settings.all_at_once {
             let time = crate::utils::time_it(|| {
-                self.brain.tick_systems(delta, settings);
+                self.brain.tick_systems(delta, settings, & systems);
             });
             self.register_time(String::from("ALL_SYSTEMS"), time);
         } else {

@@ -10,12 +10,11 @@ use legion::*;
 use rand::Rng;
 use std::borrow::{Borrow, BorrowMut};
 
-pub struct BrainLegionScheduled {
+pub struct BrainLegion {
     world: World,
     schedule: Option<Schedule>,
 }
 
-// A function for making a new unit
 pub fn make_unit(world: &mut World, pos: Vec2, vel: Vec2, team: usize, universe_id: usize) {
     let command_buffer = &mut CommandBuffer::new(world);
     let ent = command_buffer.push((
@@ -30,6 +29,7 @@ pub fn make_unit(world: &mut World, pos: Vec2, vel: Vec2, team: usize, universe_
     ));
     command_buffer.flush(world, &mut Resources::default());
 }
+
 fn make_projectile(buffer: &mut CommandBuffer, pos: Vec2, target: Vec2, universe_id: usize) {
     let vel = (target - pos).normalize() * 100.0;
     buffer.push((
@@ -47,20 +47,24 @@ fn make_projectile(buffer: &mut CommandBuffer, pos: Vec2, target: Vec2, universe
 fn velocity(#[resource] dt: &f32, pos: &mut PositionComp, vel: &VelocityComp) {
     pos.pos += vel.vel * *dt;
 }
+
 #[system(for_each)]
 fn acceleration(#[resource] dt: &f32, vel: &mut VelocityComp, acc: &AccelerationComp) {
     vel.vel += acc.acc * *dt;
 }
+
 #[system(for_each)]
 fn map_edge(pos: &mut PositionComp) {
     pos.pos.x = pos.pos.x.rem_euclid(MAP_SIZE);
     pos.pos.y = pos.pos.y.rem_euclid(MAP_SIZE);
 }
+
 // Decrement the time left on all entities with a TimedLife component
 #[system(for_each)]
 fn update_timed_life(#[resource] dt: &f32, time: &mut TimedLifeComp) {
     time.time_left -= *dt;
 }
+
 // Shoot projectiles at the nearest enemy
 #[system(for_each)]
 fn shoot(
@@ -74,29 +78,29 @@ fn shoot(
     buffer: &mut CommandBuffer,
 ) {
     spawner.cooldown -= *dt;
-    if spawner.cooldown > 0.0 {
-        return;
-    }
-    spawner.cooldown = rand::thread_rng().gen_range(0.25..0.75);
-    let mut closest_dist = f32::MAX;
-    let mut closest_pos = Vec2::ZERO;
-    for (other_pos, other_team, other_universe) in other_entities.iter() {
-        if other_team.team == team.team || other_universe.universe_id != universe.universe_id {
-            continue;
+    if spawner.cooldown == 0.0 {
+        let mut closest_dist = f32::MAX;
+        let mut closest_pos = Vec2::ZERO;
+        for (other_pos, other_team, other_universe) in other_entities.iter() {
+            if other_team.team == team.team || other_universe.universe_id != universe.universe_id {
+                continue;
+            }
+            let dist = (pos.pos - other_pos.pos).length();
+            if dist < closest_dist {
+                closest_dist = dist;
+                closest_pos = other_pos.pos;
+            }
         }
-        let dist = (pos.pos - other_pos.pos).length();
-        if dist < closest_dist {
-            closest_dist = dist;
-            closest_pos = other_pos.pos;
+        if closest_dist < settings.meet_distance {
+            make_projectile(buffer, pos.pos, closest_pos, universe.universe_id);
+            spawner.cooldown = 0.5;
         }
-    }
-    if closest_dist < settings.meet_distance {
-        make_projectile(buffer, pos.pos, closest_pos, universe.universe_id);
     }
 }
+
 #[system(for_each)]
 fn paint_nearest(
-    #[resource] other_entities: &Vec<(PositionComp, ColorComp)>,
+    #[resource] pos_color: &Vec<(PositionComp, ColorComp)>,
     #[resource] settings: &GuiSettings,
     pos: &PositionComp,
     color: &mut ColorComp,
@@ -105,7 +109,7 @@ fn paint_nearest(
     let mut closest_color = &ColorComp {
         color: Color::new(0.0, 0.0, 0.0, 1.0),
     };
-    for (other_pos, other_color) in other_entities.iter() {
+    for (other_pos, other_color) in pos_color.iter() {
         let dist = (pos.pos - other_pos.pos).length();
         if dist < closest_dist {
             closest_dist = dist;
@@ -114,6 +118,7 @@ fn paint_nearest(
     }
     color.blend(closest_color, &settings);
 }
+
 // Delete entities that have expired
 #[system(for_each)]
 fn delete_expired(time: &TimedLifeComp, entity: &Entity, command_buffer: &mut CommandBuffer) {
@@ -121,7 +126,8 @@ fn delete_expired(time: &TimedLifeComp, entity: &Entity, command_buffer: &mut Co
         command_buffer.remove(*entity);
     }
 }
-impl BrainLegionScheduled {
+
+impl BrainLegion {
     pub fn new() -> Self {
         let mut world = World::default();
         Self {
@@ -130,7 +136,8 @@ impl BrainLegionScheduled {
         }
     }
 }
-impl Brain for BrainLegionScheduled {
+
+impl Brain for BrainLegion {
     fn add_entity_unit(
         &mut self,
         position: Point,
@@ -159,7 +166,10 @@ impl Brain for BrainLegionScheduled {
         let mut entities = Vec::new();
         for (pos, color, universe) in query.iter(&self.world) {
             if universe.universe_id == universe_id {
-                entities.push((pos.pos, color.color));
+                entities.push(ExportEntity {
+                    position: pos.pos,
+                    color: color.color,
+                });
             }
         }
         entities
@@ -186,12 +196,20 @@ impl Brain for BrainLegionScheduled {
         resources.insert(delta);
         resources.insert(settings.clone());
 
-        let mut other_entities = Vec::new();
+        let mut pos_team_universe = Vec::new();
         let mut query = <(&PositionComp, &TeamComp, &UniverseComp)>::query();
         for (pos, team, universe) in query.iter(&self.world) {
-            other_entities.push((*pos, *team, *universe));
+            pos_team_universe.push((*pos, *team, *universe));
         }
-        resources.insert(other_entities);
+
+        let mut pos_color = Vec::new();
+        let mut query = <(&PositionComp, &ColorComp)>::query();
+        for (pos, color) in query.iter(&self.world) {
+            pos_color.push((*pos, *color));
+        }
+
+        resources.insert(pos_team_universe);
+        resources.insert(pos_color);
         resources.insert(settings.clone());
 
         let schedule = self.schedule.as_mut().unwrap();
@@ -199,7 +217,75 @@ impl Brain for BrainLegionScheduled {
     }
 
     fn tick_system(&mut self, system: &SystemType, delta: f32, settings: &GuiSettings) {
-        panic!("Should run multi")
+        match system {
+            SystemType::Velocity => {
+                let mut query = <(&mut PositionComp, &VelocityComp)>::query();
+                for (mut pos, vel) in query.iter_mut(&mut self.world) {
+                    velocity(&delta, pos, vel)
+                }
+            }
+            SystemType::Acceleration => {
+                let mut query = <(&mut VelocityComp, &AccelerationComp)>::query();
+                for (mut vel, acc) in query.iter_mut(&mut self.world) {
+                    acceleration(&delta, vel, acc)
+                }
+            }
+            SystemType::MapEdge => {
+                let mut query = <(&mut PositionComp)>::query();
+                for (mut pos) in query.iter_mut(&mut self.world) {
+                    map_edge(pos);
+                }
+            }
+            SystemType::UpdateTimedLife => {
+                let mut query = <(&mut TimedLifeComp)>::query();
+                for (mut time) in query.iter_mut(&mut self.world) {
+                    update_timed_life(&delta, time);
+                }
+            }
+            SystemType::Shoot => {
+                let mut pos_team_universe = Vec::new();
+                let mut query = <(&PositionComp, &TeamComp, &UniverseComp)>::query();
+                for (pos, team, universe) in query.iter(&self.world) {
+                    pos_team_universe.push((*pos, *team, *universe));
+                }
+                let mut buffer = CommandBuffer::new(&mut self.world);
+
+                let mut query =
+                    <(&PositionComp, &TeamComp, &UniverseComp, &mut ShooterComp)>::query();
+                for (pos, team, universe, mut shooter) in query.iter_mut(&mut self.world) {
+                    shoot(
+                        &delta,
+                        &pos_team_universe,
+                        settings,
+                        pos,
+                        team,
+                        shooter,
+                        universe,
+                        &mut buffer,
+                    );
+                }
+                buffer.flush(&mut self.world, &mut Resources::default());
+            }
+            SystemType::DeleteExpired => {
+                let mut buffer = CommandBuffer::new(&mut self.world);
+                let mut query = <(&TimedLifeComp, &Entity)>::query();
+                for (time, entity) in query.iter(&self.world) {
+                    delete_expired(time, entity, &mut buffer);
+                }
+                buffer.flush(&mut self.world, &mut Resources::default());
+            }
+            SystemType::PaintNearest => {
+                let mut pos_color = Vec::new();
+                let mut query = <(&PositionComp, &ColorComp)>::query();
+                for (pos, color) in query.iter(&self.world) {
+                    pos_color.push((*pos, *color));
+                }
+                let mut query = <(Entity, &PositionComp, &mut ColorComp)>::query();
+                for (entity, pos, color) in query.iter_mut(&mut self.world) {
+                    paint_nearest(&pos_color, settings, pos, color);
+                }
+            }
+        }
     }
 
     fn get_name(&self) -> String {

@@ -10,7 +10,7 @@ pub struct BrainSql<C, D> {
     command_plan: C,
     database: D,
 }
-pub trait SqlCommandPlan {
+pub trait CommandPlanSql {
     fn systems(
         &mut self,
         sys: &SystemType,
@@ -34,7 +34,7 @@ pub trait SqlCommandPlan {
     fn init_systems(&mut self, systems: &Vec<SystemType>) -> Vec<SqlStatement>;
 }
 impl<C, D> BrainSql<C, D> {
-    fn new(c: C, d: D) -> Self {
+    pub fn new(c: C, d: D) -> Self {
         Self {
             command_plan: c,
             database: d,
@@ -42,7 +42,7 @@ impl<C, D> BrainSql<C, D> {
     }
 }
 
-impl<C: SqlCommandPlan, D: SqlInterface> Brain for BrainSql<C, D> {
+impl<C: CommandPlanSql, D: SqlInterface> Brain for BrainSql<C, D> {
     fn add_entity_unit(
         &mut self,
         position: Point,
@@ -80,7 +80,7 @@ impl<C: SqlCommandPlan, D: SqlInterface> Brain for BrainSql<C, D> {
         for system in systems {
             let commands = self.command_plan.systems(system, delta, settings);
             for command in commands {
-                big_command.push_str(&command.sql);
+                big_command.push_str(&command.statement);
                 big_command.push(';');
                 params.extend(command.params);
             }

@@ -18,3 +18,11 @@ pub struct SqlStatement {
     pub statement: String,
     pub params: Vec<f32>,
 }
+impl SqlStatement {
+    pub fn new(statement: &str, params: Vec<f32>) -> SqlStatement {
+        SqlStatement {
+            statement: statement.to_string(),
+            params,
+        }
+    }
+}

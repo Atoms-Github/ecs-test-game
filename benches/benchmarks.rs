@@ -8,13 +8,13 @@
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-use std::time::Duration;
 use ecs_test_game::brains::legion_sequential::BrainLegionSequential;
 use ecs_test_game::challenges::rts::ChallengeRts;
 use ecs_test_game::test_controller::TestController;
-use ecs_test_game::ui::ui_settings::BrainType::LegionScheduled;
+use ecs_test_game::ui::ui_settings::BrainType::Legion;
 use ecs_test_game::ui::ui_settings::ChallengeType::Rts;
 use ecs_test_game::ui::ui_settings::GuiSettings;
+use std::time::Duration;
 
 criterion_group!(benches, rts_benchmark);
 criterion_main!(benches);
@@ -27,9 +27,7 @@ fn rts_benchmark(c: &mut Criterion) {
     group.warm_up_time(Duration::from_millis(100));
     group.bench_function("Legion Scheduled", |b| {
         let brain = Box::new(BrainLegionSequential::new());
-        let challenge = Box::new(ChallengeRts {
-            units_count: ENTITY_COUNT,
-        });
+        let challenge = Box::new(ChallengeRts {});
         let mut test_controller = TestController::new(brain, challenge);
         b.iter(move || {
             test_controller.tick(0.16, &GuiSettings::new());
@@ -37,9 +35,7 @@ fn rts_benchmark(c: &mut Criterion) {
     });
     group.bench_function("Legion Sequential", |b| {
         let brain = Box::new(BrainLegionSequential::new());
-        let challenge = Box::new(ChallengeRts {
-            units_count: ENTITY_COUNT,
-        });
+        let challenge = Box::new(ChallengeRts {});
         let mut test_controller = TestController::new(brain, challenge);
         b.iter(move || {
             test_controller.tick(0.16, &GuiSettings::new());
