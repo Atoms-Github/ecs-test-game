@@ -71,12 +71,12 @@ fn shoot(
     #[resource] settings: &GuiSettings,
     pos: &PositionComp,
     team: &TeamComp,
-    spawner: &mut ShooterComp,
+    shooter: &mut ShooterComp,
     universe: &UniverseComp,
     buffer: &mut CommandBuffer,
 ) {
-    spawner.cooldown -= *dt;
-    if spawner.cooldown == 0.0 {
+    shooter.cooldown -= *dt;
+    if shooter.cooldown <= 0.0 {
         let mut closest_dist = f32::MAX;
         let mut closest_pos = Vec2::ZERO;
         for (other_pos, other_team, other_universe) in other_entities.iter() {
@@ -91,7 +91,7 @@ fn shoot(
         }
         if closest_dist < settings.meet_distance {
             make_projectile(buffer, pos.pos, closest_pos, universe.universe_id);
-            spawner.cooldown = 0.5;
+            shooter.cooldown = 0.5;
         }
     }
 }

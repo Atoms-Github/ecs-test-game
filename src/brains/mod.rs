@@ -10,7 +10,6 @@ use crate::Point;
 pub mod brain_legion;
 pub mod com;
 pub mod ecs_concepts;
-pub mod fancy_pointers;
 // pub mod sparsey;
 pub mod sql_brains;
 pub mod sql_interfaces;

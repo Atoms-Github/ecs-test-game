@@ -21,7 +21,7 @@ impl GuiSettings {
             blend_speed: 10.0,
             entity_count: 100,
             brain_type: BrainType::SqlIte,
-            challenge_type: ChallengeType::SpacialArray,
+            challenge_type: ChallengeType::Rts,
             all_at_once: true,
         }
     }

@@ -7,6 +7,7 @@ use crate::utils::{color_from_team, FromTeam};
 use crate::{Point, MAP_SIZE};
 use duckdb::ffi::system;
 use ggez::graphics::Color;
+use std::process::id;
 
 pub struct BrainSqlFlatTable {}
 impl BrainSqlFlatTable {
@@ -36,10 +37,70 @@ impl CommandPlanSql for BrainSqlFlatTable {
                 )]
             }
             SystemType::Shoot => {
-                vec![SqlStatement::new(
-                    "UPDATE entities SET shooter_cooldown = shooter_cooldown - ?;",
+                //
+                // shooter.cooldown -= *dt;
+                // if shooter.cooldown <= 0.0 {
+                //     let mut closest_dist = f32::MAX;
+                //     let mut closest_pos = Vec2::ZERO;
+                //     for (other_pos, other_team, other_universe) in other_entities.iter() {
+                //         if other_team.team == team.team || other_universe.universe_id != universe.universe_id {
+                //             continue;
+                //         }
+                //         let dist = (pos.pos - other_pos.pos).length();
+                //         if dist < closest_dist {
+                //             closest_dist = dist;
+                //             closest_pos = other_pos.pos;
+                //         }
+                //     }
+                //     if closest_dist < settings.meet_distance {
+                //         make_projectile(buffer, pos.pos, closest_pos, universe.universe_id);
+                //         shooter.cooldown = 0.5;
+                //     }
+                // }
+                // The above code is the logic for the shoot system. Here is it in SQL
+                let cooldown_update = SqlStatement::new(
+                    "UPDATE entities SET shooter_cooldown = shooter_cooldown - ? WHERE shooter_cooldown IS NOT NULL;",
                     vec![delta],
-                )]
+                );
+                let shooters_temp_table = SqlStatement::new(
+                    "CREATE TEMPORARY TABLE shooters AS SELECT id, position_x, position_y, shooter_cooldown, team, universe_id FROM entities WHERE shooter_cooldown IS NOT NULL;",
+                    vec![],
+                );
+                // For each shooter, find the closest target
+                // Create a temp table with the closest target for each shooter
+                let closest_targets_temp_table = SqlStatement::new(
+                    "CREATE TEMPORARY TABLE closest_targets AS
+                    SELECT shooters.id AS shooter_id, entities.id AS target_id, entities.position_x AS target_x, entities.position_y AS target_y
+                    FROM shooters
+                    JOIN entities ON entities.universe_id = shooters.universe_id
+                    WHERE entities.team != shooters.team
+                    ORDER BY (shooters.position_x - entities.position_x) * (shooters.position_x - entities.position_x) + (shooters.position_y - entities.position_y) * (shooters.position_y - entities.position_y)
+                    LIMIT 1;",
+                    vec![],
+                );
+                // Insert a projectile for each item in the temp table
+                let insert_projectiles = SqlStatement::new(
+                    "INSERT INTO entities (position_x, position_y, velocity_x, velocity_y, universe_id, team, blue, timed_life)
+                    SELECT shooters.position_x, shooters.position_y, closest_targets.target_x - shooters.position_x, closest_targets.target_y - shooters.position_y, shooters.universe_id, shooters.team, 0.3, 2.0
+                    FROM closest_targets
+                    JOIN shooters ON shooters.id = closest_targets.shooter_id;",
+                    vec![],
+                );
+
+                let reset_cooldown_for_shooters = SqlStatement::new(
+                    "UPDATE entities SET shooter_cooldown = 0.5 WHERE id IN (SELECT id FROM shooters);",
+                    vec![],
+                );
+                vec![
+                    cooldown_update,
+                    shooters_temp_table,
+                    closest_targets_temp_table,
+                    insert_projectiles,
+                    reset_cooldown_for_shooters,
+                    // And drop the temp tables
+                    SqlStatement::new("DROP TABLE shooters;", vec![]),
+                    SqlStatement::new("DROP TABLE closest_targets;", vec![]),
+                ]
             }
             SystemType::Acceleration => {
                 vec![
@@ -129,8 +190,10 @@ impl CommandPlanSql for BrainSqlFlatTable {
     }
 
     fn init_systems(&mut self, systems: &Vec<SystemType>) -> Vec<SqlStatement> {
+        // Entities should have an auto incrementing id
         return vec![SqlStatement::new(
             "CREATE TABLE entities (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             position_x REAL,
             position_y REAL,
             velocity_x REAL,
