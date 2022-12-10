@@ -20,9 +20,9 @@ impl GuiSettings {
             universe_count: 1,
             blend_speed: 10.0,
             entity_count: 100,
-            brain_type: BrainType::Legion,
+            brain_type: BrainType::SqlIte,
             challenge_type: ChallengeType::SpacialArray,
-            all_at_once: false,
+            all_at_once: true,
         }
     }
     pub fn draw(&mut self, ui: &mut Ui) {
@@ -46,6 +46,7 @@ impl GuiSettings {
             .show_ui(ui, |ui| {
                 ui.selectable_value(&mut self.brain_type, BrainType::Legion, "Legion");
                 ui.selectable_value(&mut self.brain_type, BrainType::SqlDuck, "Sql duck");
+                ui.selectable_value(&mut self.brain_type, BrainType::SqlIte, "Sqlite");
             })
             .response;
         let resp_challenge = egui::ComboBox::from_label("Challenge type")
@@ -70,6 +71,7 @@ impl GuiSettings {
 pub enum BrainType {
     Legion,
     SqlDuck,
+    SqlIte,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum ChallengeType {

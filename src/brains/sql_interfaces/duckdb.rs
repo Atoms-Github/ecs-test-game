@@ -19,24 +19,38 @@ impl<'a> SqlInterface for InterfaceDuckDB<'a> {
         }
     }
 
-    fn execute(&mut self, statement: SqlStatement) {
-        self.conn
-            .prepare_cached(statement.statement.as_str())
-            .unwrap()
-            .execute(params_from_iter(statement.params))
-            .unwrap();
+    fn execute_batch(&mut self, statements: Vec<SqlStatement>) {
+        let transaction = self.conn.transaction().unwrap();
+        for statement in statements {
+            let mut stmt = transaction.prepare_cached(&statement.statement).unwrap();
+            stmt.execute(params_from_iter(statement.params)).unwrap();
+        }
+        transaction.commit().unwrap();
     }
 
     fn get_entities(&mut self, query_xyc: SqlStatement) -> Vec<ExportEntity> {
-        let mut stmt = self.conn.prepare(query_xyc.statement.as_str()).unwrap();
-        let person_iter = stmt
-            .query_map([], |row| {
-                Ok(ExportEntity {
-                    position: Point::new(row.get(0).unwrap(), row.get(1).unwrap()),
-                    blue: row.get(2).unwrap(),
-                })
-            })
+        let mut stmt = self
+            .conn
+            .prepare_cached(query_xyc.statement.as_str())
             .unwrap();
-        return person_iter.collect::<Result<Vec<_>, _>>().unwrap();
+        let mut rows = stmt.query(params_from_iter(query_xyc.params)).unwrap();
+        let mut ents = Vec::new();
+        while let Some(row) = rows.next().unwrap() {
+            let ent = ExportEntity {
+                position: Point::new(row.get(0).unwrap(), row.get(1).unwrap()),
+                blue: row.get(2).unwrap(),
+            };
+            ents.push(ent);
+        }
+        ents
+    }
+
+    fn execute_single(&mut self, statement: SqlStatement) {
+        self.conn
+            .execute(
+                statement.statement.as_str(),
+                params_from_iter(statement.params),
+            )
+            .unwrap();
     }
 }

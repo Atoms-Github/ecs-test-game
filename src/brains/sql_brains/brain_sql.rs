@@ -48,12 +48,12 @@ impl<C: CommandPlanSql, D: SqlInterface> Brain for BrainSql<C, D> {
         let command = self
             .command_plan
             .add_entity_unit(position, velocity, team, universe_id);
-        self.database.execute(command);
+        self.database.execute_batch(vec![command]);
     }
 
     fn add_entity(&mut self, position: Point, velocity: Option<Point>, blue: f32) {
         let command = self.command_plan.add_entity(position, velocity, blue);
-        self.database.execute(command);
+        self.database.execute_batch(vec![command]);
     }
 
     fn get_entities(&mut self, universe_id: usize) -> Vec<ExportEntity> {
@@ -61,34 +61,24 @@ impl<C: CommandPlanSql, D: SqlInterface> Brain for BrainSql<C, D> {
         let entities = self.database.get_entities(command);
         return entities;
     }
-
     fn init(&mut self, systems: &Vec<SystemType>) {
         let commands = self.command_plan.init_systems(systems);
-        for command in commands {
-            self.database.execute(command);
-        }
+        self.database.execute_batch(commands);
     }
 
     fn tick_systems(&mut self, delta: f32, settings: &GuiSettings, systems: &Vec<SystemType>) {
-        let mut big_command = String::new();
-        let mut params = Vec::new();
-        for system in systems {
-            let commands = self.command_plan.systems(system, delta, settings);
-            for command in commands {
-                big_command.push_str(&command.statement);
-                big_command.push(';');
-                params.extend(command.params);
-            }
+        let mut commands = vec![];
+        for sys in systems {
+            let mut sys_commands = self.command_plan.systems(sys, delta, settings);
+            commands.extend(sys_commands);
         }
-        self.database.execute(SqlStatement {
-            statement: big_command,
-            params,
-        });
+        self.database.execute_batch(commands);
     }
     fn tick_system(&mut self, system: &SystemType, delta: f32, settings: &GuiSettings) {
         let commands = self.command_plan.systems(system, delta, settings);
         for command in commands {
-            self.database.execute(command);
+            // Deliberately not doing batch execution here, to compare performance
+            self.database.execute_single(command);
         }
     }
     fn get_name(&self) -> String {

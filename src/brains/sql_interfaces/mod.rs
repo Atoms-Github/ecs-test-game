@@ -1,4 +1,5 @@
 pub mod duckdb;
+pub mod sqlite;
 
 use crate::brains::com::ExportEntity;
 use crate::brains::{Brain, SystemType};
@@ -11,9 +12,11 @@ use std::backtrace::Backtrace;
 pub trait SqlInterface {
     type PreppedStatement;
     fn new() -> Self;
-    fn execute(&mut self, statement: SqlStatement);
+    fn execute_batch(&mut self, statements: Vec<SqlStatement>);
     fn get_entities(&mut self, query_xyc: SqlStatement) -> Vec<ExportEntity>;
+    fn execute_single(&mut self, statement: SqlStatement);
 }
+#[derive(Debug)]
 pub struct SqlStatement {
     pub statement: String,
     pub params: Vec<f32>,

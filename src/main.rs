@@ -10,6 +10,7 @@ use ecs_test_game::brains::brain_legion::BrainLegion;
 use ecs_test_game::brains::sql_brains::brain_sql::BrainSql;
 use ecs_test_game::brains::sql_brains::sql_flat_table::BrainSqlFlatTable;
 use ecs_test_game::brains::sql_interfaces::duckdb::InterfaceDuckDB;
+use ecs_test_game::brains::sql_interfaces::sqlite::InterfaceSqlite;
 use ecs_test_game::brains::sql_interfaces::SqlInterface;
 use ecs_test_game::brains::Brain;
 use ecs_test_game::challenges::get_nearest::ChallengeGetNearest;
@@ -52,6 +53,10 @@ impl MainState {
                 BrainSqlFlatTable::new(),
                 InterfaceDuckDB::new(),
             )),
+            BrainType::SqlIte => Box::new(BrainSql::new(
+                BrainSqlFlatTable::new(),
+                InterfaceSqlite::new(),
+            )),
         };
         let new_challenge: Box<dyn Challenge> = match settings.challenge_type {
             ChallengeType::Rts => Box::new(ChallengeRts {}),
@@ -91,6 +96,9 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             self.gui_settings.draw(ui);
             if ui.button("Save Graph").clicked() {
                 self.test_controller.save_graph("graph.png");
+            }
+            if ui.button("Reload").clicked() {
+                self.reload();
             }
         });
         self.update_time = start.elapsed().as_micros();
@@ -159,7 +167,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
 }
 
 pub fn main() -> GameResult {
-    let mut cb = ggez::ContextBuilder::new("super_simple", "ggez");
+    let mut cb = ggez::ContextBuilder::new("ECS Benchmark", "ggez");
 
     cb = cb.window_setup(ggez::conf::WindowSetup::default().title("Ecs Performance Benchmark"));
     cb = cb.window_mode(ggez::conf::WindowMode::default().dimensions(MAP_SIZE, MAP_SIZE));

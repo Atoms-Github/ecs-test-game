@@ -16,4 +16,4 @@ pub mod ui;
 pub mod utils;
 
 pub type Point = glam::Vec2;
-pub const MAP_SIZE: f32 = 800.0;
+pub const MAP_SIZE: f32 = 1200.0;

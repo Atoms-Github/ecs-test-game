@@ -18,6 +18,8 @@ plotters = "0.3.4"
 
 duckdb = "0.6.0"
 backtrace = "0.3.66"
+rusqlite = "0.28.0"
+#sparsey = "0.10.0"
 #jemallocator = "0.5"
 #jemalloc-sys = {version = "0.5", features = ["stats"]}
 #libc = "0.2"

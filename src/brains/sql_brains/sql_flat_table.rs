@@ -25,8 +25,8 @@ impl CommandPlanSql for BrainSqlFlatTable {
         let mut statements: Vec<SqlStatement> = match sys {
             SystemType::Velocity => {
                 vec![
-                    SqlStatement::new("UPDATE entities SET pos_x = pos_x + velocity_x * ? WHERE velocity_x IS NOT NULL;", vec![delta]),
-                    SqlStatement::new("UPDATE entities SET pos_y = pos_y + velocity_y * ? WHERE velocity_y IS NOT NULL;", vec![delta]),
+                    SqlStatement::new("UPDATE entities SET position_x = position_x + velocity_x * ? WHERE velocity_x IS NOT NULL;", vec![delta]),
+                    SqlStatement::new("UPDATE entities SET position_y = position_y + velocity_y * ? WHERE velocity_y IS NOT NULL;", vec![delta]),
                 ]
             }
             SystemType::UpdateTimedLife => {
@@ -50,19 +50,19 @@ impl CommandPlanSql for BrainSqlFlatTable {
             SystemType::MapEdge => {
                 vec![
                     SqlStatement::new(
-                        "UPDATE entities SET pos_x = pos_x - ? WHERE pos_x > ?;",
+                        "UPDATE entities SET position_x = position_x - ? WHERE position_x > ?;",
                         vec![MAP_SIZE, MAP_SIZE],
                     ),
                     SqlStatement::new(
-                        "UPDATE entities SET pos_x = pos_x + ? WHERE pos_x < 0;",
+                        "UPDATE entities SET position_x = position_x + ? WHERE position_x < 0;",
                         vec![MAP_SIZE],
                     ),
                     SqlStatement::new(
-                        "UPDATE entities SET pos_y = pos_y - ? WHERE pos_y > ?;",
+                        "UPDATE entities SET position_y = position_y - ? WHERE position_y > ?;",
                         vec![MAP_SIZE, MAP_SIZE],
                     ),
                     SqlStatement::new(
-                        "UPDATE entities SET pos_y = pos_y + ? WHERE pos_y < 0;",
+                        "UPDATE entities SET position_y = position_y + ? WHERE position_y < 0;",
                         vec![MAP_SIZE],
                     ),
                 ]
@@ -88,7 +88,7 @@ impl CommandPlanSql for BrainSqlFlatTable {
     ) -> SqlStatement {
         let blue = color_from_team(team);
         return SqlStatement::new(
-            "INSERT INTO entities (position_x, position_y, velocity_x, velocity_y, team, universe_id, blue, shooter_cooldown) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO entities (position_x, position_y, velocity_x, velocity_y, team, universe_id, blue, shooter_cooldown) VALUES (?, ?, ?, ?, ?, ?, ?, ?);",
             vec![
                 position.x,
                 position.y,
@@ -105,7 +105,7 @@ impl CommandPlanSql for BrainSqlFlatTable {
     fn add_entity(&mut self, position: Point, velocity: Option<Point>, blue: f32) -> SqlStatement {
         return if let Some(velocity) = velocity {
             SqlStatement::new(
-                "INSERT INTO entities (position_x, position_y, velocity_x, velocity_y, blue) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO entities (position_x, position_y, velocity_x, velocity_y, blue, universe_id) VALUES (?, ?, ?, ?, ?, 0);",
                 vec![
                     position.x,
                     position.y,
@@ -116,32 +116,33 @@ impl CommandPlanSql for BrainSqlFlatTable {
             )
         } else {
             SqlStatement::new(
-                "INSERT INTO entities (position_x, position_y, blue) VALUES (?, ?, ?)",
+                "INSERT INTO entities (position_x, position_y, blue, universe_id) VALUES (?, ?, ?, 0);",
                 vec![position.x, position.y, blue],
             )
         };
     }
-
     fn get_ents_xyc(&mut self, universe_id: usize) -> SqlStatement {
-        let command = "SELECT pos_x, pos_y, color_r FROM entities";
-        return SqlStatement::new(command, vec![]);
+        return SqlStatement::new(
+            "SELECT position_x, position_y, blue FROM entities WHERE universe_id = ?;",
+            vec![universe_id as f32],
+        );
     }
 
     fn init_systems(&mut self, systems: &Vec<SystemType>) -> Vec<SqlStatement> {
         return vec![SqlStatement::new(
             "CREATE TABLE entities (
-            pos_x REAL,
-            pos_y REAL,
+            position_x REAL,
+            position_y REAL,
             velocity_x REAL,
             velocity_y REAL,
             acceleration_x REAL,
             acceleration_y REAL,
-            color_r REAL,
+            blue REAL,
             team INTEGER,
             universe_id INTEGER,
             shooter_cooldown REAL,
             timed_life REAL
-        )",
+        );",
             vec![],
         )];
     }
