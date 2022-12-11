@@ -45,28 +45,30 @@ impl CommandPlanSql for BrainSqlFlatTable {
                     "CREATE TEMPORARY TABLE shooters AS SELECT id, position_x, position_y, shooter_cooldown, team, universe_id FROM entities WHERE shooter_cooldown IS NOT NULL AND shooter_cooldown < 0.0;",
                     vec![],
                 );
-                // // For each shooter, find the closest target
-                // // Create a temp table with the closest target for each shooter
-                // let closest_targets_temp_table = SqlStatement::new(
-                //     "CREATE TEMPORARY TABLE closest_targets AS
-                //     SELECT shooters.id AS shooter_id, entities.id AS target_id, entities.position_x AS target_x, entities.position_y AS target_y
-                //     FROM shooters
-                //     JOIN entities ON entities.universe_id = shooters.universe_id
-                //     WHERE entities.team != shooters.team
-                //     ORDER BY (shooters.position_x - entities.position_x) * (shooters.position_x - entities.position_x) + (shooters.position_y - entities.position_y) * (shooters.position_y - entities.position_y)
-                //     LIMIT 1;",
-                //     vec![],
-                // );
-                // The above code only returns the single closest target, but we want to find every closest target
+                // pair each shooter with every other entity in the universe
+                // Same universe, different team, and not self.
+                // Create a table with columns: shooter_id, target_id, distance
+
+
+
                 let closest_targets_temp_table = SqlStatement::new(
-                    "CREATE TEMPORARY TABLE closest_targets AS
-                    SELECT shooters.id AS shooter_id, entities.id AS target_id, entities.position_x AS target_x, entities.position_y AS target_y
+                    "CREATE TEMPORARY TABLE closest_targets_temp AS
+                    SELECT shooters.id AS shooter_id, entities.id AS target_id, entities.position_x AS target_x, entities.position_y AS target_y,
+                    (shooters.position_x - entities.position_x) * (shooters.position_x - entities.position_x) + (shooters.position_y - entities.position_y) * (shooters.position_y - entities.position_y) AS distance
                     FROM shooters
                     JOIN entities ON entities.universe_id = shooters.universe_id
                     WHERE entities.team != shooters.team
-                    ORDER BY (shooters.position_x - entities.position_x) * (shooters.position_x - entities.position_x) + (shooters.position_y - entities.position_y) * (shooters.position_y - entities.position_y);",
+                    AND entities.id != shooters.id;",
                     vec![],
                 );
+                let closest = SqlStatement::new(
+                    "CREATE TEMPORARY TABLE closest_targets AS SELECT * \
+                     FROM closest_targets_temp WHERE distance = (SELECT MIN(distance) FROM closest_targets_temp i WHERE i.shooter_id = closest_targets_temp.shooter_id);",
+
+                    vec![]
+                );
+
+
 
 
                 // Insert a projectile for each item in the temp table
@@ -86,11 +88,14 @@ impl CommandPlanSql for BrainSqlFlatTable {
                     cooldown_update,
                     shooters_temp_table,
                     closest_targets_temp_table,
+                    closest,
                     insert_projectiles,
                     reset_cooldown_for_shooters,
+
                     // And drop the temp tables
                     SqlStatement::new("DROP TABLE shooters;", vec![]),
                     SqlStatement::new("DROP TABLE closest_targets;", vec![]),
+                    SqlStatement::new("DROP TABLE closest_targets_temp;", vec![]),
                 ]
             }
             SystemType::Acceleration => {
