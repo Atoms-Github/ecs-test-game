@@ -1,8 +1,17 @@
 use crate::brains::Brain;
 use crate::challenges::Challenge;
-use crate::ui::ui_settings::GuiSettings;
+use crate::ui::ui_settings::{BrainType, ChallengeType, GuiSettings};
 use plotters::prelude::*;
 use std::collections::HashMap;
+use crate::brains::brain_legion::BrainLegion;
+use crate::brains::sql_brains::brain_sql::BrainSql;
+use crate::brains::sql_brains::sql_flat_table::BrainSqlFlatTable;
+use crate::brains::sql_interfaces::duckdb::InterfaceDuckDB;
+use crate::brains::sql_interfaces::SqlInterface;
+use crate::brains::sql_interfaces::sqlite::InterfaceSqlite;
+use crate::challenges::get_nearest::ChallengeGetNearest;
+use crate::challenges::rts::ChallengeRts;
+use crate::challenges::spacial_array::ChallengeSpatialArray;
 
 pub struct TestController {
     pub brain: Box<dyn Brain>,
@@ -13,6 +22,32 @@ pub struct TestController {
 }
 
 impl TestController {
+    pub fn gen_test_controller(settings: &GuiSettings) -> TestController {
+        let new_brain: Box<dyn Brain> = match settings.brain_type {
+            BrainType::Legion => Box::new(BrainLegion::new()),
+            BrainType::SqlDuck => Box::new(BrainSql::new(
+                BrainSqlFlatTable::new(),
+                InterfaceDuckDB::new(),
+            )),
+            BrainType::SqlIte => Box::new(BrainSql::new(
+                BrainSqlFlatTable::new(),
+                InterfaceSqlite::new(),
+            )),
+        };
+        let new_challenge: Box<dyn Challenge> = match settings.challenge_type {
+            ChallengeType::Rts => Box::new(ChallengeRts {}),
+            ChallengeType::GetNearest => Box::new(ChallengeGetNearest {}),
+            ChallengeType::SpacialArray => Box::new(ChallengeSpatialArray {
+                has_velocity_fraction: 0.7,
+                dupe_entity_fraction: 0.2,
+                unique_velocity_fraction: 1.0,
+            }),
+        };
+
+        let mut controller = TestController::new(new_brain, new_challenge);
+        controller.init(settings);
+        controller
+    }
     pub fn new(brain: Box<dyn Brain>, challenge: Box<dyn Challenge>) -> TestController {
         TestController {
             brain,

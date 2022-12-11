@@ -11,9 +11,7 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use ecs_test_game::brains::brain_legion::BrainLegion;
 use ecs_test_game::challenges::rts::ChallengeRts;
 use ecs_test_game::test_controller::TestController;
-use ecs_test_game::ui::ui_settings::BrainType::Legion;
-use ecs_test_game::ui::ui_settings::ChallengeType::Rts;
-use ecs_test_game::ui::ui_settings::GuiSettings;
+use ecs_test_game::ui::ui_settings::{BrainType, ChallengeType, GuiSettings};
 use std::time::Duration;
 
 criterion_group!(benches, rts_benchmark);
@@ -21,16 +19,35 @@ criterion_main!(benches);
 
 fn rts_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("rts");
-    const ENTITY_COUNT: usize = 100;
+    let mut settings = GuiSettings{
+        meet_distance: 30.0,
+        view_universe: 0,
+        universe_count: 0,
+        entity_count: 0,
+        blend_speed: 0.0,
+        brain_type: BrainType::Legion,
+        challenge_type: ChallengeType::Rts,
+        all_at_once: true
+    };
+    const ITERATIONS: usize = 100;
     group.sample_size(10);
     group.measurement_time(Duration::from_secs(3));
     group.warm_up_time(Duration::from_millis(100));
     group.bench_function("Legion", |b| {
-        let brain = Box::new(BrainLegion::new());
-        let challenge = Box::new(ChallengeRts {});
-        let mut test_controller = TestController::new(brain, challenge);
+        let mut controller = TestController::gen_test_controller(&settings);
         b.iter(move || {
-            test_controller.tick(0.16, &GuiSettings::new());
+            for i in 0..ITERATIONS {
+                controller.tick(0.016, &mut settings);
+            }
+        });
+    });
+    settings.brain_type = BrainType::SqlIte;
+    group.bench_function("Sqlite", |b| {
+        let mut controller = TestController::gen_test_controller(&settings);
+        b.iter(move || {
+            for i in 0..ITERATIONS {
+                controller.tick(0.016, &mut settings);
+            }
         });
     });
 }

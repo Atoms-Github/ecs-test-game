@@ -39,42 +39,16 @@ impl MainState {
         let settings = GuiSettings::new();
 
         MainState {
-            test_controller: Self::gen_test_controller(&settings),
+            test_controller: TestController::gen_test_controller(&settings),
             egui_backend: ggez_egui::EguiBackend::new(ctx),
             gui_settings: settings,
             draw_time: 0,
             update_time: 0,
         }
     }
-    fn gen_test_controller(settings: &GuiSettings) -> TestController {
-        let new_brain: Box<dyn Brain> = match settings.brain_type {
-            BrainType::Legion => Box::new(BrainLegion::new()),
-            BrainType::SqlDuck => Box::new(BrainSql::new(
-                BrainSqlFlatTable::new(),
-                InterfaceDuckDB::new(),
-            )),
-            BrainType::SqlIte => Box::new(BrainSql::new(
-                BrainSqlFlatTable::new(),
-                InterfaceSqlite::new(),
-            )),
-        };
-        let new_challenge: Box<dyn Challenge> = match settings.challenge_type {
-            ChallengeType::Rts => Box::new(ChallengeRts {}),
-            ChallengeType::GetNearest => Box::new(ChallengeGetNearest {}),
-            ChallengeType::SpacialArray => Box::new(ChallengeSpatialArray {
-                has_velocity_fraction: 0.7,
-                dupe_entity_fraction: 0.2,
-                unique_velocity_fraction: 1.0,
-            }),
-        };
-
-        let mut controller = TestController::new(new_brain, new_challenge);
-        controller.init(settings);
-        controller
-    }
 
     fn reload(&mut self) {
-        self.test_controller = Self::gen_test_controller(&self.gui_settings);
+        self.test_controller = TestController::gen_test_controller(&self.gui_settings);
     }
 }
 
