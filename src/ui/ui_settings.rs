@@ -19,7 +19,7 @@ impl GuiSettings {
             view_universe: 0,
             universe_count: 1,
             blend_speed: 10.0,
-            entity_count: 100,
+            entity_count: 5,
             brain_type: BrainType::SqlIte,
             challenge_type: ChallengeType::Rts,
             all_at_once: true,

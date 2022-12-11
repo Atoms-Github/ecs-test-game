@@ -170,8 +170,8 @@ pub fn main() -> GameResult {
     let mut cb = ggez::ContextBuilder::new("ECS Benchmark", "ggez");
 
     cb = cb.window_setup(ggez::conf::WindowSetup::default().title("Ecs Performance Benchmark"));
-    cb = cb.window_mode(ggez::conf::WindowMode::default().dimensions(MAP_SIZE, MAP_SIZE));
-    cb = cb.window_mode(ggez::conf::WindowMode::default().resizable(true));
+    cb = cb.window_mode(ggez::conf::WindowMode::default().dimensions(MAP_SIZE, MAP_SIZE).resizable(true));
+
 
     let (mut ctx, event_loop) = cb.build()?;
     let mut state = MainState::new(&mut ctx);
