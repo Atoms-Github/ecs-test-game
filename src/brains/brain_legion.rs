@@ -267,11 +267,11 @@ impl Brain for BrainLegion {
                 buffer.flush(&mut self.world, &mut Resources::default());
             }
             SystemType::DeleteExpired => {
-                let mut buffer = CommandBuffer::new(&mut self.world);
-                let mut query = <(&TimedLifeComp, &Entity)>::query();
-                for (time, entity) in query.iter(&self.world) {
-                    delete_expired(time, entity, &mut buffer);
-                }
+                let mut buffer = CommandBuffer::new(&self.world);
+                let mut query = <(&TimedLifeComp)>::query();
+                // for (time, entity) in query.iter_entities(&self.world) {
+                //     delete_expired(time, entity, &mut buffer);
+                // }
                 buffer.flush(&mut self.world, &mut Resources::default());
             }
             SystemType::PaintNearest => {

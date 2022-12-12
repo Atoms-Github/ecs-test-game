@@ -1,6 +1,6 @@
 use crate::brains::com::ExportEntity;
 use crate::brains::sql_brains::brain_sql::CommandPlanSql;
-use crate::brains::sql_interfaces::{SqlInterface, SqlStatement};
+use crate::brains::sql_interfaces::{InterfaceType, SqlInterface, SqlStatement};
 use crate::brains::{Brain, SystemType};
 use crate::ui::ui_settings::GuiSettings;
 use crate::utils::{color_from_team, FromTeam};
@@ -180,10 +180,12 @@ impl CommandPlanSql for BrainSqlFlatTable {
 
     fn init_systems<I: SqlInterface>(&mut self, systems: &Vec<SystemType>) -> Vec<SqlStatement> {
         let mut systems = vec![];
-        systems.append(&mut vec![SqlStatement::new(
-            format!(
-                "CREATE TABLE entities (
-            id INTEGER KEY NOT NULL,
+        match I::get_type(){
+            InterfaceType::Sqlite => {
+                systems.append(&mut vec![SqlStatement::new(
+                    format!(
+                        "CREATE TABLE entities (
+            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
             position_x REAL,
             position_y REAL,
             velocity_x REAL,
@@ -196,13 +198,40 @@ impl CommandPlanSql for BrainSqlFlatTable {
             shooter_cooldown REAL,
             timed_life REAL
         );",
-            )
-            .as_str(),
-            vec![],
-        )]);
-        let mut my_systems = I::make_field_auto_increment("id", "entities");
-        systems.append(&mut my_systems);
+                    )
+                        .as_str(),
+                    vec![],
+                )]);
 
+            }
+            InterfaceType::DuckDB => {
+                systems.append(&mut vec![SqlStatement::new(
+                    format!(
+                        "CREATE TABLE entities (
+            id INTEGER PRIMARY KEY NOT NULL,
+            position_x REAL,
+            position_y REAL,
+            velocity_x REAL,
+            velocity_y REAL,
+            acceleration_x REAL,
+            acceleration_y REAL,
+            blue REAL,
+            team INTEGER,
+            universe_id INTEGER,
+            shooter_cooldown REAL,
+            timed_life REAL
+        );",
+                    )
+                        .as_str(),
+                    vec![],
+                ),
+                SqlStatement::new("CREATE SEQUENCE entities_id_seq;", vec![]),
+                SqlStatement::new("ALTER TABLE entities ALTER COLUMN id SET DEFAULT nextval('entities_id_seq');", vec![]),
+                ]);
+
+
+            }
+        }
         systems.append(&mut vec![
             SqlStatement::new("CREATE INDEX idx_team ON entities (team);", vec![]),
             SqlStatement::new("CREATE INDEX idx_id ON entities (id);", vec![]),
