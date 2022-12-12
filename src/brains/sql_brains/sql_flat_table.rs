@@ -75,6 +75,11 @@ impl CommandPlanSql for BrainSqlFlatTable {
                     JOIN shooters ON shooters.id = closest_targets.shooter_id;",
                     vec![PROJECTILE_LIFETIME],
                 );
+                // Normalize velocity of projectiles
+                let normalize_projectiles = SqlStatement::new(
+                    "UPDATE entities SET velocity_x = velocity_x / SQRT(velocity_x * velocity_x + velocity_y * velocity_y), velocity_y = velocity_y / SQRT(velocity_x * velocity_x + velocity_y * velocity_y) WHERE blue = 0.3;",
+                    vec![],
+                );
 
                 let reset_cooldown_for_shooters = SqlStatement::new(
                     "UPDATE entities SET shooter_cooldown = 0.5 WHERE id IN (SELECT id FROM shooters);",
