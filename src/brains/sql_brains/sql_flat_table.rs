@@ -154,10 +154,15 @@ impl CommandPlanSql for BrainSqlFlatTable {
                 // Make a new temp table with the shooter id and the new blue value by joining the closest_targets table with the entities table
                 let update_blue = SqlStatement::new(
                     "CREATE TEMPORARY TABLE shooter_blue_update AS
-                    SELECT shooters.id AS shooter_id, (shooters.blue + closest_targets.target_blue / ?) % 1.0 AS new_blue
+                    SELECT shooters.id AS shooter_id, (shooters.blue + closest_targets.target_blue / ?) AS new_blue
                     FROM closest_targets
                     JOIN shooters ON shooters.id = closest_targets.shooter_id;",
                     vec![blend_speed],
+                );
+                // Modulus operation, but some SQL dialects don't support it (and we only max out at 2 anyway)
+                let mod_blue = SqlStatement::new(
+                    "UPDATE shooter_blue_update SET new_blue = new_blue - 1.0 where new_blue > 1.0;",
+                    vec![],
                 );
                 // Now update the blue value of the shooter
                 let update_blue2 = SqlStatement::new(
@@ -173,6 +178,7 @@ impl CommandPlanSql for BrainSqlFlatTable {
                     closest_targets_temp_table,
                     closest,
                     update_blue,
+                    mod_blue,
                     update_blue2,
                     SqlStatement::new("DROP TABLE shooters;", vec![]),
                     SqlStatement::new("DROP TABLE closest_targets;", vec![]),
