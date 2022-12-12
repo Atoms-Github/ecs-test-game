@@ -56,13 +56,15 @@ impl CommandPlanSql for BrainSqlFlatTable {
                     JOIN entities ON entities.universe_id = shooters.universe_id
                     WHERE entities.team != shooters.team
                     AND entities.id != shooters.id;",
-                    vec![],
+                    vec![]
                 );
+                let shoot_distance = settings.shoot_distance * settings.shoot_distance;
                 let closest = SqlStatement::new(
                     "CREATE TEMPORARY TABLE closest_targets AS SELECT * \
-                     FROM closest_targets_temp WHERE distance = (SELECT MIN(distance) FROM closest_targets_temp i WHERE i.shooter_id = closest_targets_temp.shooter_id);",
+                     FROM closest_targets_temp WHERE distance = (SELECT MIN(distance) FROM \
+                      closest_targets_temp i WHERE i.shooter_id = closest_targets_temp.shooter_id) AND distance <= ?  ;",
 
-                    vec![]
+                    vec![shoot_distance],
                 );
 
                 // Insert a projectile for each item in the temp table
@@ -124,7 +126,60 @@ impl CommandPlanSql for BrainSqlFlatTable {
                 )]
             }
             SystemType::PaintNearest => {
-                vec![]
+                let cooldown_update = SqlStatement::new(
+                    "UPDATE entities SET shooter_cooldown = shooter_cooldown - ? WHERE shooter_cooldown IS NOT NULL;",
+                    vec![delta],
+                );
+                let shooters_temp_table = SqlStatement::new(
+                    "CREATE TEMPORARY TABLE shooters AS SELECT id, position_x, position_y, shooter_cooldown, team, universe_id FROM entities WHERE shooter_cooldown IS NOT NULL AND shooter_cooldown < 0.0;",
+                    vec![],
+                );
+                // pair each shooter with every other entity in the universe
+                // Same universe, different team, and not self.
+                // Create a table with columns: shooter_id, target_id, distance
+
+                let closest_targets_temp_table = SqlStatement::new(
+                    "CREATE TEMPORARY TABLE closest_targets_temp AS
+                    SELECT shooters.id AS shooter_id, entities.id AS target_id, entities.position_x AS target_x, entities.position_y AS target_y,
+                    (shooters.position_x - entities.position_x) * (shooters.position_x - entities.position_x) + (shooters.position_y - entities.position_y) * (shooters.position_y - entities.position_y) AS distance
+                    FROM shooters
+                    JOIN entities ON entities.universe_id = shooters.universe_id
+                    WHERE entities.team != shooters.team
+                    AND entities.id != shooters.id;",
+                    vec![],
+                );
+                let closest = SqlStatement::new(
+                    "CREATE TEMPORARY TABLE closest_targets AS SELECT * \
+                     FROM closest_targets_temp WHERE distance = (SELECT MIN(distance) FROM closest_targets_temp i WHERE i.shooter_id = closest_targets_temp.shooter_id);",
+
+                    vec![]
+                );
+
+                // Insert a projectile for each item in the temp table
+                let insert_projectiles = SqlStatement::new(
+                    "INSERT INTO entities (position_x, position_y, velocity_x, velocity_y, universe_id, blue, timed_life)
+                    SELECT shooters.position_x, shooters.position_y, closest_targets.target_x - shooters.position_x, closest_targets.target_y - shooters.position_y, shooters.universe_id, 0.3, 2.0
+                    FROM closest_targets
+                    JOIN shooters ON shooters.id = closest_targets.shooter_id;",
+                    vec![],
+                );
+
+                let reset_cooldown_for_shooters = SqlStatement::new(
+                    "UPDATE entities SET shooter_cooldown = 0.5 WHERE id IN (SELECT id FROM shooters);",
+                    vec![],
+                );
+                vec![
+                    cooldown_update,
+                    shooters_temp_table,
+                    closest_targets_temp_table,
+                    closest,
+                    insert_projectiles,
+                    reset_cooldown_for_shooters,
+                    // And drop the temp tables
+                    SqlStatement::new("DROP TABLE shooters;", vec![]),
+                    SqlStatement::new("DROP TABLE closest_targets;", vec![]),
+                    SqlStatement::new("DROP TABLE closest_targets_temp;", vec![]),
+                ]
             }
         };
         return statements;
@@ -202,7 +257,6 @@ impl CommandPlanSql for BrainSqlFlatTable {
                         .as_str(),
                     vec![],
                 )]);
-
             }
             InterfaceType::DuckDB => {
                 systems.append(&mut vec![SqlStatement::new(

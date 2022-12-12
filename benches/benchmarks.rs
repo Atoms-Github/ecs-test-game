@@ -20,7 +20,7 @@ criterion_main!(benches);
 fn rts_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("rts");
     let mut settings = GuiSettings {
-        meet_distance: 30.0,
+        shoot_distance: 30.0,
         view_universe: 0,
         universe_count: 0,
         entity_count: 0,

@@ -89,7 +89,7 @@ fn shoot(
                 closest_pos = other_pos.pos;
             }
         }
-        if closest_dist < settings.meet_distance {
+        if closest_dist < settings.shoot_distance {
             make_projectile(buffer, pos.pos, closest_pos, universe.universe_id);
             shooter.cooldown = 0.5;
         }

@@ -3,7 +3,7 @@ use ggez::GameResult;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct GuiSettings {
-    pub meet_distance: f32,
+    pub shoot_distance: f32,
     pub view_universe: usize,
     pub universe_count: usize,
     pub entity_count: usize,
@@ -15,7 +15,7 @@ pub struct GuiSettings {
 impl GuiSettings {
     pub fn new() -> GuiSettings {
         GuiSettings {
-            meet_distance: 10.0,
+            shoot_distance: 10.0,
             view_universe: 0,
             universe_count: 1,
             blend_speed: 10.0,
@@ -27,7 +27,7 @@ impl GuiSettings {
     }
     pub fn draw(&mut self, ui: &mut Ui) {
         ui.label("Meet distance");
-        ui.add(egui::DragValue::new(&mut self.meet_distance).speed(0.1));
+        ui.add(egui::DragValue::new(&mut self.shoot_distance).speed(0.1));
         ui.label("Universe");
         ui.add(egui::DragValue::new(&mut self.view_universe).speed(0.1));
         ui.label("Requested universe count");
