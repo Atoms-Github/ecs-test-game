@@ -1,5 +1,5 @@
 use crate::brains::com::ExportEntity;
-use crate::brains::sql_interfaces::{SqlInterface, SqlStatement};
+use crate::brains::sql_interfaces::{InterfaceType, SqlInterface, SqlStatement};
 use crate::ui::ui_settings::GuiSettings;
 use ggez::filesystem::open;
 use ggez::graphics::Color;
@@ -14,8 +14,9 @@ pub struct InterfaceSqlite {
 }
 
 impl SqlInterface for InterfaceSqlite {
-    type PreppedStatement = ();
-
+    fn get_type() -> InterfaceType {
+        InterfaceType::Sqlite
+    }
     fn new() -> Self {
         let connection = Connection::open_in_memory().unwrap();
 

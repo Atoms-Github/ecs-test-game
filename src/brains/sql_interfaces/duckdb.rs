@@ -1,5 +1,5 @@
 use crate::brains::com::ExportEntity;
-use crate::brains::sql_interfaces::{SqlInterface, SqlStatement};
+use crate::brains::sql_interfaces::{InterfaceType, SqlInterface, SqlStatement};
 use crate::Point;
 use duckdb::{params, params_from_iter, Connection, ParamsFromIter, Statement};
 use ggez::graphics::Color;
@@ -8,7 +8,10 @@ pub struct InterfaceDuckDB {
     conn: Connection,
 }
 impl SqlInterface for InterfaceDuckDB {
-    type PreppedStatement = ();
+
+    fn get_type() -> InterfaceType {
+        InterfaceType::DuckDB
+    }
     fn new() -> Self {
         let mut conn = Connection::open_in_memory().unwrap();
         conn.set_prepared_statement_cache_capacity(1000);
