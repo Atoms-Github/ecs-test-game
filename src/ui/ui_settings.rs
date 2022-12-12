@@ -21,7 +21,7 @@ impl GuiSettings {
             blend_speed: 10.0,
             entity_count: 5,
             brain_type: BrainType::SqlIte,
-            challenge_type: ChallengeType::Rts,
+            challenge_type: ChallengeType::GetNearest,
             all_at_once: true,
         }
     }

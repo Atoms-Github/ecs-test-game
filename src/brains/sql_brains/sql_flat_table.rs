@@ -4,7 +4,7 @@ use crate::brains::sql_interfaces::{InterfaceType, SqlInterface, SqlStatement};
 use crate::brains::{Brain, SystemType};
 use crate::ui::ui_settings::GuiSettings;
 use crate::utils::{color_from_team, FromTeam};
-use crate::{Point, MAP_SIZE};
+use crate::{Point, MAP_SIZE, PROJECTILE_LIFETIME};
 use duckdb::ffi::system;
 use ggez::graphics::Color;
 use std::process::id;
@@ -70,10 +70,10 @@ impl CommandPlanSql for BrainSqlFlatTable {
                 // Insert a projectile for each item in the temp table
                 let insert_projectiles = SqlStatement::new(
                     "INSERT INTO entities (position_x, position_y, velocity_x, velocity_y, universe_id, blue, timed_life)
-                    SELECT shooters.position_x, shooters.position_y, closest_targets.target_x - shooters.position_x, closest_targets.target_y - shooters.position_y, shooters.universe_id, 0.3, 2.0
+                    SELECT shooters.position_x, shooters.position_y, closest_targets.target_x - shooters.position_x, closest_targets.target_y - shooters.position_y, shooters.universe_id, 0.3, ?
                     FROM closest_targets
                     JOIN shooters ON shooters.id = closest_targets.shooter_id;",
-                    vec![],
+                    vec![PROJECTILE_LIFETIME],
                 );
 
                 let reset_cooldown_for_shooters = SqlStatement::new(
@@ -126,25 +126,17 @@ impl CommandPlanSql for BrainSqlFlatTable {
                 )]
             }
             SystemType::PaintNearest => {
-                let cooldown_update = SqlStatement::new(
-                    "UPDATE entities SET shooter_cooldown = shooter_cooldown - ? WHERE shooter_cooldown IS NOT NULL;",
-                    vec![delta],
-                );
                 let shooters_temp_table = SqlStatement::new(
-                    "CREATE TEMPORARY TABLE shooters AS SELECT id, position_x, position_y, shooter_cooldown, team, universe_id FROM entities WHERE shooter_cooldown IS NOT NULL AND shooter_cooldown < 0.0;",
+                    "CREATE TEMPORARY TABLE shooters AS SELECT id, position_x, position_y, shooter_cooldown, blue, universe_id FROM entities;",
                     vec![],
                 );
-                // pair each shooter with every other entity in the universe
-                // Same universe, different team, and not self.
-                // Create a table with columns: shooter_id, target_id, distance
-
                 let closest_targets_temp_table = SqlStatement::new(
                     "CREATE TEMPORARY TABLE closest_targets_temp AS
-                    SELECT shooters.id AS shooter_id, entities.id AS target_id, entities.position_x AS target_x, entities.position_y AS target_y,
+                    SELECT shooters.id AS shooter_id, entities.id AS target_id,
+                      entities.position_x AS target_x, entities.position_y AS target_y, entities.blue AS target_blue,
                     (shooters.position_x - entities.position_x) * (shooters.position_x - entities.position_x) + (shooters.position_y - entities.position_y) * (shooters.position_y - entities.position_y) AS distance
                     FROM shooters
                     JOIN entities ON entities.universe_id = shooters.universe_id
-                    WHERE entities.team != shooters.team
                     AND entities.id != shooters.id;",
                     vec![],
                 );
@@ -155,30 +147,37 @@ impl CommandPlanSql for BrainSqlFlatTable {
                     vec![]
                 );
 
-                // Insert a projectile for each item in the temp table
-                let insert_projectiles = SqlStatement::new(
-                    "INSERT INTO entities (position_x, position_y, velocity_x, velocity_y, universe_id, blue, timed_life)
-                    SELECT shooters.position_x, shooters.position_y, closest_targets.target_x - shooters.position_x, closest_targets.target_y - shooters.position_y, shooters.universe_id, 0.3, 2.0
+                let blend_speed = settings.blend_speed + 1.0;
+                // self.blue = (self.blue + other.blue / (settings.blend_speed + 1.0)) % 1.0;
+                // Update the blue value of the shooter using this formula
+                // Shooter_new_blue = (Shooter_old_blue + Target_blue / (settings.blend_speed + 1.0)) % 1.0
+                // Make a new temp table with the shooter id and the new blue value by joining the closest_targets table with the entities table
+                let update_blue = SqlStatement::new(
+                    "CREATE TEMPORARY TABLE shooter_blue_update AS
+                    SELECT shooters.id AS shooter_id, (shooters.blue + closest_targets.target_blue / ?) % 1.0 AS new_blue
                     FROM closest_targets
                     JOIN shooters ON shooters.id = closest_targets.shooter_id;",
+                    vec![blend_speed],
+                );
+                // Now update the blue value of the shooter
+                let update_blue2 = SqlStatement::new(
+                    "UPDATE entities SET blue = (SELECT new_blue FROM shooter_blue_update WHERE shooter_id = entities.id) WHERE id IN (SELECT shooter_id FROM shooter_blue_update);",
                     vec![],
                 );
 
-                let reset_cooldown_for_shooters = SqlStatement::new(
-                    "UPDATE entities SET shooter_cooldown = 0.5 WHERE id IN (SELECT id FROM shooters);",
-                    vec![],
-                );
+
+
+
                 vec![
-                    cooldown_update,
                     shooters_temp_table,
                     closest_targets_temp_table,
                     closest,
-                    insert_projectiles,
-                    reset_cooldown_for_shooters,
-                    // And drop the temp tables
+                    update_blue,
+                    update_blue2,
                     SqlStatement::new("DROP TABLE shooters;", vec![]),
                     SqlStatement::new("DROP TABLE closest_targets;", vec![]),
                     SqlStatement::new("DROP TABLE closest_targets_temp;", vec![]),
+                    SqlStatement::new("DROP TABLE shooter_blue_update;", vec![]),
                 ]
             }
         };
