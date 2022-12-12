@@ -2,7 +2,7 @@ use crate::brains::com::*;
 use crate::brains::{Brain, SystemType};
 use crate::ui::ui_settings::GuiSettings;
 use crate::utils::{color_from_team, FromTeam};
-use crate::{Point, MAP_SIZE};
+use crate::{Point, MAP_SIZE, SHOOT_SPEED, PROJECTILE_LIFETIME};
 use ggez::graphics::Color;
 use glam::*;
 use legion::systems::CommandBuffer;
@@ -36,7 +36,7 @@ fn make_projectile(buffer: &mut CommandBuffer, pos: Vec2, target: Vec2, universe
         PositionComp { pos },
         VelocityComp { vel },
         ColorComp { blue: 0.8 },
-        TimedLifeComp { time_left: 1.0 },
+        TimedLifeComp { time_left: PROJECTILE_LIFETIME },
         UniverseComp { universe_id },
     ));
 }
@@ -91,7 +91,7 @@ fn shoot(
         }
         if closest_dist < settings.shoot_distance {
             make_projectile(buffer, pos.pos, closest_pos, universe.universe_id);
-            shooter.cooldown = 0.5;
+            shooter.cooldown = SHOOT_SPEED;
         }
     }
 }

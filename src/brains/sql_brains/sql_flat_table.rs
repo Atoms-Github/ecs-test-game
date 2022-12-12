@@ -4,7 +4,7 @@ use crate::brains::sql_interfaces::{InterfaceType, SqlInterface, SqlStatement};
 use crate::brains::{Brain, SystemType};
 use crate::ui::ui_settings::GuiSettings;
 use crate::utils::{color_from_team, FromTeam};
-use crate::{Point, MAP_SIZE, PROJECTILE_LIFETIME};
+use crate::{Point, MAP_SIZE, PROJECTILE_LIFETIME, SHOOT_SPEED};
 use duckdb::ffi::system;
 use ggez::graphics::Color;
 use std::process::id;
@@ -82,8 +82,8 @@ impl CommandPlanSql for BrainSqlFlatTable {
                 );
 
                 let reset_cooldown_for_shooters = SqlStatement::new(
-                    "UPDATE entities SET shooter_cooldown = 0.5 WHERE id IN (SELECT id FROM shooters);",
-                    vec![],
+                    "UPDATE entities SET shooter_cooldown = ? WHERE id IN (SELECT id FROM shooters);",
+                    vec![SHOOT_SPEED],
                 );
                 vec![
                     cooldown_update,
