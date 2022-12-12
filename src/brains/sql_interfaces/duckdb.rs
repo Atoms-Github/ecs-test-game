@@ -4,19 +4,15 @@ use crate::Point;
 use duckdb::{params, params_from_iter, Connection, ParamsFromIter, Statement};
 use ggez::graphics::Color;
 
-pub struct InterfaceDuckDB<'a> {
+pub struct InterfaceDuckDB {
     conn: Connection,
-    phantom: std::marker::PhantomData<&'a ()>,
 }
-impl<'a> SqlInterface for InterfaceDuckDB<'a> {
-    type PreppedStatement = Statement<'a>;
+impl SqlInterface for InterfaceDuckDB {
+    type PreppedStatement = ();
     fn new() -> Self {
         let mut conn = Connection::open_in_memory().unwrap();
-        conn.set_prepared_statement_cache_capacity(100);
-        Self {
-            conn,
-            phantom: std::marker::PhantomData,
-        }
+        conn.set_prepared_statement_cache_capacity(1000);
+        Self { conn }
     }
 
     fn execute_batch(&mut self, statements: Vec<SqlStatement>) {
@@ -47,10 +43,9 @@ impl<'a> SqlInterface for InterfaceDuckDB<'a> {
 
     fn execute_single(&mut self, statement: SqlStatement) {
         self.conn
-            .execute(
-                statement.statement.as_str(),
-                params_from_iter(statement.params),
-            )
+            .prepare_cached(&statement.statement)
+            .unwrap()
+            .execute(params_from_iter(statement.params))
             .unwrap();
     }
 }

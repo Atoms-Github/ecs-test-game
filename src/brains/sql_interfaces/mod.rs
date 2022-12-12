@@ -15,6 +15,26 @@ pub trait SqlInterface {
     fn execute_batch(&mut self, statements: Vec<SqlStatement>);
     fn get_entities(&mut self, query_xyc: SqlStatement) -> Vec<ExportEntity>;
     fn execute_single(&mut self, statement: SqlStatement);
+    fn make_field_auto_increment(
+        field_name: &'static str,
+        table_name: &'static str,
+    ) -> Vec<SqlStatement> {
+        // Drop the column, then re-make it as an auto incrementing field. Primary key. Not null.
+        vec![
+            SqlStatement::new(
+                format!("ALTER TABLE {} DROP COLUMN {}", table_name, field_name).as_str(),
+                vec![],
+            ),
+            SqlStatement::new(
+                format!(
+                    "ALTER TABLE {} ADD COLUMN {} INTEGER KEY AUTOINCREMENT NOT NULL ",
+                    table_name, field_name
+                )
+                .as_str(),
+                vec![],
+            ),
+        ]
+    }
 }
 #[derive(Debug)]
 pub struct SqlStatement {

@@ -26,7 +26,9 @@ impl SqlInterface for InterfaceSqlite {
         let transaction = self.connection.transaction().unwrap();
         for statement in statements {
             transaction
-                .execute(&statement.statement, params_from_iter(statement.params))
+                .prepare_cached(&statement.statement)
+                .unwrap()
+                .execute(params_from_iter(statement.params))
                 .unwrap();
         }
         transaction.commit().unwrap();
@@ -54,7 +56,9 @@ impl SqlInterface for InterfaceSqlite {
     }
     fn execute_single(&mut self, statement: SqlStatement) {
         self.connection
-            .execute(&statement.statement, params_from_iter(statement.params))
+            .prepare_cached(&statement.statement)
+            .unwrap()
+            .execute(params_from_iter(statement.params))
             .unwrap();
     }
 }

@@ -15,7 +15,6 @@ impl BrainSqlFlatTable {
         Self {}
     }
 }
-
 impl CommandPlanSql for BrainSqlFlatTable {
     fn systems(
         &mut self,
@@ -49,8 +48,6 @@ impl CommandPlanSql for BrainSqlFlatTable {
                 // Same universe, different team, and not self.
                 // Create a table with columns: shooter_id, target_id, distance
 
-
-
                 let closest_targets_temp_table = SqlStatement::new(
                     "CREATE TEMPORARY TABLE closest_targets_temp AS
                     SELECT shooters.id AS shooter_id, entities.id AS target_id, entities.position_x AS target_x, entities.position_y AS target_y,
@@ -67,9 +64,6 @@ impl CommandPlanSql for BrainSqlFlatTable {
 
                     vec![]
                 );
-
-
-
 
                 // Insert a projectile for each item in the temp table
                 let insert_projectiles = SqlStatement::new(
@@ -91,7 +85,6 @@ impl CommandPlanSql for BrainSqlFlatTable {
                     closest,
                     insert_projectiles,
                     reset_cooldown_for_shooters,
-
                     // And drop the temp tables
                     SqlStatement::new("DROP TABLE shooters;", vec![]),
                     SqlStatement::new("DROP TABLE closest_targets;", vec![]),
@@ -185,11 +178,12 @@ impl CommandPlanSql for BrainSqlFlatTable {
         );
     }
 
-    fn init_systems(&mut self, systems: &Vec<SystemType>) -> Vec<SqlStatement> {
-        // Entities should have an auto incrementing id
-        return vec![SqlStatement::new(
-            "CREATE TABLE entities (
-            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    fn init_systems<I: SqlInterface>(&mut self, systems: &Vec<SystemType>) -> Vec<SqlStatement> {
+        let mut systems = vec![];
+        systems.append(&mut vec![SqlStatement::new(
+            format!(
+                "CREATE TABLE entities (
+            id INTEGER KEY NOT NULL,
             position_x REAL,
             position_y REAL,
             velocity_x REAL,
@@ -202,7 +196,22 @@ impl CommandPlanSql for BrainSqlFlatTable {
             shooter_cooldown REAL,
             timed_life REAL
         );",
+            )
+            .as_str(),
             vec![],
-        )];
+        )]);
+        let mut my_systems = I::make_field_auto_increment("id", "entities");
+        systems.append(&mut my_systems);
+
+        systems.append(&mut vec![
+            SqlStatement::new("CREATE INDEX idx_team ON entities (team);", vec![]),
+            SqlStatement::new("CREATE INDEX idx_id ON entities (id);", vec![]),
+            SqlStatement::new(
+                "CREATE INDEX idx_universe ON entities (universe_id);",
+                vec![],
+            ),
+        ]);
+
+        return systems;
     }
 }

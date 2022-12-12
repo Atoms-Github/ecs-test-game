@@ -6,9 +6,9 @@ use crate::Point;
 use duckdb::params;
 use ggez::graphics::Color;
 
-pub struct BrainSql<C, D> {
+pub struct BrainSql<C, I> {
     command_plan: C,
-    database: D,
+    database: I,
 }
 pub trait CommandPlanSql {
     fn systems(
@@ -26,7 +26,7 @@ pub trait CommandPlanSql {
     ) -> SqlStatement;
     fn add_entity(&mut self, position: Point, velocity: Option<Point>, blue: f32) -> SqlStatement;
     fn get_ents_xyc(&mut self, universe_id: usize) -> SqlStatement;
-    fn init_systems(&mut self, systems: &Vec<SystemType>) -> Vec<SqlStatement>;
+    fn init_systems<I: SqlInterface>(&mut self, systems: &Vec<SystemType>) -> Vec<SqlStatement>;
 }
 impl<C, D> BrainSql<C, D> {
     pub fn new(c: C, d: D) -> Self {
@@ -37,7 +37,7 @@ impl<C, D> BrainSql<C, D> {
     }
 }
 
-impl<C: CommandPlanSql, D: SqlInterface> Brain for BrainSql<C, D> {
+impl<C: CommandPlanSql, I: SqlInterface> Brain for BrainSql<C, I> {
     fn add_entity_unit(
         &mut self,
         position: Point,
@@ -62,7 +62,7 @@ impl<C: CommandPlanSql, D: SqlInterface> Brain for BrainSql<C, D> {
         return entities;
     }
     fn init(&mut self, systems: &Vec<SystemType>) {
-        let commands = self.command_plan.init_systems(systems);
+        let commands = self.command_plan.init_systems::<I>(systems);
         self.database.execute_batch(commands);
     }
 
