@@ -131,64 +131,26 @@ impl CommandPlanSql for BrainSqlFlatTable {
                 )]
             }
             SystemType::PaintNearest => {
-                let shooters_temp_table = SqlStatement::new(
-                    "CREATE TEMPORARY TABLE shooters AS SELECT id, position_x, position_y, shooter_cooldown, blue, universe_id FROM entities;",
-                    vec![],
-                );
-                let closest_targets_temp_table = SqlStatement::new(
-                    "CREATE TEMPORARY TABLE closest_targets_temp AS
-                    SELECT shooters.id AS shooter_id, entities.id AS target_id,
-                      entities.position_x AS target_x, entities.position_y AS target_y, entities.blue AS target_blue,
-                    (shooters.position_x - entities.position_x) * (shooters.position_x - entities.position_x) + (shooters.position_y - entities.position_y) * (shooters.position_y - entities.position_y) AS distance
-                    FROM shooters
-                    JOIN entities ON entities.universe_id = shooters.universe_id
-                    AND entities.id != shooters.id;",
-                    vec![],
-                );
-                let closest = SqlStatement::new(
-                    "CREATE TEMPORARY TABLE closest_targets AS SELECT * \
-                     FROM closest_targets_temp WHERE distance = (SELECT MIN(distance) FROM closest_targets_temp i WHERE i.shooter_id = closest_targets_temp.shooter_id);",
-
-                    vec![]
-                );
 
                 let blend_speed = settings.blend_speed + 1.0;
-                // self.blue = (self.blue + other.blue / (settings.blend_speed + 1.0)) % 1.0;
-                // Update the blue value of the shooter using this formula
-                // Shooter_new_blue = (Shooter_old_blue + Target_blue / (settings.blend_speed + 1.0)) % 1.0
-                // Make a new temp table with the shooter id and the new blue value by joining the closest_targets table with the entities table
                 let update_blue = SqlStatement::new(
-                    "CREATE TEMPORARY TABLE shooter_blue_update AS
-                    SELECT shooters.id AS shooter_id, (shooters.blue + closest_targets.target_blue / ?) AS new_blue
-                    FROM closest_targets
-                    JOIN shooters ON shooters.id = closest_targets.shooter_id;",
-                    vec![blend_speed],
+                    "UPDATE entities e1
+SET blue = e1.blue +
+  (SELECT e2.blue
+   FROM entities e2
+   WHERE e2.universe_id = e1.universe_id
+   AND e2.id != e1.id
+   ORDER BY (e1.position_x - e2.position_x) * (e1.position_x - e2.position_x) + (e1.position_y - e2.position_y) * (e1.position_y - e2.position_y)
+   LIMIT 1) / 10",
+                    vec![],
                 );
-                // Modulus operation, but some SQL dialects don't support it (and we only max out at 2 anyway)
                 let mod_blue = SqlStatement::new(
-                    "UPDATE shooter_blue_update SET new_blue = new_blue - 1.0 where new_blue > 1.0;",
+                    "UPDATE entities SET blue = blue - 1.0 where blue > 1.0;",
                     vec![],
                 );
-                // Now update the blue value of the shooter
-                let update_blue2 = SqlStatement::new(
-                    "UPDATE entities SET blue = (SELECT new_blue FROM shooter_blue_update WHERE shooter_id = entities.id) WHERE id IN (SELECT shooter_id FROM shooter_blue_update);",
-                    vec![],
-                );
-
-
-
-
                 vec![
-                    shooters_temp_table,
-                    closest_targets_temp_table,
-                    closest,
                     update_blue,
                     mod_blue,
-                    update_blue2,
-                    SqlStatement::new("DROP TABLE shooters;", vec![]),
-                    SqlStatement::new("DROP TABLE closest_targets;", vec![]),
-                    SqlStatement::new("DROP TABLE closest_targets_temp;", vec![]),
-                    SqlStatement::new("DROP TABLE shooter_blue_update;", vec![]),
                 ]
             }
         };
