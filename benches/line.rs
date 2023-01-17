@@ -14,11 +14,11 @@ use ecs_test_game::test_controller::TestController;
 use ecs_test_game::ui::ui_settings::{BrainType, ChallengeType, GuiSettings};
 use std::time::Duration;
 
-criterion_group!(benches, rts_benchmark);
+criterion_group!(benches, nearest_line);
 criterion_main!(benches);
 
-fn rts_benchmark(c: &mut Criterion) {
-    let mut group = c.benchmark_group("rts");
+fn nearest_line(c: &mut Criterion) {
+    let mut group = c.benchmark_group("line_nearest");
     let mut settings = GuiSettings {
         shoot_distance: 30.0,
         view_universe: 0,
@@ -26,26 +26,17 @@ fn rts_benchmark(c: &mut Criterion) {
         entity_count: 0,
         blend_speed: 0.0,
         brain_type: BrainType::Legion,
-        challenge_type: ChallengeType::Rts,
+        challenge_type: ChallengeType::GetNearest,
         all_at_once: true,
     };
-    const ITERATIONS: usize = 100;
+    const FRAMES: usize = 100;
     group.sample_size(10);
     group.measurement_time(Duration::from_secs(3));
     group.warm_up_time(Duration::from_millis(100));
     group.bench_function("Legion", |b| {
         let mut controller = TestController::gen_test_controller(&settings);
         b.iter(move || {
-            for i in 0..ITERATIONS {
-                controller.tick(0.016, &mut settings);
-            }
-        });
-    });
-    settings.brain_type = BrainType::SqlIte;
-    group.bench_function("Sqlite", |b| {
-        let mut controller = TestController::gen_test_controller(&settings);
-        b.iter(move || {
-            for i in 0..ITERATIONS {
+            for i in 0..FRAMES {
                 controller.tick(0.016, &mut settings);
             }
         });

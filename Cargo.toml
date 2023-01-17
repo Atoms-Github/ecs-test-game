@@ -26,6 +26,10 @@ rusqlite = "0.28.0"
 #duckdb = {version = "0.5.1", features = ["bundled"]}
 
 [[bench]]
-name = "benchmarks"
+name = "violin"
+harness = false
+
+[[bench]]
+name = "line"
 harness = false
 

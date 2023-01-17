@@ -19,8 +19,8 @@ impl GuiSettings {
             view_universe: 0,
             universe_count: 1,
             blend_speed: 10.0,
-            entity_count: 50,
-            brain_type: BrainType::SqlIte,
+            entity_count: 30,
+            brain_type: BrainType::SqlDuck,
             challenge_type: ChallengeType::GetNearest,
             all_at_once: true,
         }
