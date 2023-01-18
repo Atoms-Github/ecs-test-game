@@ -6,7 +6,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_parens)]
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 use ecs_test_game::brains::brain_legion::BrainLegion;
 use ecs_test_game::challenges::rts::ChallengeRts;
@@ -19,6 +19,9 @@ criterion_main!(benches);
 
 fn nearest_line(c: &mut Criterion) {
     let mut group = c.benchmark_group("line_nearest");
+    group.sample_size(10);
+    group.measurement_time(Duration::from_secs(3));
+    group.warm_up_time(Duration::from_millis(100));
     let mut settings = GuiSettings {
         shoot_distance: 30.0,
         view_universe: 0,
@@ -29,16 +32,26 @@ fn nearest_line(c: &mut Criterion) {
         challenge_type: ChallengeType::GetNearest,
         all_at_once: true,
     };
-    const FRAMES: usize = 100;
-    group.sample_size(10);
-    group.measurement_time(Duration::from_secs(3));
-    group.warm_up_time(Duration::from_millis(100));
-    group.bench_function("Legion", |b| {
-        let mut controller = TestController::gen_test_controller(&settings);
-        b.iter(move || {
-            for i in 0..FRAMES {
-                controller.tick(0.016, &mut settings);
-            }
-        });
-    });
+    let tests = [(BrainType::Legion, "legion"), (BrainType::SqlDuck, "duck")];
+
+    const FRAMES: usize = 3;
+    let entity_counts = [5, 20, 50, 100, 500, 1000];
+    for entity_count in entity_counts.iter() {
+        settings.entity_count = *entity_count;
+        for (brain_type, name) in tests.iter() {
+            settings.brain_type = *brain_type;
+            let mut controller = TestController::gen_test_controller(&settings);
+            group.bench_with_input(
+                BenchmarkId::new(String::from(*name), entity_count),
+                entity_count,
+                |b, _| {
+                    b.iter(|| {
+                        for _ in 0..FRAMES {
+                            controller.tick(0.016, &mut settings);
+                        }
+                    })
+                },
+            );
+        }
+    }
 }

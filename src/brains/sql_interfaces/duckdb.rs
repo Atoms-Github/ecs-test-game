@@ -8,7 +8,6 @@ pub struct InterfaceDuckDB {
     conn: Connection,
 }
 impl SqlInterface for InterfaceDuckDB {
-
     fn get_type() -> InterfaceType {
         InterfaceType::DuckDB
     }

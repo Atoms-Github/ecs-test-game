@@ -131,7 +131,6 @@ impl CommandPlanSql for BrainSqlFlatTable {
                 )]
             }
             SystemType::PaintNearest => {
-
                 let blend_speed = settings.blend_speed + 1.0;
                 let update_blue = SqlStatement::new(
                     "UPDATE entities e1
@@ -141,17 +140,14 @@ SET blue = e1.blue +
    WHERE e2.universe_id = e1.universe_id
    AND e2.id != e1.id
    ORDER BY (e1.position_x - e2.position_x) * (e1.position_x - e2.position_x) + (e1.position_y - e2.position_y) * (e1.position_y - e2.position_y)
-   LIMIT 1) / 10",
+   LIMIT 1) / 10000",
                     vec![],
                 );
                 let mod_blue = SqlStatement::new(
                     "UPDATE entities SET blue = blue - 1.0 where blue > 1.0;",
                     vec![],
                 );
-                vec![
-                    update_blue,
-                    mod_blue,
-                ]
+                vec![update_blue, mod_blue]
             }
         };
         return statements;
@@ -207,7 +203,7 @@ SET blue = e1.blue +
 
     fn init_systems<I: SqlInterface>(&mut self, systems: &Vec<SystemType>) -> Vec<SqlStatement> {
         let mut systems = vec![];
-        match I::get_type(){
+        match I::get_type() {
             InterfaceType::Sqlite => {
                 systems.append(&mut vec![SqlStatement::new(
                     format!(
@@ -226,7 +222,7 @@ SET blue = e1.blue +
             timed_life REAL
         );",
                     )
-                        .as_str(),
+                    .as_str(),
                     vec![],
                 )]);
             }
@@ -254,8 +250,6 @@ SET blue = e1.blue +
                 SqlStatement::new("CREATE SEQUENCE entities_id_seq;", vec![]),
                 SqlStatement::new("ALTER TABLE entities ALTER COLUMN id SET DEFAULT nextval('entities_id_seq');", vec![]),
                 ]);
-
-
             }
         }
         systems.append(&mut vec![
