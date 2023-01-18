@@ -1,8 +1,11 @@
 use crate::brains::com::*;
 use crate::brains::{Brain, SystemType};
+use crate::challenges::ChallengeTrait;
+use crate::simulation_settings::Challenge;
 use crate::ui::ui_settings::GuiSettings;
+use crate::utils::cast;
 use crate::utils::{color_from_team, FromTeam};
-use crate::{Point, MAP_SIZE, SHOOT_SPEED, PROJECTILE_LIFETIME};
+use crate::{Point, MAP_SIZE, PROJECTILE_LIFETIME, SHOOT_SPEED};
 use ggez::graphics::Color;
 use glam::*;
 use legion::systems::CommandBuffer;
@@ -36,7 +39,9 @@ fn make_projectile(buffer: &mut CommandBuffer, pos: Vec2, target: Vec2, universe
         PositionComp { pos },
         VelocityComp { vel },
         ColorComp { blue: 0.8 },
-        TimedLifeComp { time_left: PROJECTILE_LIFETIME },
+        TimedLifeComp {
+            time_left: PROJECTILE_LIFETIME,
+        },
         UniverseComp { universe_id },
     ));
 }
@@ -89,6 +94,14 @@ fn shoot(
                 closest_pos = other_pos.pos;
             }
         }
+        // let a = if let Challenge::Rts { .. } = &settings.simulation_settings.challenge_type {
+        //     ..
+        // }else{
+        //     panic!("");
+        // };
+        // if a == 2.0{
+        //
+        // }
         if closest_dist < settings.shoot_distance {
             make_projectile(buffer, pos.pos, closest_pos, universe.universe_id);
             shooter.cooldown = SHOOT_SPEED;

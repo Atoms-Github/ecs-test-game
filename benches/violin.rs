@@ -10,8 +10,9 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 use ecs_test_game::brains::brain_legion::BrainLegion;
 use ecs_test_game::challenges::rts::ChallengeRts;
+use ecs_test_game::simulation_settings::SimSettings;
 use ecs_test_game::test_controller::TestController;
-use ecs_test_game::ui::ui_settings::{BrainType, ChallengeType, GuiSettings};
+use ecs_test_game::ui::ui_settings::{BrainType, Challenge, GuiSettings};
 use std::time::Duration;
 
 criterion_group!(benches, nearest_violin);
@@ -26,7 +27,7 @@ fn nearest_violin(c: &mut Criterion) {
         entity_count: 0,
         blend_speed: 0.0,
         brain_type: BrainType::Legion,
-        challenge_type: ChallengeType::GetNearest,
+        challenge_type: Challenge::PaintClosest,
         all_at_once: true,
     };
     const FRAMES: usize = 100;

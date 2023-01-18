@@ -1,5 +1,5 @@
 use crate::brains::{Brain, SystemType};
-use crate::challenges::Challenge;
+use crate::challenges::ChallengeTrait;
 use crate::ui::ui_settings::GuiSettings;
 use crate::utils::GenRandom;
 use crate::{utils, Point, MAP_SIZE};
@@ -16,7 +16,7 @@ pub struct ChallengeSpatialArray {
     pub dupe_entity_fraction: f64,
     pub unique_velocity_fraction: f64,
 }
-impl Challenge for ChallengeSpatialArray {
+impl ChallengeTrait for ChallengeSpatialArray {
     fn init(&mut self, brain: &mut dyn Brain, universe_count: usize, settings: &GuiSettings) {
         let mut rand = rand::thread_rng();
         const SPEED: f32 = 30.0;
@@ -39,7 +39,7 @@ impl Challenge for ChallengeSpatialArray {
                 let blue = rand.gen_range(0.0..1.0);
                 let mut velocity = None;
                 if random.gen_bool(self.has_velocity_fraction) {
-                    if existing_velocities.len() < unique_velocities {
+                    if existing_velocities.len() <= unique_velocities {
                         let genned_velocity = Vec2::gen_random() * SPEED;
                         existing_velocities.push(genned_velocity);
                         velocity = Some(genned_velocity);
@@ -55,7 +55,7 @@ impl Challenge for ChallengeSpatialArray {
     fn get_tick_systems(&self) -> Vec<SystemType> {
         return vec![SystemType::Velocity];
     }
-    fn clone_box(&self) -> Box<dyn Challenge> {
+    fn clone_box(&self) -> Box<dyn ChallengeTrait> {
         Box::new(self.clone())
     }
 }

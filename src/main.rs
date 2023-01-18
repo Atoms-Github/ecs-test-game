@@ -16,9 +16,9 @@ use ecs_test_game::brains::Brain;
 use ecs_test_game::challenges::get_nearest::ChallengeGetNearest;
 use ecs_test_game::challenges::rts::ChallengeRts;
 use ecs_test_game::challenges::spacial_array::ChallengeSpatialArray;
-use ecs_test_game::challenges::Challenge;
+use ecs_test_game::challenges::ChallengeTrait;
 use ecs_test_game::test_controller::TestController;
-use ecs_test_game::ui::ui_settings::{BrainType, ChallengeType, GuiSettings};
+use ecs_test_game::ui::ui_settings::{BrainType, Challenge, GuiSettings};
 use ecs_test_game::{test_controller, MAP_SIZE};
 use ggez::graphics::{Color, Drawable};
 use ggez::input::mouse::position;
@@ -145,8 +145,14 @@ pub fn main() -> GameResult {
 
     cb = cb.window_setup(ggez::conf::WindowSetup::default().title("Ecs Performance Benchmark"));
     let window_size_multiplier = 1.3;
-    cb = cb.window_mode(ggez::conf::WindowMode::default().dimensions(MAP_SIZE * window_size_multiplier, MAP_SIZE * window_size_multiplier).resizable(true));
-
+    cb = cb.window_mode(
+        ggez::conf::WindowMode::default()
+            .dimensions(
+                MAP_SIZE * window_size_multiplier,
+                MAP_SIZE * window_size_multiplier,
+            )
+            .resizable(true),
+    );
 
     let (mut ctx, event_loop) = cb.build()?;
     let mut state = MainState::new(&mut ctx);

@@ -1,28 +1,29 @@
-use crate::brains::Brain;
-use crate::challenges::Challenge;
-use crate::ui::ui_settings::{BrainType, ChallengeType, GuiSettings};
-use plotters::prelude::*;
-use std::collections::HashMap;
 use crate::brains::brain_legion::BrainLegion;
 use crate::brains::sql_brains::brain_sql::BrainSql;
 use crate::brains::sql_brains::sql_flat_table::BrainSqlFlatTable;
 use crate::brains::sql_interfaces::duckdb::InterfaceDuckDB;
-use crate::brains::sql_interfaces::SqlInterface;
 use crate::brains::sql_interfaces::sqlite::InterfaceSqlite;
+use crate::brains::sql_interfaces::SqlInterface;
+use crate::brains::Brain;
 use crate::challenges::get_nearest::ChallengeGetNearest;
 use crate::challenges::rts::ChallengeRts;
 use crate::challenges::spacial_array::ChallengeSpatialArray;
+use crate::challenges::ChallengeTrait;
+use crate::simulation_settings::{BrainType, Challenge, SimSettings};
+use crate::ui::ui_settings::GuiSettings;
+use plotters::prelude::*;
+use std::collections::HashMap;
 
 pub struct TestController {
     pub brain: Box<dyn Brain>,
-    pub challenge: Box<dyn Challenge>,
+    pub challenge: Box<dyn ChallengeTrait>,
     pub timings: HashMap<String, u128>,
     pub ticks: u32,
     pub universe_count: usize,
 }
 
 impl TestController {
-    pub fn gen_test_controller(settings: &GuiSettings) -> TestController {
+    pub fn gen_test_controller(settings: &SimSettings) -> TestController {
         let new_brain: Box<dyn Brain> = match settings.brain_type {
             BrainType::Legion => Box::new(BrainLegion::new()),
             BrainType::SqlDuck => Box::new(BrainSql::new(
@@ -34,21 +35,21 @@ impl TestController {
                 InterfaceSqlite::new(),
             )),
         };
-        let new_challenge: Box<dyn Challenge> = match settings.challenge_type {
-            ChallengeType::Rts => Box::new(ChallengeRts {}),
-            ChallengeType::GetNearest => Box::new(ChallengeGetNearest {}),
-            ChallengeType::SpacialArray => Box::new(ChallengeSpatialArray {
-                has_velocity_fraction: 0.7,
-                dupe_entity_fraction: 0.2,
-                unique_velocity_fraction: 1.0,
+        let new_challenge: Box<dyn ChallengeTrait> = match settings.challenge_type {
+            Challenge::SpacialArray => Box::new(ChallengeSpatialArray {
+                has_velocity_fraction: 1.0,
+                dupe_entity_fraction: 1.0,
+                unique_velocity_fraction: 0.001,
             }),
+            Challenge::Rts { shoot_distance } => Box::new(ChallengeRts {}),
+            Challenge::PaintClosest { blend_speed } => Box::new(ChallengeGetNearest {}),
         };
 
         let mut controller = TestController::new(new_brain, new_challenge);
         controller.init(settings);
         controller
     }
-    pub fn new(brain: Box<dyn Brain>, challenge: Box<dyn Challenge>) -> TestController {
+    pub fn new(brain: Box<dyn Brain>, challenge: Box<dyn ChallengeTrait>) -> TestController {
         TestController {
             brain,
             challenge,
@@ -66,12 +67,12 @@ impl TestController {
         self.register_time(String::from("init"), time);
     }
 
-    pub fn tick(&mut self, delta: f32, settings: &GuiSettings) {
+    pub fn tick(&mut self, delta: f32, settings: &SimSettings) {
         let systems = self.challenge.get_tick_systems();
 
         if settings.all_at_once {
             let time = crate::utils::time_it(|| {
-                self.brain.tick_systems(delta, settings, & systems);
+                self.brain.tick_systems(delta, settings, &systems);
             });
             self.register_time(String::from("ALL_SYSTEMS"), time);
         } else {

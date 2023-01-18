@@ -30,10 +30,10 @@ name = "violin"
 harness = false
 
 [[bench]]
-name = "line"
+name = "paint_closest"
 harness = false
+
 
 [[bench]]
-name = "testbench"
+name = "spatial_array"
 harness = false
-

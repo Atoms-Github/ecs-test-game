@@ -1,13 +1,14 @@
 use crate::brains::{Brain, SystemType};
-use crate::challenges::Challenge;
+use crate::challenges::ChallengeTrait;
 use crate::ui::ui_settings::GuiSettings;
 use crate::{Point, MAP_SIZE};
 use ggez::input::mouse::position;
 use rand::Rng;
 
 #[derive(Clone)]
-pub struct ChallengeRts {}
-impl Challenge for ChallengeRts {
+pub struct ChallengeRts {
+}
+impl ChallengeTrait for ChallengeRts {
     fn init(&mut self, brain: &mut dyn Brain, universe_count: usize, settings: &GuiSettings) {
         let mut rand = rand::thread_rng();
 
@@ -32,7 +33,7 @@ impl Challenge for ChallengeRts {
             SystemType::DeleteExpired,
         ];
     }
-    fn clone_box(&self) -> Box<dyn Challenge> {
+    fn clone_box(&self) -> Box<dyn ChallengeTrait> {
         Box::new(self.clone())
     }
 }

@@ -1,5 +1,5 @@
 use crate::brains::{Brain, SystemType};
-use crate::challenges::Challenge;
+use crate::challenges::ChallengeTrait;
 use crate::ui::ui_settings::GuiSettings;
 use crate::utils::GenRandom;
 use crate::{Point, MAP_SIZE};
@@ -7,8 +7,9 @@ use ggez::graphics::Color;
 use rand::Rng;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ChallengeGetNearest {}
-impl Challenge for ChallengeGetNearest {
+pub struct ChallengeGetNearest {
+}
+impl ChallengeTrait for ChallengeGetNearest {
     fn init(&mut self, brain: &mut dyn Brain, universe_count: usize, settings: &GuiSettings) {
         let mut rand = rand::thread_rng();
         const SPEED: f32 = 30.0;
@@ -23,7 +24,7 @@ impl Challenge for ChallengeGetNearest {
     fn get_tick_systems(&self) -> Vec<SystemType> {
         return vec![SystemType::PaintNearest];
     }
-    fn clone_box(&self) -> Box<dyn Challenge> {
+    fn clone_box(&self) -> Box<dyn ChallengeTrait> {
         Box::new(self.clone())
     }
 }
