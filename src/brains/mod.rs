@@ -6,6 +6,7 @@ use ggez::graphics::Color;
 
 use crate::ui::ui_settings::GuiSettings;
 use crate::Point;
+use crate::simulation_settings::SimSettings;
 
 pub mod brain_legion;
 pub mod com;
@@ -28,8 +29,8 @@ pub trait Brain {
 
     fn init(&mut self, systems: &Vec<SystemType>);
 
-    fn tick_systems(&mut self, delta: f32, settings: &GuiSettings, systems: &Vec<SystemType>);
-    fn tick_system(&mut self, system: &SystemType, delta: f32, settings: &GuiSettings);
+    fn tick_systems(&mut self, delta: f32, settings: &SimSettings, systems: &Vec<SystemType>);
+    fn tick_system(&mut self, system: &SystemType, delta: f32, settings: &SimSettings);
 
     fn get_name(&self) -> String;
 }

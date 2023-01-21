@@ -41,8 +41,8 @@ impl TestController {
                 dupe_entity_fraction: 1.0,
                 unique_velocity_fraction: 0.001,
             }),
-            Challenge::Rts { shoot_distance } => Box::new(ChallengeRts {}),
-            Challenge::PaintClosest { blend_speed } => Box::new(ChallengeGetNearest {}),
+            Challenge::Rts  => Box::new(ChallengeRts {}),
+            Challenge::PaintClosest  => Box::new(ChallengeGetNearest {}),
         };
 
         let mut controller = TestController::new(new_brain, new_challenge);
@@ -58,7 +58,7 @@ impl TestController {
             universe_count: 1,
         }
     }
-    pub fn init(&mut self, settings: &GuiSettings) {
+    pub fn init(&mut self, settings: &SimSettings) {
         self.brain.init(&self.challenge.get_tick_systems());
         let time = crate::utils::time_it(|| {
             self.challenge

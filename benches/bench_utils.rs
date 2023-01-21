@@ -5,9 +5,10 @@ use ecs_test_game::test_controller::TestController;
 
 pub fn benchmark(group: &mut BenchmarkGroup<WallTime>, settings: &SimSettings, frame_count: usize) {
     let mut controller = TestController::gen_test_controller(settings);
+    let mut entity_count = 0;
     group.bench_with_input(
-        BenchmarkId::new(settings.brain_type, entity_count),
-        entity_count,
+        BenchmarkId::new(settings.brain_type.to_string(), entity_count),
+        &mut entity_count,
         |b, _| {
             b.iter(|| {
                 for _ in 0..frame_count {

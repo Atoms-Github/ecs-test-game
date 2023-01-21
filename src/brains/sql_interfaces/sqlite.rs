@@ -14,15 +14,11 @@ pub struct InterfaceSqlite {
 }
 
 impl SqlInterface for InterfaceSqlite {
-    fn get_type() -> InterfaceType {
-        InterfaceType::Sqlite
-    }
     fn new() -> Self {
         let connection = Connection::open_in_memory().unwrap();
 
         InterfaceSqlite { connection }
     }
-
     fn execute_batch(&mut self, statements: Vec<SqlStatement>) {
         let transaction = self.connection.transaction().unwrap();
         for statement in statements {
@@ -34,6 +30,7 @@ impl SqlInterface for InterfaceSqlite {
         }
         transaction.commit().unwrap();
     }
+
     fn get_entities(&mut self, query_xyc: SqlStatement) -> Vec<ExportEntity> {
         let mut statement = self
             .connection
@@ -61,5 +58,8 @@ impl SqlInterface for InterfaceSqlite {
             .unwrap()
             .execute(params_from_iter(statement.params))
             .unwrap();
+    }
+    fn get_type() -> InterfaceType {
+        InterfaceType::Sqlite
     }
 }

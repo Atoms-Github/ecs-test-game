@@ -8,6 +8,7 @@ use crate::{Point, MAP_SIZE, PROJECTILE_LIFETIME, SHOOT_SPEED};
 use duckdb::ffi::system;
 use ggez::graphics::Color;
 use std::process::id;
+use crate::simulation_settings::SimSettings;
 
 pub struct BrainSqlFlatTable {}
 impl BrainSqlFlatTable {
@@ -20,7 +21,7 @@ impl CommandPlanSql for BrainSqlFlatTable {
         &mut self,
         sys: &SystemType,
         delta: f32,
-        settings: &GuiSettings,
+        settings: &SimSettings,
     ) -> Vec<SqlStatement> {
         let mut statements: Vec<SqlStatement> = match sys {
             SystemType::Velocity => {
@@ -58,7 +59,7 @@ impl CommandPlanSql for BrainSqlFlatTable {
                     AND entities.id != shooters.id;",
                     vec![]
                 );
-                let shoot_distance = settings.shoot_distance * settings.shoot_distance;
+                let shoot_distance = settings.rts_range * settings.rts_range;
                 let closest = SqlStatement::new(
                     "CREATE TEMPORARY TABLE closest_targets AS SELECT * \
                      FROM closest_targets_temp WHERE distance = (SELECT MIN(distance) FROM \
@@ -131,7 +132,7 @@ impl CommandPlanSql for BrainSqlFlatTable {
                 )]
             }
             SystemType::PaintNearest => {
-                let blend_speed = settings.blend_speed + 1.0;
+                let blend_speed = settings.paint_speed + 1.0;
                 let update_blue = SqlStatement::new(
                     "UPDATE entities e1
 SET blue = e1.blue +

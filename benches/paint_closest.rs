@@ -6,16 +6,14 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_parens)]
 
-use std::default::default;
 mod bench_utils;
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 use crate::bench_utils::benchmark;
 use ecs_test_game::brains::brain_legion::BrainLegion;
 use ecs_test_game::challenges::rts::ChallengeRts;
-use ecs_test_game::simulation_settings::SimSettings;
+use ecs_test_game::simulation_settings::{BrainType, Challenge, SimSettings};
 use ecs_test_game::test_controller::TestController;
-use ecs_test_game::ui::ui_settings::{BrainType, Challenge, GuiSettings};
 use std::time::Duration;
 
 criterion_group!(benches, color_closest);
@@ -31,7 +29,7 @@ fn color_closest(c: &mut Criterion) {
     let entity_counts = [5, 20, 50, 100, 500, 1000];
     let mut settings = SimSettings::default();
 
-    settings.challenge_type = Challenge::PaintClosest { blend_speed: 1.0 };
+    settings.challenge_type = Challenge::PaintClosest;
     for entity_count in entity_counts {
         settings.entity_count = entity_count;
         for test in tests {

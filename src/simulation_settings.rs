@@ -9,6 +9,8 @@ pub struct SimSettings {
     pub brain_type: BrainType,
     pub challenge_type: Challenge,
     pub all_at_once: bool,
+    pub rts_range: f32,
+    pub paint_speed: f32,
 }
 impl SimSettings {
     pub fn draw(&mut self, ui: &mut Ui) {
@@ -33,13 +35,12 @@ impl SimSettings {
                 ui.selectable_value(
                     &mut self.challenge_type,
                     Challenge::Rts {
-                        shoot_distance: 30.0,
                     },
                     "Rts",
                 );
                 ui.selectable_value(
                     &mut self.challenge_type,
-                    Challenge::PaintClosest { blend_speed: 1.0 },
+                    Challenge::PaintClosest {},
                     "Get Nearest",
                 );
                 ui.selectable_value(
@@ -51,13 +52,14 @@ impl SimSettings {
             .response;
 
         match &mut self.challenge_type {
-            Challenge::Rts { shoot_distance } => {
-                ui.label("Shoot distance");
-                ui.add(egui::DragValue::new(shoot_distance).speed(0.1));
+            Challenge::Rts {} => {
+                ui.label("Rts range");
+                ui.add(egui::DragValue::new(&mut self.rts_range).speed(0.1));
             }
-            Challenge::PaintClosest { blend_speed } => {
-                ui.label("Blend Speed");
-                ui.add(egui::DragValue::new(blend_speed).speed(0.5));
+            Challenge::PaintClosest {} => {
+
+                ui.label("Paint speed");
+                ui.add(egui::DragValue::new(&mut self.paint_speed).speed(0.5));
             }
             Challenge::SpacialArray => {}
         }
@@ -76,13 +78,13 @@ impl fmt::Display for BrainType {
 }
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Challenge {
-    Rts { shoot_distance: f32 },
-    PaintClosest { blend_speed: f32 },
+    Rts,
+    PaintClosest,
     SpacialArray,
 }
 impl Default for Challenge {
     fn default() -> Self {
-        Challenge::PaintClosest { blend_speed: 1.0 }
+        Challenge::PaintClosest {}
     }
 }
 impl Default for BrainType {
@@ -98,6 +100,8 @@ impl Default for SimSettings {
             brain_type: Default::default(),
             challenge_type: Default::default(),
             all_at_once: true,
+            rts_range: 50.0,
+            paint_speed: 10.0
         }
     }
 }

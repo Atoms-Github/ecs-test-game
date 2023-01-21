@@ -8,15 +8,11 @@ pub struct InterfaceDuckDB {
     conn: Connection,
 }
 impl SqlInterface for InterfaceDuckDB {
-    fn get_type() -> InterfaceType {
-        InterfaceType::DuckDB
-    }
     fn new() -> Self {
         let mut conn = Connection::open_in_memory().unwrap();
         conn.set_prepared_statement_cache_capacity(1000);
         Self { conn }
     }
-
     fn execute_batch(&mut self, statements: Vec<SqlStatement>) {
         let transaction = self.conn.transaction().unwrap();
         for statement in statements {
@@ -49,5 +45,9 @@ impl SqlInterface for InterfaceDuckDB {
             .unwrap()
             .execute(params_from_iter(statement.params))
             .unwrap();
+    }
+
+    fn get_type() -> InterfaceType {
+        InterfaceType::DuckDB
     }
 }

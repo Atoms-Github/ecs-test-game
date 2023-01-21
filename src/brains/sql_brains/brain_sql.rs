@@ -5,6 +5,7 @@ use crate::ui::ui_settings::GuiSettings;
 use crate::Point;
 use duckdb::params;
 use ggez::graphics::Color;
+use crate::simulation_settings::SimSettings;
 
 pub struct BrainSql<C, I> {
     command_plan: C,
@@ -15,7 +16,7 @@ pub trait CommandPlanSql {
         &mut self,
         sys: &SystemType,
         delta: f32,
-        settings: &GuiSettings,
+        settings: &SimSettings,
     ) -> Vec<SqlStatement>;
     fn add_entity_unit(
         &mut self,
@@ -66,7 +67,7 @@ impl<C: CommandPlanSql, I: SqlInterface> Brain for BrainSql<C, I> {
         self.database.execute_batch(commands);
     }
 
-    fn tick_systems(&mut self, delta: f32, settings: &GuiSettings, systems: &Vec<SystemType>) {
+    fn tick_systems(&mut self, delta: f32, settings: &SimSettings, systems: &Vec<SystemType>) {
         let mut commands = vec![];
         for sys in systems {
             let mut sys_commands = self.command_plan.systems(sys, delta, settings);
@@ -74,7 +75,7 @@ impl<C: CommandPlanSql, I: SqlInterface> Brain for BrainSql<C, I> {
         }
         self.database.execute_batch(commands);
     }
-    fn tick_system(&mut self, system: &SystemType, delta: f32, settings: &GuiSettings) {
+    fn tick_system(&mut self, system: &SystemType, delta: f32, settings: &SimSettings) {
         let commands = self.command_plan.systems(system, delta, settings);
         for command in commands {
             // Deliberately not doing batch execution here, to compare performance

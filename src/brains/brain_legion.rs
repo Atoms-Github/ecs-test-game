@@ -1,7 +1,7 @@
 use crate::brains::com::*;
 use crate::brains::{Brain, SystemType};
 use crate::challenges::ChallengeTrait;
-use crate::simulation_settings::Challenge;
+use crate::simulation_settings::{Challenge, SimSettings};
 use crate::ui::ui_settings::GuiSettings;
 use crate::utils::cast;
 use crate::utils::{color_from_team, FromTeam};
@@ -73,7 +73,7 @@ fn update_timed_life(#[resource] dt: &f32, time: &mut TimedLifeComp) {
 fn shoot(
     #[resource] dt: &f32,
     #[resource] other_entities: &Vec<(PositionComp, TeamComp, UniverseComp)>,
-    #[resource] settings: &GuiSettings,
+    #[resource] settings: &SimSettings,
     pos: &PositionComp,
     team: &TeamComp,
     shooter: &mut ShooterComp,
@@ -102,7 +102,7 @@ fn shoot(
         // if a == 2.0{
         //
         // }
-        if closest_dist < settings.shoot_distance {
+        if closest_dist < settings.rts_range {
             make_projectile(buffer, pos.pos, closest_pos, universe.universe_id);
             shooter.cooldown = SHOOT_SPEED;
         }
@@ -112,7 +112,7 @@ fn shoot(
 #[system(for_each)]
 fn paint_nearest(
     #[resource] pos_color: &Vec<(PositionComp, ColorComp)>,
-    #[resource] settings: &GuiSettings,
+    #[resource] settings: &SimSettings,
     pos: &PositionComp,
     color: &mut ColorComp,
 ) {
@@ -162,7 +162,7 @@ impl Brain for BrainLegion {
             self.world.push((
                 PositionComp { pos: position },
                 VelocityComp { vel: velocity },
-                ColorComp { blue: blue },
+                ColorComp { blue },
                 UniverseComp { universe_id: 0 },
             ));
         } else {
@@ -204,7 +204,7 @@ impl Brain for BrainLegion {
         self.schedule = Some(schedule.build());
     }
 
-    fn tick_systems(&mut self, delta: f32, settings: &GuiSettings, systems: &Vec<SystemType>) {
+    fn tick_systems(&mut self, delta: f32, settings: &SimSettings, systems: &Vec<SystemType>) {
         let mut resources = Resources::default();
         resources.insert(delta);
         resources.insert(settings.clone());
@@ -229,7 +229,7 @@ impl Brain for BrainLegion {
         schedule.execute(&mut self.world, &mut resources);
     }
 
-    fn tick_system(&mut self, system: &SystemType, delta: f32, settings: &GuiSettings) {
+    fn tick_system(&mut self, system: &SystemType, delta: f32, settings: &SimSettings) {
         match system {
             SystemType::Velocity => {
                 let mut query = <(&mut PositionComp, &VelocityComp)>::query();

@@ -20,7 +20,7 @@ criterion_main!(benches);
 
 fn nearest_violin(c: &mut Criterion) {
     let mut group = c.benchmark_group("nearest");
-    let mut settings = GuiSettings {
+    let mut settings = SimSettings {
         shoot_distance: 30.0,
         view_universe: 0,
         universe_count: 0,

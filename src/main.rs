@@ -18,13 +18,13 @@ use ecs_test_game::challenges::rts::ChallengeRts;
 use ecs_test_game::challenges::spacial_array::ChallengeSpatialArray;
 use ecs_test_game::challenges::ChallengeTrait;
 use ecs_test_game::test_controller::TestController;
-use ecs_test_game::ui::ui_settings::{BrainType, Challenge, GuiSettings};
 use ecs_test_game::{test_controller, MAP_SIZE};
 use ggez::graphics::{Color, Drawable};
 use ggez::input::mouse::position;
 use ggez::{Context, GameResult};
 use glam::Vec2;
 use std::io::read_to_string;
+use ecs_test_game::ui::ui_settings::GuiSettings;
 
 pub struct MainState {
     pub test_controller: TestController,
@@ -39,7 +39,7 @@ impl MainState {
         let settings = GuiSettings::new();
 
         MainState {
-            test_controller: TestController::gen_test_controller(&settings),
+            test_controller: TestController::gen_test_controller(&settings.simulation_settings),
             egui_backend: ggez_egui::EguiBackend::new(ctx),
             gui_settings: settings,
             draw_time: 0,
@@ -48,7 +48,7 @@ impl MainState {
     }
 
     fn reload(&mut self) {
-        self.test_controller = TestController::gen_test_controller(&self.gui_settings);
+        self.test_controller = TestController::gen_test_controller(&self.gui_settings.simulation_settings);
     }
 }
 
@@ -76,7 +76,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             }
         });
         self.update_time = start.elapsed().as_micros();
-        self.test_controller.tick(dt, &self.gui_settings);
+        self.test_controller.tick(dt, &self.gui_settings.simulation_settings);
         Ok(())
     }
 

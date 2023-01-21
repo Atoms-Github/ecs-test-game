@@ -9,6 +9,7 @@ use glam::Vec2;
 use rand::prelude::SliceRandom;
 use rand::rngs::StdRng;
 use rand::{thread_rng, Rng, SeedableRng};
+use crate::simulation_settings::SimSettings;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ChallengeSpatialArray {
@@ -17,7 +18,7 @@ pub struct ChallengeSpatialArray {
     pub unique_velocity_fraction: f64,
 }
 impl ChallengeTrait for ChallengeSpatialArray {
-    fn init(&mut self, brain: &mut dyn Brain, universe_count: usize, settings: &GuiSettings) {
+    fn init(&mut self, brain: &mut dyn Brain, universe_count: usize, settings: &SimSettings) {
         let mut rand = rand::thread_rng();
         const SPEED: f32 = 30.0;
         // Create units. Distribute them evenly across universes.

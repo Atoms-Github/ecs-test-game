@@ -4,12 +4,13 @@ use crate::ui::ui_settings::GuiSettings;
 use crate::{Point, MAP_SIZE};
 use ggez::input::mouse::position;
 use rand::Rng;
+use crate::simulation_settings::SimSettings;
 
 #[derive(Clone)]
 pub struct ChallengeRts {
 }
 impl ChallengeTrait for ChallengeRts {
-    fn init(&mut self, brain: &mut dyn Brain, universe_count: usize, settings: &GuiSettings) {
+    fn init(&mut self, brain: &mut dyn Brain, universe_count: usize, settings: &SimSettings) {
         let mut rand = rand::thread_rng();
 
         const SPEED: f32 = 30.0;
