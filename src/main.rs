@@ -5,6 +5,8 @@
 #![allow(unused_attributes)]
 #![allow(non_camel_case_types)]
 #![allow(unused_parens)]
+#![allow(unused_macros)]
+
 
 use ecs_test_game::brains::brain_legion::BrainLegion;
 use ecs_test_game::brains::sql_brains::brain_sql::BrainSql;
