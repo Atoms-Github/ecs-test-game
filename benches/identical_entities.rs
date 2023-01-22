@@ -20,15 +20,15 @@ criterion_group!(benches, color_closest);
 criterion_main!(benches);
 
 fn color_closest(c: &mut Criterion) {
-    let mut group = c.benchmark_group("painting");
+    let mut group = c.benchmark_group("identical_entities");
     group.sample_size(10);
     group.measurement_time(Duration::from_secs(3));
     group.warm_up_time(Duration::from_millis(100));
 
     let tests = [BrainType::Legion, BrainType::SqlDuck, BrainType::SqlIte];
-    let entity_counts = [5, 10, 20, 50, 70,85, 100, 130, 160, 200, 230, 250];
+    let entity_counts = [100, 1000, 10000];
     let mut settings = SimSettings::default();
-    settings.challenge_type = Challenge::PaintClosest;
+    settings.challenge_type = Challenge::IdenticalEntities;
 
     for entity_count in entity_counts {
         settings.entity_count = entity_count;

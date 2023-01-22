@@ -155,7 +155,7 @@ SET blue = e1.blue + (SELECT closest_blue FROM (
     distance,
     ROW_NUMBER() OVER (PARTITION BY id ORDER BY distance) AS rn
   FROM cte
-) WHERE rn = 1 and id = e1.id) / 100.0",
+) WHERE rn = 1 and id = e1.id) / 10000.0",
                             vec![],
                         );
                         let mod_blue = SqlStatement::new(
@@ -173,7 +173,7 @@ SET blue = e1.blue +
    WHERE e2.universe_id = e1.universe_id
    AND e2.id != e1.id
    ORDER BY (e1.position_x - e2.position_x) * (e1.position_x - e2.position_x) + (e1.position_y - e2.position_y) * (e1.position_y - e2.position_y)
-   LIMIT 1) / 10",
+   LIMIT 1) / 10000",
                             vec![],
                         );
                         let mod_blue = SqlStatement::new(

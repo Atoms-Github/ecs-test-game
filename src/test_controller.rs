@@ -14,6 +14,7 @@ use crate::ui::ui_settings::GuiSettings;
 use plotters::prelude::*;
 use std::collections::HashMap;
 use crate::brains::sql_interfaces::postgresql::InterfacePostgres;
+use crate::challenges::identical_entities::ChallengeIdenticalEntities;
 
 pub struct TestController {
     pub brain: Box<dyn Brain>,
@@ -49,6 +50,7 @@ impl TestController {
             }),
             Challenge::Rts  => Box::new(ChallengeRts {}),
             Challenge::PaintClosest  => Box::new(ChallengeGetNearest {}),
+            Challenge::IdenticalEntities => Box::new(ChallengeIdenticalEntities {}),
         };
 
         let mut controller = TestController::new(new_brain, new_challenge);

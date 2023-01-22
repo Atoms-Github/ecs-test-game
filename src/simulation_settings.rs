@@ -49,6 +49,11 @@ impl SimSettings {
                     Challenge::SpacialArray,
                     "Spacial Array",
                 );
+                ui.selectable_value(
+                    &mut self.challenge_type,
+                    Challenge::IdenticalEntities,
+                    "Identical Entities",
+                );
             })
             .response;
 
@@ -62,7 +67,7 @@ impl SimSettings {
                 ui.label("Paint speed");
                 ui.add(egui::DragValue::new(&mut self.paint_speed).speed(0.5));
             }
-            Challenge::SpacialArray => {}
+            _ => {}
         }
     }
 }
@@ -83,6 +88,7 @@ pub enum Challenge {
     Rts,
     PaintClosest,
     SpacialArray,
+    IdenticalEntities,
 }
 impl Default for Challenge {
     fn default() -> Self {

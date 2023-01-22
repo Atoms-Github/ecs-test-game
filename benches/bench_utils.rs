@@ -12,6 +12,7 @@ pub fn benchmark(group: &mut BenchmarkGroup<WallTime>, settings: &SimSettings, f
     let name = format!("{}, {}", settings.brain_type.to_string(), rand::thread_rng().gen_range(0..5000));
     group.bench_with_input(
         BenchmarkId::new(settings.brain_type.to_string(), entity_count),
+
         &mut entity_count,
         |b, _| {
             b.iter(|| {

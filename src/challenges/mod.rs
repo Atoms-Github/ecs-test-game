@@ -3,9 +3,10 @@ use crate::simulation_settings::SimSettings;
 use crate::ui::ui_settings::GuiSettings;
 
 pub mod get_nearest;
-pub mod get_nearest_random;
 pub mod rts;
 pub mod spacial_array;
+pub mod identical_entities;
+
 
 pub trait ChallengeTrait {
     fn init(&mut self, brain: &mut dyn Brain, universe_count: usize, settings: &SimSettings);
