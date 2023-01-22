@@ -12,7 +12,7 @@ pub struct BrainSql<C, I> {
     database: I,
 }
 pub trait CommandPlanSql {
-    fn systems(
+    fn systems<I: SqlInterface>(
         &mut self,
         sys: &SystemType,
         delta: f32,
@@ -70,13 +70,13 @@ impl<C: CommandPlanSql, I: SqlInterface> Brain for BrainSql<C, I> {
     fn tick_systems(&mut self, delta: f32, settings: &SimSettings, systems: &Vec<SystemType>) {
         let mut commands = vec![];
         for sys in systems {
-            let mut sys_commands = self.command_plan.systems(sys, delta, settings);
+            let mut sys_commands = self.command_plan.systems::<I>(sys, delta, settings);
             commands.extend(sys_commands);
         }
         self.database.execute_batch(commands);
     }
     fn tick_system(&mut self, system: &SystemType, delta: f32, settings: &SimSettings) {
-        let commands = self.command_plan.systems(system, delta, settings);
+        let commands = self.command_plan.systems::<I>(system, delta, settings);
         for command in commands {
             // Deliberately not doing batch execution here, to compare performance
             self.database.execute_single(command);

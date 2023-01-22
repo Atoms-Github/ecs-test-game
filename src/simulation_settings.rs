@@ -91,14 +91,14 @@ impl Default for Challenge {
 }
 impl Default for BrainType {
     fn default() -> Self {
-        BrainType::SqlPostgres
+        BrainType::SqlIte
     }
 }
 impl Default for SimSettings {
     fn default() -> Self {
         Self {
             universe_count: 1,
-            entity_count: 100,
+            entity_count: 10,
             brain_type: Default::default(),
             challenge_type: Default::default(),
             all_at_once: true,

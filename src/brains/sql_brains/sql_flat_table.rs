@@ -8,7 +8,8 @@ use crate::{Point, MAP_SIZE, PROJECTILE_LIFETIME, SHOOT_SPEED};
 use duckdb::ffi::system;
 use ggez::graphics::Color;
 use std::process::id;
-use crate::simulation_settings::SimSettings;
+use crate::simulation_settings::{BrainType, SimSettings};
+use crate::simulation_settings::BrainType::SqlIte;
 
 pub struct BrainSqlFlatTable {}
 impl BrainSqlFlatTable {
@@ -17,7 +18,7 @@ impl BrainSqlFlatTable {
     }
 }
 impl CommandPlanSql for BrainSqlFlatTable {
-    fn systems(
+    fn systems<I: SqlInterface>(
         &mut self,
         sys: &SystemType,
         delta: f32,
@@ -133,22 +134,47 @@ impl CommandPlanSql for BrainSqlFlatTable {
             }
             SystemType::PaintNearest => {
                 let blend_speed = settings.paint_speed + 1.0;
-                let update_blue = SqlStatement::new(
-                    "UPDATE entities e1
+                match I::get_type(){
+                    InterfaceType::Sqlite =>{
+                        let update_blue = SqlStatement::new(
+                            "WITH cte AS (
+SELECT e2.blue, e2.universe_id, e1.id
+FROM entities e1
+JOIN entities e2 ON e2.universe_id = e1.universe_id
+AND e2.id != e1.id
+ORDER BY ((e1.position_x - e2.position_x) * (e1.position_x - e2.position_x) + (e1.position_y - e2.position_y) * (e1.position_y - e2.position_y))
+LIMIT 1
+)
+UPDATE entities
+SET blue = blue + (SELECT blue FROM cte WHERE cte.id = entities.id) / 10.0",
+                            vec![],
+                        );
+                        let mod_blue = SqlStatement::new(
+                            "UPDATE entities SET blue = blue - 1.0 where blue > 1.0;",
+                            vec![],
+                        );
+                        vec![update_blue, mod_blue]
+                    }
+                    _ => {
+                        let update_blue = SqlStatement::new(
+                            "UPDATE entities e1
 SET blue = e1.blue +
   (SELECT e2.blue
    FROM entities e2
    WHERE e2.universe_id = e1.universe_id
    AND e2.id != e1.id
    ORDER BY (e1.position_x - e2.position_x) * (e1.position_x - e2.position_x) + (e1.position_y - e2.position_y) * (e1.position_y - e2.position_y)
-   LIMIT 1) / 10000",
-                    vec![],
-                );
-                let mod_blue = SqlStatement::new(
-                    "UPDATE entities SET blue = blue - 1.0 where blue > 1.0;",
-                    vec![],
-                );
-                vec![update_blue, mod_blue]
+   LIMIT 1) / 10",
+                            vec![],
+                        );
+                        let mod_blue = SqlStatement::new(
+                            "UPDATE entities SET blue = blue - 1.0 where blue > 1.0;",
+                            vec![],
+                        );
+                        vec![update_blue, mod_blue]
+
+                    }
+                }
             }
         };
         return statements;
