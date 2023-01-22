@@ -3,7 +3,6 @@ use crate::brains::{Brain, SystemType};
 use crate::challenges::ChallengeTrait;
 use crate::simulation_settings::{Challenge, SimSettings};
 use crate::ui::ui_settings::GuiSettings;
-use crate::utils::cast;
 use crate::utils::{color_from_team, FromTeam};
 use crate::{Point, MAP_SIZE, PROJECTILE_LIFETIME, SHOOT_SPEED};
 use ggez::graphics::Color;

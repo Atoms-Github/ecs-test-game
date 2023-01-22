@@ -205,28 +205,6 @@ SET blue = e1.blue +
     fn init_systems<I: SqlInterface>(&mut self, systems: &Vec<SystemType>) -> Vec<SqlStatement> {
         let mut systems = vec![];
         match I::get_type() {
-            InterfaceType::Sqlite => {
-                systems.append(&mut vec![SqlStatement::new(
-                    format!(
-                        "CREATE TABLE entities (
-            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-            position_x REAL,
-            position_y REAL,
-            velocity_x REAL,
-            velocity_y REAL,
-            acceleration_x REAL,
-            acceleration_y REAL,
-            blue REAL,
-            team INTEGER,
-            universe_id INTEGER,
-            shooter_cooldown REAL,
-            timed_life REAL
-        );",
-                    )
-                    .as_str(),
-                    vec![],
-                )]);
-            }
             InterfaceType::DuckDB => {
                 systems.append(&mut vec![SqlStatement::new(
                     format!(
@@ -248,9 +226,31 @@ SET blue = e1.blue +
                         .as_str(),
                     vec![],
                 ),
-                SqlStatement::new("CREATE SEQUENCE entities_id_seq;", vec![]),
-                SqlStatement::new("ALTER TABLE entities ALTER COLUMN id SET DEFAULT nextval('entities_id_seq');", vec![]),
+                                         SqlStatement::new("CREATE SEQUENCE entities_id_seq;", vec![]),
+                                         SqlStatement::new("ALTER TABLE entities ALTER COLUMN id SET DEFAULT nextval('entities_id_seq');", vec![]),
                 ]);
+            }
+            _ => {
+                systems.append(&mut vec![SqlStatement::new(
+                    format!(
+                        "CREATE TABLE entities (
+            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            position_x REAL,
+            position_y REAL,
+            velocity_x REAL,
+            velocity_y REAL,
+            acceleration_x REAL,
+            acceleration_y REAL,
+            blue REAL,
+            team INTEGER,
+            universe_id INTEGER,
+            shooter_cooldown REAL,
+            timed_life REAL
+        );",
+                    )
+                    .as_str(),
+                    vec![],
+                )]);
             }
         }
         systems.append(&mut vec![

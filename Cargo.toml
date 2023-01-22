@@ -12,6 +12,7 @@ rand = "*"
 egui = "0.18.1"
 ggez-egui = "0.2.1"
 glam = { version = "0.20", features = ["rand"]}
+futures = "0.3.25"
 criterion = { version = "0.4.0", features = ["html_reports", "plotters"] }
 heapsize = "0.4.2"
 plotters = "0.3.4"
@@ -24,6 +25,7 @@ rusqlite = "0.28.0"
 #jemalloc-sys = {version = "0.5", features = ["stats"]}
 #libc = "0.2"
 #duckdb = {version = "0.5.1", features = ["bundled"]}
+sqlx = { version = "0.6", features = [  "runtime-async-std-native-tls", "postgres" ] }
 
 [[bench]]
 name = "violin"

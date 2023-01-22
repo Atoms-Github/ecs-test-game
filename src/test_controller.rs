@@ -13,6 +13,7 @@ use crate::simulation_settings::{BrainType, Challenge, SimSettings};
 use crate::ui::ui_settings::GuiSettings;
 use plotters::prelude::*;
 use std::collections::HashMap;
+use crate::brains::sql_interfaces::postgresql::InterfacePostgres;
 
 pub struct TestController {
     pub brain: Box<dyn Brain>,
@@ -34,6 +35,11 @@ impl TestController {
                 BrainSqlFlatTable::new(),
                 InterfaceSqlite::new(),
             )),
+            BrainType::SqlPostgres => Box::new(BrainSql::new(
+                BrainSqlFlatTable::new(),
+                InterfacePostgres::new(),
+            )),
+
         };
         let new_challenge: Box<dyn ChallengeTrait> = match settings.challenge_type {
             Challenge::SpacialArray => Box::new(ChallengeSpatialArray {

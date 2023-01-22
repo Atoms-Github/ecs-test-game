@@ -1,5 +1,6 @@
 pub mod duckdb;
 pub mod sqlite;
+pub mod postgresql;
 
 use crate::brains::com::ExportEntity;
 use crate::brains::{Brain, SystemType};
@@ -24,6 +25,7 @@ pub struct SqlStatement {
 pub enum InterfaceType {
     Sqlite,
     DuckDB,
+    Postgres
 }
 impl SqlStatement {
     pub fn new(statement: &str, params: Vec<f32>) -> SqlStatement {

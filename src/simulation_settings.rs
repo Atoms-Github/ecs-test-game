@@ -27,6 +27,7 @@ impl SimSettings {
                 ui.selectable_value(&mut self.brain_type, BrainType::Legion, "Legion");
                 ui.selectable_value(&mut self.brain_type, BrainType::SqlDuck, "Sql duck");
                 ui.selectable_value(&mut self.brain_type, BrainType::SqlIte, "Sqlite");
+                ui.selectable_value(&mut self.brain_type, BrainType::SqlPostgres, "Postgres");
             })
             .response;
         let resp_challenge = egui::ComboBox::from_label("Challenge type")
@@ -70,6 +71,7 @@ pub enum BrainType {
     Legion,
     SqlDuck,
     SqlIte,
+    SqlPostgres
 }
 impl fmt::Display for BrainType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -89,7 +91,7 @@ impl Default for Challenge {
 }
 impl Default for BrainType {
     fn default() -> Self {
-        BrainType::Legion
+        BrainType::SqlPostgres
     }
 }
 impl Default for SimSettings {
