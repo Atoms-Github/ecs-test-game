@@ -155,7 +155,7 @@ SET blue = e1.blue + (SELECT closest_blue FROM (
     distance,
     ROW_NUMBER() OVER (PARTITION BY id ORDER BY distance) AS rn
   FROM cte
-) WHERE rn = 1 and id = e1.id)",
+) WHERE rn = 1 and id = e1.id) / 100.0",
                             vec![],
                         );
                         let mod_blue = SqlStatement::new(

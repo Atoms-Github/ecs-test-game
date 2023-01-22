@@ -3,6 +3,7 @@ use crate::simulation_settings::SimSettings;
 use crate::ui::ui_settings::GuiSettings;
 
 pub mod get_nearest;
+pub mod get_nearest_random;
 pub mod rts;
 pub mod spacial_array;
 
