@@ -138,15 +138,24 @@ impl CommandPlanSql for BrainSqlFlatTable {
                     InterfaceType::Sqlite =>{
                         let update_blue = SqlStatement::new(
                             "WITH cte AS (
-SELECT e2.blue, e2.universe_id, e1.id
-FROM entities e1
-JOIN entities e2 ON e2.universe_id = e1.universe_id
-AND e2.id != e1.id
-ORDER BY ((e1.position_x - e2.position_x) * (e1.position_x - e2.position_x) + (e1.position_y - e2.position_y) * (e1.position_y - e2.position_y))
-LIMIT 1
+  SELECT
+    e2.blue as closest_blue,
+    e1.id,
+    ((e1.position_x - e2.position_x) * (e1.position_x - e2.position_x) + (e1.position_y - e2.position_y) * (e1.position_y - e2.position_y)) AS distance
+  FROM entities AS e1
+  JOIN entities AS e2
+  ON e1.universe_id = e2.universe_id
+  AND e1.id != e2.id
 )
-UPDATE entities
-SET blue = blue + (SELECT blue FROM cte WHERE cte.id = entities.id) / 10.0",
+UPDATE entities AS e1
+SET blue = e1.blue + (SELECT closest_blue FROM (
+  SELECT
+    closest_blue,
+    id,
+    distance,
+    ROW_NUMBER() OVER (PARTITION BY id ORDER BY distance) AS rn
+  FROM cte
+) WHERE rn = 1 and id = e1.id)",
                             vec![],
                         );
                         let mod_blue = SqlStatement::new(
