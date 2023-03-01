@@ -25,21 +25,20 @@ impl BrainLegionTrait for BrainLegionCounted{
         let mut found_ent = None;
 
         // Try and find if an identical entity already exists.
-        let mut query = <(&Entity, &PositionComp, &VelocityComp, &ColorComp)>::query();
-        for (ent, pos, vel, col) in query.iter(world) {
-            if pos.pos == position && vel.vel == velocity.unwrap() && col.blue == blue {
-                found_ent = Some(ent);
-                break;
-            }
+        let mut query = <(&PositionComp, &VelocityComp, &ColorComp)>::query();
+        for chunk in query.iter_chunks(world) {
+            chunk.into_iter_entities().for_each(|(ent, (pos, vel, col))| {
+                if pos.pos == position && vel.vel == velocity.unwrap() && col.blue == blue {
+                    found_ent = Some(ent);
+                }
+            });
         }
-
 
         if let Some(found_ent) = found_ent {
             let count = self.counts.get_mut(&found_ent).unwrap();
             *count += 1;
             return;
         }
-
         // Try and find if an identical entity already exists.
         let ent_id = if let Some(velocity) = velocity {
             world.push((

@@ -94,12 +94,12 @@ pub enum Challenge {
 }
 impl Default for Challenge {
     fn default() -> Self {
-        Challenge::PaintClosest {}
+        Challenge::IdenticalEntities {}
     }
 }
 impl Default for BrainType {
     fn default() -> Self {
-        BrainType::SqlIte
+        BrainType::LegionCounted
     }
 }
 impl Default for SimSettings {

@@ -70,6 +70,15 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
                 ggez::timer::delta(ctx).as_millis()
             ));
             self.gui_settings.draw(ui);
+
+            let ent_count = self
+                .test_controller
+                .brain
+                .get_entities(self.gui_settings.view_universe).len();
+
+            ui.label(format!("Entity count: {}", ent_count));
+
+
             if ui.button("Save Graph").clicked() {
                 self.test_controller.save_graph("graph.png");
             }
