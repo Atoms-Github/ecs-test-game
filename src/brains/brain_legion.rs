@@ -12,6 +12,7 @@ use legion::*;
 use rand::Rng;
 use std::borrow::{Borrow, BorrowMut};
 use std::collections::HashMap;
+use ggez::input::mouse::position;
 
 
 #[derive(Default)]
@@ -349,9 +350,12 @@ impl<T : BrainLegionTrait> Brain for BrainLegion<T> {
             SystemType::DeleteExpired => {
                 let mut buffer = CommandBuffer::new(&self.world);
                 let mut query = <(&TimedLifeComp)>::query();
-                // for (time, entity) in query.iter_entities(&self.world) {
-                //     delete_expired(time, entity, &mut buffer);
-                // } TODO: fix this
+
+                for chunk in query.iter_chunks(&self.world) {
+                    chunk.into_iter_entities().for_each(|(ent, time)| {
+                        delete_expired(time, &ent, &mut buffer);
+                    });
+                }
                 buffer.flush(&mut self.world, &mut Resources::default());
             }
             SystemType::PaintNearest => {
