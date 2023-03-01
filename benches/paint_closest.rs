@@ -25,7 +25,7 @@ fn color_closest(c: &mut Criterion) {
     group.measurement_time(Duration::from_secs(3));
     group.warm_up_time(Duration::from_millis(100));
 
-    let tests = [BrainType::Legion, BrainType::SqlDuck, BrainType::SqlIte];
+    let tests = [BrainType::LegionDupey, BrainType::SqlDuck, BrainType::SqlIte];
     let entity_counts = [5, 10, 20, 50, 70,85, 100, 130, 160, 200, 230, 250];
     let mut settings = SimSettings::default();
     settings.challenge_type = Challenge::PaintClosest;

@@ -26,7 +26,7 @@ fn nearest_violin(c: &mut Criterion) {
         universe_count: 0,
         entity_count: 0,
         blend_speed: 0.0,
-        brain_type: BrainType::Legion,
+        brain_type: BrainType::LegionDupey,
         challenge_type: Challenge::PaintClosest,
         all_at_once: true,
     };

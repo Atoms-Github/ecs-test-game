@@ -24,7 +24,7 @@ fn spatial_array(c: &mut Criterion) {
     group.measurement_time(Duration::from_secs(3));
     group.warm_up_time(Duration::from_millis(100));
 
-    let tests = [BrainType::Legion, BrainType::SqlDuck];
+    let tests = [BrainType::LegionDupey, BrainType::SqlDuck];
     let entity_counts = [5, 20, 50, 100, 500, 1000];
     let mut settings = SimSettings::default();
 

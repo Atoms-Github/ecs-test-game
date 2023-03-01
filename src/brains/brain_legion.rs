@@ -11,10 +11,90 @@ use legion::systems::CommandBuffer;
 use legion::*;
 use rand::Rng;
 use std::borrow::{Borrow, BorrowMut};
+use std::collections::HashMap;
 
-pub struct BrainLegion {
-    world: World,
+
+#[derive(Default)]
+pub struct BrainLegionCounted{
+    counts: HashMap<Entity, u32>,
+}
+
+
+impl BrainLegionTrait for BrainLegionCounted{
+    fn add_entity(&mut self, world: &mut World, position: Point, velocity: Option<Point>, blue: f32) {
+        let mut found_ent = None;
+
+        // Try and find if an identical entity already exists.
+        let mut query = <(&Entity, &PositionComp, &VelocityComp, &ColorComp)>::query();
+        for (ent, pos, vel, col) in query.iter(world) {
+            if pos.pos == position && vel.vel == velocity.unwrap() && col.blue == blue {
+                found_ent = Some(ent);
+                break;
+            }
+        }
+
+
+        if let Some(found_ent) = found_ent {
+            let count = self.counts.get_mut(&found_ent).unwrap();
+            *count += 1;
+            return;
+        }
+
+        // Try and find if an identical entity already exists.
+        let ent_id = if let Some(velocity) = velocity {
+            world.push((
+                PositionComp { pos: position },
+                VelocityComp { vel: velocity },
+                ColorComp { blue },
+                UniverseComp { universe_id: 0 },
+            ))
+        } else {
+            world.push((
+                PositionComp { pos: position },
+                ColorComp { blue },
+                UniverseComp { universe_id: 0 },
+            ))
+        };
+        let found = self.counts.insert(ent_id, 1);
+        assert_eq!(found, None);
+    }
+}
+#[derive(Default)]
+pub struct BrainLegionDupey{
+}
+
+pub trait BrainLegionTrait{
+    fn add_entity(
+        &mut self,
+        world: &mut World,
+        position: Point, velocity: Option<Point>,
+        blue: f32
+    );
+}
+
+impl BrainLegionTrait for BrainLegionDupey{
+    fn add_entity(&mut self, world: &mut World, position: Point, velocity: Option<Point>, blue: f32) {
+        if let Some(velocity) = velocity {
+            world.push((
+                PositionComp { pos: position },
+                VelocityComp { vel: velocity },
+                ColorComp { blue },
+                UniverseComp { universe_id: 0 },
+            ));
+        } else {
+            world.push((
+                PositionComp { pos: position },
+                ColorComp { blue },
+                UniverseComp { universe_id: 0 },
+            ));
+        }
+    }
+}
+
+pub struct BrainLegion<T : BrainLegionTrait> {
     schedule: Option<Schedule>,
+    world: World,
+    trait_data: T,
 }
 
 pub fn make_unit(world: &mut World, pos: Vec2, vel: Vec2, team: usize, universe_id: usize) {
@@ -135,17 +215,19 @@ fn delete_expired(time: &TimedLifeComp, entity: &Entity, command_buffer: &mut Co
     }
 }
 
-impl BrainLegion {
+impl<T : Default + BrainLegionTrait> BrainLegion<T> {
     pub fn new() -> Self {
         let mut world = World::default();
         Self {
             world,
             schedule: None,
+
+            trait_data: T::default(),
         }
     }
 }
 
-impl Brain for BrainLegion {
+impl<T : BrainLegionTrait> Brain for BrainLegion<T> {
     fn add_entity_unit(
         &mut self,
         position: Point,
@@ -157,20 +239,7 @@ impl Brain for BrainLegion {
     }
 
     fn add_entity(&mut self, position: Point, velocity: Option<Point>, blue: f32) {
-        if let Some(velocity) = velocity {
-            self.world.push((
-                PositionComp { pos: position },
-                VelocityComp { vel: velocity },
-                ColorComp { blue },
-                UniverseComp { universe_id: 0 },
-            ));
-        } else {
-            self.world.push((
-                PositionComp { pos: position },
-                ColorComp { blue },
-                UniverseComp { universe_id: 0 },
-            ));
-        }
+        self.trait_data.add_entity(&mut self.world, position, velocity, blue);
     }
 
     fn get_entities(&mut self, universe_id: usize) -> Vec<ExportEntity> {
@@ -283,7 +352,7 @@ impl Brain for BrainLegion {
                 let mut query = <(&TimedLifeComp)>::query();
                 // for (time, entity) in query.iter_entities(&self.world) {
                 //     delete_expired(time, entity, &mut buffer);
-                // }
+                // } TODO: fix this
                 buffer.flush(&mut self.world, &mut Resources::default());
             }
             SystemType::PaintNearest => {

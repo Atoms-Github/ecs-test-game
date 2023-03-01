@@ -10,7 +10,7 @@ mod bench_utils;
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 use crate::bench_utils::benchmark;
-use ecs_test_game::brains::brain_legion::BrainLegion;
+use ecs_test_game::brains::brain_legion::{BrainLegion, BrainLegionCounted};
 use ecs_test_game::challenges::rts::ChallengeRts;
 use ecs_test_game::simulation_settings::{BrainType, Challenge, SimSettings};
 use ecs_test_game::test_controller::TestController;
@@ -25,14 +25,12 @@ fn color_closest(c: &mut Criterion) {
     group.measurement_time(Duration::from_secs(3));
     group.warm_up_time(Duration::from_millis(100));
 
-    let tests = [BrainType::Legion, BrainType::SqlDuck, BrainType::SqlIte];
-    let entity_counts = [100, 1000, 10000];
     let mut settings = SimSettings::default();
     settings.challenge_type = Challenge::IdenticalEntities;
 
-    for entity_count in entity_counts {
+    for entity_count in (1..10).map(|x| x * 1000) {
         settings.entity_count = entity_count;
-        for test in tests {
+        for test in [BrainType::LegionDupey, BrainType::LegionCounted, BrainType::SqlDuck, BrainType::SqlIte] {
             settings.brain_type = test;
             benchmark(&mut group, &settings, 3);
         }

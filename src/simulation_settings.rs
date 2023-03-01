@@ -24,7 +24,8 @@ impl SimSettings {
         let resp_brain = egui::ComboBox::from_label("Brain type")
             .selected_text(format!("{:?}", self.brain_type))
             .show_ui(ui, |ui| {
-                ui.selectable_value(&mut self.brain_type, BrainType::Legion, "Legion");
+                ui.selectable_value(&mut self.brain_type, BrainType::LegionDupey, "LegionDupey");
+                ui.selectable_value(&mut self.brain_type, BrainType::LegionCounted, "LegionCounted");
                 ui.selectable_value(&mut self.brain_type, BrainType::SqlDuck, "Sql duck");
                 ui.selectable_value(&mut self.brain_type, BrainType::SqlIte, "Sqlite");
                 ui.selectable_value(&mut self.brain_type, BrainType::SqlPostgres, "Postgres");
@@ -73,7 +74,8 @@ impl SimSettings {
 }
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum BrainType {
-    Legion,
+    LegionDupey,
+    LegionCounted,
     SqlDuck,
     SqlIte,
     SqlPostgres

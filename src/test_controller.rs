@@ -1,4 +1,4 @@
-use crate::brains::brain_legion::BrainLegion;
+use crate::brains::brain_legion::{BrainLegion, BrainLegionCounted, BrainLegionDupey};
 use crate::brains::sql_brains::brain_sql::BrainSql;
 use crate::brains::sql_brains::sql_flat_table::BrainSqlFlatTable;
 use crate::brains::sql_interfaces::duckdb::InterfaceDuckDB;
@@ -27,7 +27,8 @@ pub struct TestController {
 impl TestController {
     pub fn gen_test_controller(settings: &SimSettings) -> TestController {
         let new_brain: Box<dyn Brain> = match settings.brain_type {
-            BrainType::Legion => Box::new(BrainLegion::new()),
+            BrainType::LegionDupey => Box::new(BrainLegion::<BrainLegionDupey>::new()),
+            BrainType::LegionCounted => Box::new(BrainLegion::<BrainLegionCounted>::new()),
             BrainType::SqlDuck => Box::new(BrainSql::new(
                 BrainSqlFlatTable::new(),
                 InterfaceDuckDB::new(),
