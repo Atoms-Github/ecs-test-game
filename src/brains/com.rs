@@ -41,7 +41,6 @@ pub struct VelocityComp {
 pub struct ShooterComp {
     pub cooldown: f32,
 }
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct TimedLifeComp {
     pub time_left: f32,
@@ -49,4 +48,8 @@ pub struct TimedLifeComp {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct UniverseComp {
     pub universe_id: usize,
+}
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ImageComp {
+    sound: ggez::
 }
