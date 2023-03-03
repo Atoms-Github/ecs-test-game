@@ -1432,6 +1432,7 @@ dependencies = [
  "rand",
  "rusqlite",
  "sqlx",
+ "trait-bound-typemap",
 ]
 
 [[package]]
@@ -2700,6 +2701,12 @@ checksum = "b9f1c5b025cda876f66ef43a113f91ebc9f4ccef34843000e0adf6ebbab84e21"
 dependencies = [
  "winapi",
 ]
+
+[[package]]
+name = "multi-trait-object"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a54c9ed2b86c7927b63e7d51f8d7ed4e1f8513c8672828ca1a850ff9d32ab1c"
 
 [[package]]
 name = "multiversion"
@@ -4367,6 +4374,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d82e1a7758622a465f8cee077614c73484dac5b836c02ff6a40d5d1010324d7"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "trait-bound-typemap"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3631df5ba73c0e41b1aa337df3bcca7f15219f042f8fec1100857bc1eb60c767"
+dependencies = [
+ "multi-trait-object",
 ]
 
 [[package]]

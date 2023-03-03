@@ -26,6 +26,7 @@ rusqlite = "0.28.0"
 #libc = "0.2"
 #duckdb = {version = "0.5.1", features = ["bundled"]}
 sqlx = { version = "0.6", features = [  "runtime-async-std-native-tls", "postgres" ] }
+trait-bound-typemap = "0.3.3"
 
 [[bench]]
 name = "violin"

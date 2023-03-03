@@ -15,6 +15,7 @@ pub mod test_controller;
 pub mod thread_controller;
 pub mod ui;
 pub mod utils;
+pub mod legionpp;
 
 pub type Point = glam::Vec2;
 pub const MAP_SIZE: f32 = 600.0;
