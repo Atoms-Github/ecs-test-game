@@ -15,22 +15,49 @@ impl<T: Clone + Hash> Cupboard<T>{
             set: HashMap::new(),
         }
     }
-    pub fn add_component(&mut self, data: T) -> ShelfRef{
-        let shelf = Shelf {
-            data,
-            available_copy: None,
-        };
+    pub fn add_component(&mut self, new_data: T) -> ShelfRef{
 
         // hash the data
         let mut hasher = DefaultHasher::new();
-        shelf.data.hash(&mut hasher);
+        new_data.hash(&mut hasher);
         let hash = hasher.finish();
 
-        let comp_index = self.vec.push(shelf);
+        let maybe_existing = self.set.get(&hash);
+        match maybe_existing {
+            Some(existing) => {
+                let shelf = self.vec.get_mut(*existing).unwrap();
+                match shelf {
+                    Shelf::One { data: existing_data } => {
+                        let mut new_shelf = Shelf::Many {
+                            data: existing_data.take().unwrap(),
+                            available_copy: Some(Box::new(new_data)),
+                            qty: 2,
+                        };
+                        std::mem::swap(shelf, &mut new_shelf);
+                        ShelfRef {
+                            index: *existing,
+                        }
+                    },
+                    Shelf::Many { data, available_copy, qty } => {
+                        *qty += 1;
+                        *available_copy = Some(Box::new(new_data));
+                        ShelfRef {
+                            index: *existing,
+                        }
+                    }
+                }
+            },
+            None => {
+                let shelf = Shelf::One{
+                    data: Some(new_data),
+                };
+                let comp_index = self.vec.push(shelf);
 
-        self.set.insert(hash, comp_index);
-        ShelfRef {
-            index: comp_index,
+                self.set.insert(hash, comp_index);
+                ShelfRef {
+                    index: comp_index,
+                }
+            }
         }
     }
 

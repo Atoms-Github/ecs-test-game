@@ -145,11 +145,11 @@ mod tests {
     #[test]
     fn basic() {
         let mut lpp = Lpp::new();
-        let position_comp = PositionComp{pos: Point::new(0.0, 0.0)};
+        let position_comp = PositionComp{pos: Point::new(1.0, 0.0)};
         let mut entity = lpp.create_entity();
         lpp.add_component(entity, position_comp);
 
-        let velocity_comp = VelocityComp{vel: Point::new(0.0, 0.0)};
+        let velocity_comp = VelocityComp{vel: Point::new(0.0, 333.0)};
         lpp.add_component(entity, velocity_comp);
 
         lpp.complete_entity(entity);
@@ -159,14 +159,21 @@ mod tests {
             vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]
         );
 
-        for entity in matching_entities {
-            let mut position = lpp.get_component::<PositionComp>(entity).unwrap();
-            let velocity = lpp.get_component_ref::<VelocityComp>(entity).unwrap();
+        assert_eq!(matching_entities.len(), 1);
+        for entity in &matching_entities {
+            let mut position = lpp.get_component::<PositionComp>(*entity).unwrap();
+            let velocity = lpp.get_component_ref::<VelocityComp>(*entity).unwrap();
             // Increment the position by the velocity
             position.pos += velocity.vel;
             println!("Entity {:?} has position {:?} and velocity {:?}", entity, position, velocity);
-            lpp.return_component(entity, position);
+            lpp.return_component(*entity, position);
         }
+        // Assert that the position has been incremented
+        let position = lpp.get_component::<PositionComp>(entity).unwrap();
+        assert_eq!(position.pos, Point::new(1.0, 333.0));
+
+
+
 
     }
 }
