@@ -10,6 +10,8 @@ use legion::Entity;
 use trait_bound_typemap::{AnyTypeMap, CloneTypeMap, TypeMap, TypeMapKey};
 
 use crate::legionpp::cupboard::{Cupboard, Shelf, ShelfRef};
+use crate::utils::HashMe;
+
 pub type TypeSig = BTreeSet<TypeId>;
 
 pub struct Lpp {
@@ -130,6 +132,17 @@ impl Lpp {
 		let internal_ent = self.lentities.get_mut(&lentity).expect("Ent doesn't exist");
 		let shelf_ref = internal_ent.shelves.get(&TypeId::of::<T>()).unwrap();
 		let shelf = cupboard.get_shelf(shelf_ref);
+
+		let maybe_shelf_new_comp = match shelf {
+			Shelf::One { .. } => None,
+			Shelf::Many { .. } => cupboard.hash_shelf_lookup.get(&component.hash_me()).cloned(),
+		};
+
+		let cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>().unwrap();
+		let internal_ent = self.lentities.get_mut(&lentity).expect("Ent doesn't exist");
+		let shelf_ref = internal_ent.shelves.get(&TypeId::of::<T>()).unwrap();
+		let shelf = cupboard.get_shelf(shelf_ref);
+
 		match shelf {
 			Shelf::One { data } => {
 				*data = Some(component);
@@ -139,7 +152,32 @@ impl Lpp {
 				data,
 				qty,
 			} => {
-				*data = Some(Box::new(component));
+				let mut identical = false;
+
+				if let Some(maybe_shelf_new_comp) = maybe_shelf_new_comp {
+					if maybe_shelf_new_comp == *shelf_ref {
+						identical = true;
+					}
+				}
+
+				if identical {
+					*data = Some(Box::new(component));
+				} else {
+					// Decrease the qty of the shelf
+					*qty -= 1;
+
+					// if the quantity is 1, set the shelf to be a one
+					if *qty == 1 {
+						let mut new_shelf = Shelf::One {
+							data: Some(component.clone()),
+						};
+						std::mem::swap(shelf, &mut new_shelf);
+					} else {
+						*data = Some(Box::new(component.clone()));
+					}
+
+					cupboard.add_component(component);
+				}
 			}
 		}
 	}
@@ -221,7 +259,7 @@ mod tests {
 			let index = expected_positions
 				.iter()
 				.position(|x| *x == position.pos)
-				.expect("Position was wrong!");
+				.expect(format!("Position was wrong! {}", position.pos).as_str());
 			expected_positions.remove(index);
 
 			lpp.return_component(*entity, position);

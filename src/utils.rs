@@ -1,3 +1,5 @@
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use ggez::graphics::Color;
 use glam::Vec2;
 use rand::Rng;
@@ -42,6 +44,18 @@ impl GenRandom for Color {
             rng.gen_range(0.0..1.0),
             1.0,
         )
+    }
+}
+
+pub trait HashMe{
+    fn hash_me(&self) -> u64;
+}
+
+impl<T: Hash> HashMe for T{
+    fn hash_me(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        hasher.finish()
     }
 }
 // macro_rules! cast {

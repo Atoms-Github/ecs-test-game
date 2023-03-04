@@ -2,27 +2,26 @@ use std::collections::{HashMap, HashSet};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use crate::legionpp::unmoving_vec::UnmovingVec;
+use crate::utils::HashMe;
 
 #[derive(Clone)]
 pub struct Cupboard<T : Clone>{
     vec: UnmovingVec<Shelf<T>>,
-    set: HashMap<u64, usize>,
+    pub hash_shelf_lookup: HashMap<u64, ShelfRef>,
 }
 impl<T: Clone + Hash> Cupboard<T>{
     pub fn new() -> Cupboard<T> {
         Cupboard{
             vec: UnmovingVec::new(),
-            set: HashMap::new(),
+            hash_shelf_lookup: HashMap::new(),
         }
     }
     pub fn add_component(&mut self, new_data: T) -> ShelfRef{
 
         // hash the data
-        let mut hasher = DefaultHasher::new();
-        new_data.hash(&mut hasher);
-        let hash = hasher.finish();
+        let hash = new_data.hash_me();
 
-        let maybe_existing = self.set.get(&hash);
+        let maybe_existing = self.hash_shelf_lookup.get(&hash);
         match maybe_existing {
             Some(existing) => {
                 let shelf = self.vec.get_mut(*existing).unwrap();
@@ -34,16 +33,12 @@ impl<T: Clone + Hash> Cupboard<T>{
                             qty: 2,
                         };
                         std::mem::swap(shelf, &mut new_shelf);
-                        ShelfRef {
-                            index: *existing,
-                        }
+                        *existing
                     },
                     Shelf::Many { data_backup: data, data: available_copy, qty } => {
                         *qty += 1;
                         *available_copy = Some(Box::new(new_data));
-                        ShelfRef {
-                            index: *existing,
-                        }
+                        *existing
                     }
                 }
             },
@@ -53,16 +48,14 @@ impl<T: Clone + Hash> Cupboard<T>{
                 };
                 let comp_index = self.vec.push(shelf);
 
-                self.set.insert(hash, comp_index);
-                ShelfRef {
-                    index: comp_index,
-                }
+                self.hash_shelf_lookup.insert(hash, comp_index);
+                comp_index
             }
         }
     }
 
     pub fn get_shelf(&mut self, shelf_ref: &ShelfRef) -> &mut Shelf<T> {
-        self.vec.get_mut(shelf_ref.index).unwrap()
+        self.vec.get_mut(*shelf_ref).unwrap()
     }
 }
 #[derive(Clone)]
@@ -72,6 +65,4 @@ pub enum Shelf<T : Clone>{
 }
 
 
-pub struct ShelfRef{
-    pub index: usize,
-}
+pub type ShelfRef = usize;
