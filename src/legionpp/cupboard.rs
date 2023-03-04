@@ -29,8 +29,8 @@ impl<T: Clone + Hash> Cupboard<T>{
                 match shelf {
                     Shelf::One { data: existing_data } => {
                         let mut new_shelf = Shelf::Many {
-                            data: existing_data.take().unwrap(),
-                            available_copy: Some(Box::new(new_data)),
+                            data_backup: existing_data.take().unwrap(),
+                            data: Some(Box::new(new_data)),
                             qty: 2,
                         };
                         std::mem::swap(shelf, &mut new_shelf);
@@ -38,7 +38,7 @@ impl<T: Clone + Hash> Cupboard<T>{
                             index: *existing,
                         }
                     },
-                    Shelf::Many { data, available_copy, qty } => {
+                    Shelf::Many { data_backup: data, data: available_copy, qty } => {
                         *qty += 1;
                         *available_copy = Some(Box::new(new_data));
                         ShelfRef {
@@ -68,7 +68,7 @@ impl<T: Clone + Hash> Cupboard<T>{
 #[derive(Clone)]
 pub enum Shelf<T : Clone>{
     One{data: Option<T>},
-    Many{data: T, available_copy: Option<Box<T>>, qty: u32},
+    Many{ data_backup: T, data: Option<Box<T>>, qty: u32},
 }
 
 
