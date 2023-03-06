@@ -25,7 +25,11 @@ impl SimSettings {
             .selected_text(format!("{:?}", self.brain_type))
             .show_ui(ui, |ui| {
                 ui.selectable_value(&mut self.brain_type, BrainType::LegionDupey, "LegionDupey");
-                ui.selectable_value(&mut self.brain_type, BrainType::LegionCounted, "LegionCounted");
+                ui.selectable_value(
+                    &mut self.brain_type,
+                    BrainType::LegionCounted,
+                    "LegionCounted",
+                );
                 ui.selectable_value(&mut self.brain_type, BrainType::SqlDuck, "Sql duck");
                 ui.selectable_value(&mut self.brain_type, BrainType::SqlIte, "Sqlite");
                 ui.selectable_value(&mut self.brain_type, BrainType::SqlPostgres, "Postgres");
@@ -34,17 +38,13 @@ impl SimSettings {
         let resp_challenge = egui::ComboBox::from_label("Challenge type")
             .selected_text(format!("{:?}", self.challenge_type))
             .show_ui(ui, |ui| {
-                ui.selectable_value(
-                    &mut self.challenge_type,
-                    Challenge::Rts {
-                    },
-                    "Rts",
-                );
+                ui.selectable_value(&mut self.challenge_type, Challenge::Rts {}, "Rts");
                 ui.selectable_value(
                     &mut self.challenge_type,
                     Challenge::PaintClosest {},
                     "Get Nearest",
                 );
+                ui.selectable_value(&mut self.challenge_type, Challenge::Blobular {}, "Blob");
                 ui.selectable_value(
                     &mut self.challenge_type,
                     Challenge::SpacialArray,
@@ -64,7 +64,6 @@ impl SimSettings {
                 ui.add(egui::DragValue::new(&mut self.rts_range).speed(0.1));
             }
             Challenge::PaintClosest {} => {
-
                 ui.label("Paint speed");
                 ui.add(egui::DragValue::new(&mut self.paint_speed).speed(0.5));
             }
@@ -78,7 +77,7 @@ pub enum BrainType {
     LegionCounted,
     SqlDuck,
     SqlIte,
-    SqlPostgres
+    SqlPostgres,
 }
 impl fmt::Display for BrainType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -91,10 +90,11 @@ pub enum Challenge {
     PaintClosest,
     SpacialArray,
     IdenticalEntities,
+    Blobular,
 }
 impl Default for Challenge {
     fn default() -> Self {
-        Challenge::IdenticalEntities {}
+        Challenge::Blobular {}
     }
 }
 impl Default for BrainType {
@@ -111,7 +111,7 @@ impl Default for SimSettings {
             challenge_type: Default::default(),
             all_at_once: true,
             rts_range: 50.0,
-            paint_speed: 10.0
+            paint_speed: 10.0,
         }
     }
 }

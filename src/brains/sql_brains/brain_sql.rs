@@ -1,11 +1,11 @@
 use crate::brains::com::ExportEntity;
 use crate::brains::sql_interfaces::{SqlInterface, SqlStatement};
 use crate::brains::{Brain, SystemType};
+use crate::simulation_settings::SimSettings;
 use crate::ui::ui_settings::GuiSettings;
 use crate::Point;
 use duckdb::params;
 use ggez::graphics::Color;
-use crate::simulation_settings::SimSettings;
 
 pub struct BrainSql<C, I> {
     command_plan: C,
@@ -26,6 +26,7 @@ pub trait CommandPlanSql {
         universe_id: usize,
     ) -> SqlStatement;
     fn add_entity(&mut self, position: Point, velocity: Option<Point>, blue: f32) -> SqlStatement;
+    fn add_entity_blob(&mut self, position: Point, blob: Vec<u8>, blue: f32) -> SqlStatement;
     fn get_ents_xyc(&mut self, universe_id: usize) -> SqlStatement;
     fn init_systems<I: SqlInterface>(&mut self, systems: &Vec<SystemType>) -> Vec<SqlStatement>;
 }
@@ -54,6 +55,11 @@ impl<C: CommandPlanSql, I: SqlInterface> Brain for BrainSql<C, I> {
 
     fn add_entity(&mut self, position: Point, velocity: Option<Point>, blue: f32) {
         let command = self.command_plan.add_entity(position, velocity, blue);
+        self.database.execute_batch(vec![command]);
+    }
+
+    fn add_entity_blob(&mut self, position: Point, blob: Vec<u8>, blue: f32) {
+        let command = self.command_plan.add_entity_blob(position, blob, blue);
         self.database.execute_batch(vec![command]);
     }
 

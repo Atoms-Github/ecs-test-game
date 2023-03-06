@@ -1,12 +1,23 @@
 use crate::brains::com::ExportEntity;
-use crate::brains::sql_interfaces::{InterfaceType, SqlInterface, SqlStatement};
+use crate::brains::sql_interfaces::{InterfaceType, SqlArgument, SqlInterface, SqlStatement};
 use crate::Point;
-use duckdb::{params, params_from_iter, Connection, ParamsFromIter, Statement};
+use duckdb::types::{ToSqlOutput, Value};
+use duckdb::{params, params_from_iter, Connection, ParamsFromIter, Statement, ToSql};
 use ggez::graphics::Color;
 
 pub struct InterfaceDuckDB {
     conn: Connection,
 }
+
+impl ToSql for SqlArgument {
+    fn to_sql(&self) -> duckdb::Result<ToSqlOutput<'_>> {
+        match self {
+            SqlArgument::Float(x) => Ok(ToSqlOutput::Owned(Value::Float(*x))),
+            SqlArgument::Blob(x) => Ok(ToSqlOutput::Owned(Value::Blob(x.clone()))),
+        }
+    }
+}
+
 impl SqlInterface for InterfaceDuckDB {
     fn new() -> Self {
         let mut conn = Connection::open_in_memory().unwrap();

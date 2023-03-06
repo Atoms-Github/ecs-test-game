@@ -1,7 +1,7 @@
+use crate::simulation_settings::SimSettings;
 use crate::ui::ui_settings::GuiSettings;
 use crate::Point;
 use ggez::graphics::Color;
-use crate::simulation_settings::SimSettings;
 
 // a component is any type that is 'static, sized, send and sync
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -49,7 +49,7 @@ pub struct TimedLifeComp {
 pub struct UniverseComp {
     pub universe_id: usize,
 }
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct ImageComp {
-    sound: ggez::
+#[derive(Clone, Debug, PartialEq)]
+pub struct BlobComp {
+    pub blob: Vec<u8>,
 }

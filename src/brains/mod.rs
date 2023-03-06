@@ -4,9 +4,9 @@ use std::time::Duration;
 use crate::brains::com::ExportEntity;
 use ggez::graphics::Color;
 
+use crate::simulation_settings::SimSettings;
 use crate::ui::ui_settings::GuiSettings;
 use crate::Point;
-use crate::simulation_settings::SimSettings;
 
 pub mod brain_legion;
 pub mod com;
@@ -24,6 +24,7 @@ pub trait Brain {
         universe_id: usize,
     );
     fn add_entity(&mut self, position: Point, velocity: Option<Point>, blue: f32);
+    fn add_entity_blob(&mut self, position: Point, blob: Vec<u8>, blue: f32);
 
     fn get_entities(&mut self, universe_id: usize) -> Vec<ExportEntity>;
 
