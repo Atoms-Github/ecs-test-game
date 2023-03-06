@@ -282,4 +282,125 @@ mod tests {
 		}
 		assert_eq!(expected_positions.len(), 0);
 	}
+	#[test]
+	pub fn test_vel_pos_acc() {
+		let mut lpp = Lpp::new();
+		for i in 0..10 {
+			let mut entity = lpp.create_entity();
+			lpp.add_component(entity, PositionComp {
+				pos: Point::new(2.0, 2.0),
+			});
+			lpp.add_component(entity, VelocityComp {
+				vel: Point::new(0.0, 2.0),
+			});
+			lpp.complete_entity(entity);
+		}
+		for i in 0..5 {
+			let mut entity = lpp.create_entity();
+			lpp.add_component(entity, PositionComp {
+				pos: Point::new(2.0, 0.0),
+			});
+			lpp.add_component(entity, VelocityComp {
+				vel: Point::new(0.0, 4.0),
+			});
+			lpp.add_component(entity, AccelerationComp {
+				acc: Point::new(0.0, 2.0),
+			});
+			lpp.complete_entity(entity);
+		}
+		for i in 0..2 {
+			let mut entity = lpp.create_entity();
+			lpp.add_component(entity, PositionComp {
+				pos: Point::new(2.0, 10.0),
+			});
+			lpp.complete_entity(entity);
+		}
+		{
+			// Velocity
+
+			// Query for all entities with a position component
+			let mut matching_entities =
+				lpp.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
+
+			assert_eq!(matching_entities.len(), 15);
+			for entity in &matching_entities {
+				let mut position = lpp.get_component::<PositionComp>(*entity).unwrap();
+				let velocity = lpp.get_component_ref::<VelocityComp>(*entity).unwrap();
+				// Increment the position by the velocity
+				position.pos += velocity.vel;
+				lpp.return_component(*entity, position);
+			}
+		}
+		{
+			// Acc
+
+			let mut matching_entities = lpp.query(vec![
+				TypeId::of::<PositionComp>(),
+				TypeId::of::<VelocityComp>(),
+				TypeId::of::<AccelerationComp>(),
+			]);
+			assert_eq!(matching_entities.len(), 5);
+			for entity in &matching_entities {
+				let mut vel = lpp.get_component::<VelocityComp>(*entity).unwrap();
+				let acc = lpp.get_component_ref::<AccelerationComp>(*entity).unwrap();
+				// Increment the position by the velocity
+				vel.vel += acc.acc;
+				lpp.return_component(*entity, vel);
+			}
+		}
+		{
+			// Velocity
+
+			let mut matching_entities =
+				lpp.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
+
+			assert_eq!(matching_entities.len(), 15);
+			for entity in &matching_entities {
+				let mut position = lpp.get_component::<PositionComp>(*entity).unwrap();
+				let velocity = lpp.get_component_ref::<VelocityComp>(*entity).unwrap();
+				// Increment the position by the velocity
+				position.pos += velocity.vel;
+				lpp.return_component(*entity, position);
+			}
+		}
+
+		// Assert that both entities have correct positions
+
+		let mut expected_positions = vec![];
+
+		for i in 0..10 {
+			expected_positions.push(Point::new(2.0, 6.0));
+		}
+		for i in 0..7 {
+			expected_positions.push(Point::new(2.0, 10.0));
+		}
+		let mut matching_entities = lpp.query(vec![TypeId::of::<PositionComp>()]);
+		for entity in &matching_entities {
+			let position = lpp.get_component_ref::<PositionComp>(*entity).unwrap();
+			let index = expected_positions
+				.iter()
+				.position(|x| *x == position.pos)
+				.expect(format!("Position was wrong! {}", position.pos).as_str());
+			expected_positions.remove(index);
+		}
+		assert_eq!(expected_positions.len(), 0);
+
+		let mut expected_velocities = vec![];
+		for i in 0..10 {
+			expected_velocities.push(Point::new(0.0, 2.0));
+		}
+		for i in 0..5 {
+			expected_velocities.push(Point::new(0.0, 6.0));
+		}
+		let mut matching_entities = lpp.query(vec![TypeId::of::<VelocityComp>()]);
+		for entity in &matching_entities {
+			let velocity = lpp.get_component_ref::<VelocityComp>(*entity).unwrap();
+			let index = expected_velocities
+				.iter()
+				.position(|x| *x == velocity.vel)
+				.expect(format!("Vel was wrong! {}", velocity.vel).as_str());
+			expected_velocities.remove(index);
+		}
+		assert_eq!(expected_velocities.len(), 0);
+	}
 }
