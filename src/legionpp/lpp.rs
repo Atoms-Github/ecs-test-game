@@ -51,7 +51,7 @@ impl Lpp {
 		return lentity;
 	}
 
-	fn create_cupboard_if_needed<T: Clone + Hash + 'static>(&mut self) {
+	fn create_cupboard_if_needed<T: Clone + Hash + Debug + 'static>(&mut self) {
 		if self.cupboards.get::<OurKey<Cupboard<T>>>().is_none() {
 			self.add(Cupboard::<T>::new());
 		}
@@ -61,7 +61,7 @@ impl Lpp {
 		self.lentities.get_mut(&lentity).expect("Ent doesn't exist")
 	}
 
-	pub fn add_component<T: Clone + Hash + 'static>(&mut self, lentity: Lentity, component: T) {
+	pub fn add_component<T: Clone + Hash + Debug + 'static>(&mut self, lentity: Lentity, component: T) {
 		self.create_cupboard_if_needed::<T>();
 		let mut cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>().unwrap();
 		let shelf_ref = cupboard.add_component(component);
@@ -87,7 +87,7 @@ impl Lpp {
 		lentities
 	}
 
-	pub fn get_component_ref<T: Clone + Hash + 'static>(&mut self, lentity: Lentity) -> Option<&T> {
+	pub fn get_component_ref<T: Clone + Hash + Debug + 'static>(&mut self, lentity: Lentity) -> Option<&T> {
 		let cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>()?;
 		let shelf_ref = self
 			.lentities
@@ -96,15 +96,19 @@ impl Lpp {
 			.shelves
 			.get(&TypeId::of::<T>())?;
 		let shelf = cupboard.get_shelf(shelf_ref);
-		match shelf {
+		let to_ret = match shelf {
 			Shelf::One { data } => Some(data.as_ref().unwrap()),
 			Shelf::Many {
 				data_backup: data, ..
-			} => Some(data),
-		}
+			} => Some(&*data),
+		};
+
+		println!("Getting component ref. Lentity: {:?}, {:?}, {:?}", lentity, to_ret, shelf_ref);
+
+		to_ret
 	}
 
-	pub fn get_component<T: Clone + Hash + 'static>(&mut self, lentity: Lentity) -> Option<T> {
+	pub fn get_component<T: Clone + Hash + Debug + 'static>(&mut self, lentity: Lentity) -> Option<T> {
 		let cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>()?;
 		let shelf_ref = self
 			.lentities
@@ -114,7 +118,7 @@ impl Lpp {
 			.get(&TypeId::of::<T>())?;
 		let shelf = cupboard.get_shelf(shelf_ref);
 
-		match shelf {
+		let to_ret = match shelf {
 			Shelf::One { data } => {
 				assert!(data.is_some(), "Was it already on loan?");
 				data.take()
@@ -124,10 +128,13 @@ impl Lpp {
 				data,
 				qty,
 			} => Some(*data.take().expect("Was it already on loan?")),
-		}
+		};
+
+		println!("Getting component. Lentity: {:?}, {:?}", lentity, to_ret);
+		to_ret
 	}
 
-	pub fn return_component<T: Clone + Hash + 'static>(&mut self, lentity: Lentity, component: T) {
+	pub fn return_component<T: Clone + Hash + Debug + 'static>(&mut self, lentity: Lentity, component: T) {
 		let cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>().unwrap();
 		let internal_ent = self.lentities.get_mut(&lentity).expect("Ent doesn't exist");
 		let shelf_ref = internal_ent.shelves.get(&TypeId::of::<T>()).unwrap();
@@ -140,8 +147,10 @@ impl Lpp {
 
 		let cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>().unwrap();
 		let internal_ent = self.lentities.get_mut(&lentity).expect("Ent doesn't exist");
-		let shelf_ref = internal_ent.shelves.get(&TypeId::of::<T>()).unwrap();
+		let shelf_ref = internal_ent.shelves.get_mut(&TypeId::of::<T>()).unwrap();
 		let shelf = cupboard.get_shelf(shelf_ref);
+
+		println!("Returning component");
 
 		match shelf {
 			Shelf::One { data } => {
@@ -161,22 +170,29 @@ impl Lpp {
 				}
 
 				if identical {
+					println!("(Unchanged)");
 					*data = Some(Box::new(component));
 				} else {
+					println!("It's changed!!");
+
 					// Decrease the qty of the shelf
 					*qty -= 1;
 
 					// if the quantity is 1, set the shelf to be a one
 					if *qty == 1 {
+						println!("qty == 1");
+
 						let mut new_shelf = Shelf::One {
-							data: Some(component.clone()),
+							data: Some(data_backup.clone()),
 						};
 						std::mem::swap(shelf, &mut new_shelf);
 					} else {
-						*data = Some(Box::new(component.clone()));
+						println!("qty != 1");
+						*data = Some(Box::new(data_backup.clone()));
 					}
 
-					cupboard.add_component(component);
+					let new_ent_shelf_ref = cupboard.add_component(component);
+					*shelf_ref = new_ent_shelf_ref;
 				}
 			}
 		}
@@ -230,7 +246,7 @@ mod tests {
 		for i in 0..2 {
 			let mut entity = lpp.create_entity();
 			lpp.add_component(entity, PositionComp {
-				pos: Point::new(1.0, 0.0),
+				pos: Point::new(0.0, 0.0),
 			});
 			lpp.add_component(entity, VelocityComp {
 				vel: Point::new(0.0, i as f32),
@@ -252,17 +268,17 @@ mod tests {
 		// Assert that both entities have correct positions
 		let mut matching_entities =
 			lpp.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
-		let mut expected_positions = vec![Point::new(1.0, 0.0), Point::new(1.0, 1.0)];
+		let mut expected_positions = vec![Point::new(0.0, 0.0), Point::new(0.0, 1.0)];
 		for entity in &matching_entities {
-			let position = lpp.get_component::<PositionComp>(*entity).unwrap();
+			let position = lpp.get_component_ref::<PositionComp>(*entity).unwrap();
 			// Remove the position from the expected positions
+
+			println!("{}", &position.pos);
 			let index = expected_positions
 				.iter()
 				.position(|x| *x == position.pos)
 				.expect(format!("Position was wrong! {}", position.pos).as_str());
 			expected_positions.remove(index);
-
-			lpp.return_component(*entity, position);
 		}
 		assert_eq!(expected_positions.len(), 0);
 	}
