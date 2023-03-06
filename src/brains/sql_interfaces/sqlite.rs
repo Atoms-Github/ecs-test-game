@@ -1,5 +1,7 @@
 use crate::brains::com::ExportEntity;
-use crate::brains::sql_interfaces::{InterfaceType, SqlInterface, SqlStatement};
+use crate::brains::sql_interfaces::{
+    sqlite, InterfaceType, SqlArgument, SqlInterface, SqlStatement,
+};
 use crate::ui::ui_settings::GuiSettings;
 use ggez::filesystem::open;
 use ggez::graphics::Color;
@@ -7,10 +9,20 @@ use glam::*;
 use legion::systems::CommandBuffer;
 use legion::*;
 use rand::Rng;
+use rusqlite::types::{ToSqlOutput, Value};
 use rusqlite::*;
 
 pub struct InterfaceSqlite {
     connection: Connection,
+}
+
+impl ToSql for SqlArgument {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
+        match self {
+            SqlArgument::Float(x) => Ok(ToSqlOutput::Owned(Value::Real(*x as f64))),
+            SqlArgument::Blob(x) => Ok(ToSqlOutput::Owned(Value::Blob(x.clone()))),
+        }
+    }
 }
 
 impl SqlInterface for InterfaceSqlite {

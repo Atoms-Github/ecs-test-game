@@ -6,6 +6,7 @@ pub mod get_nearest;
 pub mod rts;
 pub mod spacial_array;
 pub mod identical_entities;
+pub mod image_entites;
 
 
 pub trait ChallengeTrait {

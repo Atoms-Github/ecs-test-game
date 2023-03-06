@@ -2,10 +2,13 @@ use crate::brains::brain_legion::{BrainLegion, BrainLegionCounted, BrainLegionDu
 use crate::brains::sql_brains::brain_sql::BrainSql;
 use crate::brains::sql_brains::sql_flat_table::BrainSqlFlatTable;
 use crate::brains::sql_interfaces::duckdb::InterfaceDuckDB;
+use crate::brains::sql_interfaces::postgresql::InterfacePostgres;
 use crate::brains::sql_interfaces::sqlite::InterfaceSqlite;
 use crate::brains::sql_interfaces::SqlInterface;
 use crate::brains::Brain;
 use crate::challenges::get_nearest::ChallengeGetNearest;
+use crate::challenges::identical_entities::ChallengeIdenticalEntities;
+use crate::challenges::image_entites::ChallengeBlob;
 use crate::challenges::rts::ChallengeRts;
 use crate::challenges::spacial_array::ChallengeSpatialArray;
 use crate::challenges::ChallengeTrait;
@@ -13,8 +16,6 @@ use crate::simulation_settings::{BrainType, Challenge, SimSettings};
 use crate::ui::ui_settings::GuiSettings;
 use plotters::prelude::*;
 use std::collections::HashMap;
-use crate::brains::sql_interfaces::postgresql::InterfacePostgres;
-use crate::challenges::identical_entities::ChallengeIdenticalEntities;
 
 pub struct TestController {
     pub brain: Box<dyn Brain>,
@@ -41,7 +42,6 @@ impl TestController {
                 BrainSqlFlatTable::new(),
                 InterfacePostgres::new(),
             )),
-
         };
         let new_challenge: Box<dyn ChallengeTrait> = match settings.challenge_type {
             Challenge::SpacialArray => Box::new(ChallengeSpatialArray {
@@ -49,9 +49,10 @@ impl TestController {
                 dupe_entity_fraction: 1.0,
                 unique_velocity_fraction: 0.001,
             }),
-            Challenge::Rts  => Box::new(ChallengeRts {}),
-            Challenge::PaintClosest  => Box::new(ChallengeGetNearest {}),
+            Challenge::Rts => Box::new(ChallengeRts {}),
+            Challenge::PaintClosest => Box::new(ChallengeGetNearest {}),
             Challenge::IdenticalEntities => Box::new(ChallengeIdenticalEntities {}),
+            Challenge::Blobular => Box::new(ChallengeBlob {}),
         };
 
         let mut controller = TestController::new(new_brain, new_challenge);

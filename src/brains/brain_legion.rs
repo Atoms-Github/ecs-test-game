@@ -6,33 +6,39 @@ use crate::ui::ui_settings::GuiSettings;
 use crate::utils::{color_from_team, FromTeam};
 use crate::{Point, MAP_SIZE, PROJECTILE_LIFETIME, SHOOT_SPEED};
 use ggez::graphics::Color;
+use ggez::input::mouse::position;
 use glam::*;
 use legion::systems::CommandBuffer;
 use legion::*;
 use rand::Rng;
 use std::borrow::{Borrow, BorrowMut};
 use std::collections::HashMap;
-use ggez::input::mouse::position;
-
 
 #[derive(Default)]
-pub struct BrainLegionCounted{
+pub struct BrainLegionCounted {
     counts: HashMap<Entity, u32>,
 }
 
-
-impl BrainLegionTrait for BrainLegionCounted{
-    fn add_entity(&mut self, world: &mut World, position: Point, velocity: Option<Point>, blue: f32) {
+impl BrainLegionTrait for BrainLegionCounted {
+    fn add_entity(
+        &mut self,
+        world: &mut World,
+        position: Point,
+        velocity: Option<Point>,
+        blue: f32,
+    ) {
         let mut found_ent = None;
 
         // Try and find if an identical entity already exists.
         let mut query = <(&PositionComp, &VelocityComp, &ColorComp)>::query();
         for chunk in query.iter_chunks(world) {
-            chunk.into_iter_entities().for_each(|(ent, (pos, vel, col))| {
-                if pos.pos == position && vel.vel == velocity.unwrap() && col.blue == blue {
-                    found_ent = Some(ent);
-                }
-            });
+            chunk
+                .into_iter_entities()
+                .for_each(|(ent, (pos, vel, col))| {
+                    if pos.pos == position && vel.vel == velocity.unwrap() && col.blue == blue {
+                        found_ent = Some(ent);
+                    }
+                });
         }
 
         if let Some(found_ent) = found_ent {
@@ -58,22 +64,58 @@ impl BrainLegionTrait for BrainLegionCounted{
         let found = self.counts.insert(ent_id, 1);
         assert_eq!(found, None);
     }
+
+    fn add_entity_blob(&mut self, world: &mut World, position: Point, blob: Vec<u8>) {
+        let mut found_ent = None;
+
+        // Try and find if an identical entity already exists.
+        let mut query = <(&PositionComp, &Vec<u8>)>::query();
+        for chunk in query.iter_chunks(world) {
+            chunk.into_iter_entities().for_each(|(ent, (pos, blob))| {
+                if pos.pos == position && blob == blob {
+                    found_ent = Some(ent);
+                }
+            });
+        }
+
+        if let Some(found_ent) = found_ent {
+            let count = self.counts.get_mut(&found_ent).unwrap();
+            *count += 1;
+            return;
+        }
+        // Try and find if an identical entity already exists.
+        let ent_id = world.push((
+            PositionComp { pos: position },
+            blob,
+            UniverseComp { universe_id: 0 },
+            ColorComp { blue: 1.0 },
+        ));
+        let found = self.counts.insert(ent_id, 1);
+        assert_eq!(found, None);
+    }
 }
 #[derive(Default)]
-pub struct BrainLegionDupey{
-}
+pub struct BrainLegionDupey {}
 
-pub trait BrainLegionTrait{
+pub trait BrainLegionTrait {
     fn add_entity(
         &mut self,
         world: &mut World,
-        position: Point, velocity: Option<Point>,
-        blue: f32
+        position: Point,
+        velocity: Option<Point>,
+        blue: f32,
     );
+    fn add_entity_blob(&mut self, world: &mut World, position: Point, blob: Vec<u8>);
 }
 
-impl BrainLegionTrait for BrainLegionDupey{
-    fn add_entity(&mut self, world: &mut World, position: Point, velocity: Option<Point>, blue: f32) {
+impl BrainLegionTrait for BrainLegionDupey {
+    fn add_entity(
+        &mut self,
+        world: &mut World,
+        position: Point,
+        velocity: Option<Point>,
+        blue: f32,
+    ) {
         if let Some(velocity) = velocity {
             world.push((
                 PositionComp { pos: position },
@@ -89,9 +131,17 @@ impl BrainLegionTrait for BrainLegionDupey{
             ));
         }
     }
+
+    fn add_entity_blob(&mut self, world: &mut World, position: Point, blob: Vec<u8>) {
+        world.push((
+            PositionComp { pos: position },
+            BlobComp { blob },
+            UniverseComp { universe_id: 0 },
+        ));
+    }
 }
 
-pub struct BrainLegion<T : BrainLegionTrait> {
+pub struct BrainLegion<T: BrainLegionTrait> {
     schedule: Option<Schedule>,
     world: World,
     trait_data: T,
@@ -215,7 +265,7 @@ fn delete_expired(time: &TimedLifeComp, entity: &Entity, command_buffer: &mut Co
     }
 }
 
-impl<T : Default + BrainLegionTrait> BrainLegion<T> {
+impl<T: Default + BrainLegionTrait> BrainLegion<T> {
     pub fn new() -> Self {
         let mut world = World::default();
         Self {
@@ -227,7 +277,7 @@ impl<T : Default + BrainLegionTrait> BrainLegion<T> {
     }
 }
 
-impl<T : BrainLegionTrait> Brain for BrainLegion<T> {
+impl<T: BrainLegionTrait> Brain for BrainLegion<T> {
     fn add_entity_unit(
         &mut self,
         position: Point,
@@ -239,7 +289,13 @@ impl<T : BrainLegionTrait> Brain for BrainLegion<T> {
     }
 
     fn add_entity(&mut self, position: Point, velocity: Option<Point>, blue: f32) {
-        self.trait_data.add_entity(&mut self.world, position, velocity, blue);
+        self.trait_data
+            .add_entity(&mut self.world, position, velocity, blue);
+    }
+
+    fn add_entity_blob(&mut self, position: Point, blob: Vec<u8>, blue: f32) {
+        self.trait_data
+            .add_entity_blob(&mut self.world, position, blob);
     }
 
     fn get_entities(&mut self, universe_id: usize) -> Vec<ExportEntity> {

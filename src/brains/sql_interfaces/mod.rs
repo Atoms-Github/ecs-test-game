@@ -1,6 +1,6 @@
 pub mod duckdb;
-pub mod sqlite;
 pub mod postgresql;
+pub mod sqlite;
 
 use crate::brains::com::ExportEntity;
 use crate::brains::{Brain, SystemType};
@@ -20,15 +20,28 @@ pub trait SqlInterface {
 #[derive(Debug)]
 pub struct SqlStatement {
     pub statement: String,
-    pub params: Vec<f32>,
+    pub params: Vec<SqlArgument>,
 }
+
+#[derive(Debug)]
+pub enum SqlArgument {
+    Float(f32),
+    Blob(Vec<u8>),
+}
+
 pub enum InterfaceType {
     Sqlite,
     DuckDB,
-    Postgres
+    Postgres,
 }
 impl SqlStatement {
-    pub fn new(statement: &str, params: Vec<f32>) -> SqlStatement {
+    pub fn new_f32(statement: &str, params: Vec<f32>) -> SqlStatement {
+        SqlStatement {
+            statement: statement.to_string(),
+            params: params.into_iter().map(|x| SqlArgument::Float(x)).collect(),
+        }
+    }
+    pub fn new(statement: &str, params: Vec<SqlArgument>) -> SqlStatement {
         SqlStatement {
             statement: statement.to_string(),
             params,
