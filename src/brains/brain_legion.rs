@@ -111,9 +111,12 @@ impl BrainLegionTrait for BrainLegionDupey {
 	}
 
 	fn add_entity_blob(&mut self, world: &mut World, position: Point, blob: Vec<u8>) {
-		world.push((PositionComp { pos: position }, BlobComp { blob }, UniverseComp {
-			universe_id: 0,
-		}));
+		world.push((
+			PositionComp { pos: position },
+			BlobComp { blob },
+			UniverseComp { universe_id: 0 },
+			ColorComp { blue: 1.0 },
+		));
 	}
 }
 
@@ -225,7 +228,7 @@ fn paint_nearest(
 	let mut closest_color = &ColorComp { blue: 0.0 };
 	for (other_pos, other_color) in pos_color.iter() {
 		let dist = (pos.pos - other_pos.pos).length();
-		if dist < closest_dist {
+		if dist < closest_dist && dist > 0.0 {
 			closest_dist = dist;
 			closest_color = other_color;
 		}

@@ -87,9 +87,9 @@ impl Lpp {
 		lentities
 	}
 
-	pub fn get_component_ref<T: Clone + Hash + Debug + 'static>(&mut self, lentity: Lentity) -> Option<&T> {
-		let cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>()?;
-		let shelf_ref = self.lentities.get_mut(&lentity)?.shelves.get(&TypeId::of::<T>())?;
+	pub fn get_component_ref<T: Clone + Hash + Debug + 'static>(&self, lentity: Lentity) -> Option<&T> {
+		let cupboard = self.cupboards.get::<OurKey<Cupboard<T>>>()?;
+		let shelf_ref = self.lentities.get(&lentity)?.shelves.get(&TypeId::of::<T>())?;
 		let shelf = cupboard.get_shelf(shelf_ref);
 		let to_ret = match shelf {
 			Shelf::One { data } => Some(data.as_ref().expect("Was it already on loan?")),
@@ -106,7 +106,7 @@ impl Lpp {
 	pub fn get_component<T: Clone + Hash + Debug + 'static>(&mut self, lentity: Lentity) -> Option<T> {
 		let cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>()?;
 		let shelf_ref = self.lentities.get_mut(&lentity)?.shelves.get(&TypeId::of::<T>())?;
-		let shelf = cupboard.get_shelf(shelf_ref);
+		let shelf = cupboard.get_shelf_mut(shelf_ref);
 
 		let to_ret = match shelf {
 			Shelf::One { data } => {
@@ -128,7 +128,7 @@ impl Lpp {
 		let cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>().unwrap();
 		let internal_ent = self.lentities.get_mut(&lentity).expect("Ent doesn't exist");
 		let shelf_ref = internal_ent.shelves.get(&TypeId::of::<T>()).unwrap();
-		let shelf = cupboard.get_shelf(shelf_ref);
+		let shelf = cupboard.get_shelf_mut(shelf_ref);
 
 		let maybe_shelf_new_comp = match shelf {
 			Shelf::One { .. } => None,
@@ -138,7 +138,7 @@ impl Lpp {
 		let cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>().unwrap();
 		let internal_ent = self.lentities.get_mut(&lentity).expect("Ent doesn't exist");
 		let shelf_ref = internal_ent.shelves.get_mut(&TypeId::of::<T>()).unwrap();
-		let shelf = cupboard.get_shelf(shelf_ref);
+		let shelf = cupboard.get_shelf_mut(shelf_ref);
 
 		println!("Returning component");
 

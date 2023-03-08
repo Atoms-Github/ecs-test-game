@@ -68,8 +68,12 @@ impl<T: Clone + Hash + Debug> Cupboard<T> {
 		}
 	}
 
-	pub fn get_shelf(&mut self, shelf_ref: &ShelfRef) -> &mut Shelf<T> {
+	pub fn get_shelf_mut(&mut self, shelf_ref: &ShelfRef) -> &mut Shelf<T> {
 		self.vec.get_mut(*shelf_ref).unwrap()
+	}
+
+	pub fn get_shelf(&self, shelf_ref: &ShelfRef) -> &Shelf<T> {
+		self.vec.get(*shelf_ref).unwrap()
 	}
 }
 #[derive(Clone)]

@@ -26,111 +26,6 @@ pub struct BrainLpp {
 	world: Lpp,
 }
 
-pub fn make_unit(world: &mut World, pos: Vec2, vel: Vec2, team: usize, universe_id: usize) {}
-
-fn make_projectile(buffer: &mut CommandBuffer, pos: Vec2, target: Vec2, universe_id: usize) {
-	let vel = (target - pos).normalize() * 100.0;
-	buffer.push((
-		PositionComp { pos },
-		VelocityComp { vel },
-		ColorComp { blue: 0.8 },
-		TimedLifeComp {
-			time_left: PROJECTILE_LIFETIME,
-		},
-		UniverseComp { universe_id },
-	));
-}
-
-#[system(for_each)]
-fn velocity(#[resource] dt: &f32, pos: &mut PositionComp, vel: &VelocityComp) {
-	pos.pos += vel.vel * *dt;
-}
-
-#[system(for_each)]
-fn acceleration(#[resource] dt: &f32, vel: &mut VelocityComp, acc: &AccelerationComp) {
-	vel.vel += acc.acc * *dt;
-}
-
-#[system(for_each)]
-fn map_edge(pos: &mut PositionComp) {
-	pos.pos.x = pos.pos.x.rem_euclid(MAP_SIZE);
-	pos.pos.y = pos.pos.y.rem_euclid(MAP_SIZE);
-}
-
-// Decrement the time left on all entities with a TimedLife component
-#[system(for_each)]
-fn update_timed_life(#[resource] dt: &f32, time: &mut TimedLifeComp) {
-	time.time_left -= *dt;
-}
-
-// Shoot projectiles at the nearest enemy
-#[system(for_each)]
-fn shoot(
-	#[resource] dt: &f32,
-	#[resource] other_entities: &Vec<(PositionComp, TeamComp, UniverseComp)>,
-	#[resource] settings: &SimSettings,
-	pos: &PositionComp,
-	team: &TeamComp,
-	shooter: &mut ShooterComp,
-	universe: &UniverseComp,
-	buffer: &mut CommandBuffer,
-) {
-	shooter.cooldown -= *dt;
-	if shooter.cooldown <= 0.0 {
-		let mut closest_dist = f32::MAX;
-		let mut closest_pos = Vec2::ZERO;
-		for (other_pos, other_team, other_universe) in other_entities.iter() {
-			if other_team.team == team.team || other_universe.universe_id != universe.universe_id {
-				continue;
-			}
-			let dist = (pos.pos - other_pos.pos).length();
-			if dist < closest_dist {
-				closest_dist = dist;
-				closest_pos = other_pos.pos;
-			}
-		}
-		// let a = if let Challenge::Rts { .. } = &settings.simulation_settings.challenge_type {
-		//     ..
-		// }else{
-		//     panic!("");
-		// };
-		// if a == 2.0{
-		//
-		// }
-		if closest_dist < settings.rts_range {
-			make_projectile(buffer, pos.pos, closest_pos, universe.universe_id);
-			shooter.cooldown = SHOOT_SPEED;
-		}
-	}
-}
-
-#[system(for_each)]
-fn paint_nearest(
-	#[resource] pos_color: &Vec<(PositionComp, ColorComp)>,
-	#[resource] settings: &SimSettings,
-	pos: &PositionComp,
-	color: &mut ColorComp,
-) {
-	let mut closest_dist = f32::MAX;
-	let mut closest_color = &ColorComp { blue: 0.0 };
-	for (other_pos, other_color) in pos_color.iter() {
-		let dist = (pos.pos - other_pos.pos).length();
-		if dist < closest_dist {
-			closest_dist = dist;
-			closest_color = other_color;
-		}
-	}
-	color.blend(closest_color, &settings);
-}
-
-// Delete entities that have expired
-#[system(for_each)]
-fn delete_expired(time: &TimedLifeComp, entity: &Entity, command_buffer: &mut CommandBuffer) {
-	if time.time_left <= 0.0 {
-		command_buffer.remove(*entity);
-	}
-}
-
 impl BrainLpp {
 	pub fn new() -> Self {
 		Self { world: Lpp::new() }
@@ -166,6 +61,7 @@ impl Brain for BrainLpp {
 		self.world.add_component(entity, PositionComp { pos: position });
 		self.world.add_component(entity, ColorComp { blue });
 		self.world.add_component(entity, BlobComp { blob });
+		self.world.add_component(entity, UniverseComp { universe_id: 0 });
 		self.world.complete_entity(entity);
 	}
 
@@ -210,7 +106,7 @@ impl Brain for BrainLpp {
 					let mut position = self.world.get_component::<PositionComp>(*entity).unwrap();
 					let velocity = self.world.get_component_ref::<VelocityComp>(*entity).unwrap();
 
-					position.pos += velocity.vel;
+					position.pos += velocity.vel * delta;
 					self.world.return_component(*entity, position);
 				}
 			}
@@ -228,7 +124,7 @@ impl Brain for BrainLpp {
 					let mut velocity = self.world.get_component::<VelocityComp>(*entity).unwrap();
 					let acceleration = self.world.get_component_ref::<AccelerationComp>(*entity).unwrap();
 
-					velocity.vel += acceleration.acc;
+					velocity.vel += acceleration.acc * delta;
 					self.world.return_component(*entity, velocity);
 				}
 			}
@@ -280,15 +176,35 @@ impl Brain for BrainLpp {
 				// buffer.flush(&mut self.world, &mut Resources::default());
 			}
 			SystemType::PaintNearest => {
-				// let mut pos_color = Vec::new();
-				// let mut query = <(&PositionComp, &ColorComp)>::query();
-				// for (pos, color) in query.iter(&self.world) {
-				// 	pos_color.push((*pos, *color));
-				// }
-				// let mut query = <(Entity, &PositionComp, &mut ColorComp)>::query();
-				// for (entity, pos, color) in query.iter_mut(&mut self.world) {
-				// 	paint_nearest(&pos_color, settings, pos, color);
-				// }
+				let mut pos_color = Vec::new();
+				let mut matching_entities =
+					self.world.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<ColorComp>()]);
+
+				for entity in &matching_entities {
+					let pos = self.world.get_component_ref::<PositionComp>(*entity).unwrap();
+					let color = self.world.get_component_ref::<ColorComp>(*entity).unwrap();
+					pos_color.push((*pos, *color));
+				}
+
+				let mut matching_entities =
+					self.world.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<ColorComp>()]);
+
+				for entity in &matching_entities {
+					let mut color = self.world.get_component::<ColorComp>(*entity).unwrap();
+					let pos = self.world.get_component_ref::<PositionComp>(*entity).unwrap();
+					let mut closest_dist = f32::MAX;
+					let mut closest_color = &ColorComp { blue: 0.0 };
+					for (other_pos, other_color) in pos_color.iter() {
+						let dist = (pos.pos - other_pos.pos).length();
+						if dist < closest_dist && dist > 0.0 {
+							closest_dist = dist;
+							closest_color = other_color;
+						}
+					}
+					color.blend(closest_color, &settings);
+
+					self.world.return_component(*entity, color);
+				}
 			}
 		}
 	}

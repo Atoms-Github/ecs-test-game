@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use plotters::prelude::*;
 
 use crate::brains::brain_legion::{BrainLegion, BrainLegionCounted, BrainLegionDupey};
+use crate::brains::brain_lpp::BrainLpp;
 use crate::brains::sql_brains::brain_sql::BrainSql;
 use crate::brains::sql_brains::sql_flat_table::BrainSqlFlatTable;
 use crate::brains::sql_interfaces::duckdb::InterfaceDuckDB;
@@ -37,6 +38,7 @@ impl TestController {
 			BrainType::SqlPostgres => {
 				Box::new(BrainSql::new(BrainSqlFlatTable::new(), InterfacePostgres::new()))
 			}
+			BrainType::Lpp => Box::new(BrainLpp::new()),
 		};
 		let new_challenge: Box<dyn ChallengeTrait> = match settings.challenge_type {
 			Challenge::SpacialArray => Box::new(ChallengeSpatialArray {
