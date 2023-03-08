@@ -1,9 +1,12 @@
+use std::any::TypeId;
+
 use legion::systems::CommandBuffer;
 use legion::{Entity, IntoQuery, Resources, Schedule, World};
 
 use crate::brains::brain_legion::BrainLegionTrait;
 use crate::brains::com::{
 	AccelerationComp,
+	BlobComp,
 	ColorComp,
 	ExportEntity,
 	PositionComp,
@@ -128,163 +131,164 @@ fn delete_expired(time: &TimedLifeComp, entity: &Entity, command_buffer: &mut Co
 	}
 }
 
-impl<T: Default + BrainLegionTrait> BrainLpp<T> {
+impl BrainLpp {
 	pub fn new() -> Self {
-		let mut world = World::default();
-		Self {
-			world,
-			schedule: None,
-
-			trait_data: T::default(),
-		}
+		Self { world: Lpp::new() }
 	}
 }
 
 impl Brain for BrainLpp {
 	fn add_entity_unit(&mut self, position: Point, velocity: Point, team: usize, universe_id: usize) {
-		let mut entity = lpp.create_entity();
+		let mut entity = self.world.create_entity();
 		self.world.add_component(entity, PositionComp { pos: position });
 		self.world.add_component(entity, VelocityComp { vel: velocity });
 		self.world.add_component(entity, UniverseComp { universe_id });
+		self.world.add_component(entity, ShooterComp { cooldown: 0.0 });
 		self.world.add_component(entity, ColorComp {
 			blue: color_from_team(team),
 		});
 		self.world.complete_entity(entity);
-		let ent = command_buffer.push((
-			VelocityComp { vel },
-			TeamComp { team },
-			ColorComp {
-				blue: color_from_team(team),
-			},
-			UniverseComp { universe_id },
-			ShooterComp { cooldown: 0.0 },
-		));
 	}
 
 	fn add_entity(&mut self, position: Point, velocity: Option<Point>, blue: f32) {
-		self.trait_data.add_entity(&mut self.world, position, velocity, blue);
+		let mut entity = self.world.create_entity();
+		self.world.add_component(entity, PositionComp { pos: position });
+		if let Some(velocity) = velocity {
+			self.world.add_component(entity, VelocityComp { vel: velocity });
+		}
+		self.world.add_component(entity, UniverseComp { universe_id: 0 });
+		self.world.add_component(entity, ColorComp { blue });
+		self.world.complete_entity(entity);
 	}
 
 	fn add_entity_blob(&mut self, position: Point, blob: Vec<u8>, blue: f32) {
-		self.trait_data.add_entity_blob(&mut self.world, position, blob);
+		let mut entity = self.world.create_entity();
+		self.world.add_component(entity, PositionComp { pos: position });
+		self.world.add_component(entity, ColorComp { blue });
+		self.world.add_component(entity, BlobComp { blob });
+		self.world.complete_entity(entity);
 	}
 
 	fn get_entities(&mut self, universe_id: usize) -> Vec<ExportEntity> {
-		let mut query = <(Read<PositionComp>, Read<ColorComp>, Read<UniverseComp>)>::query();
+		let mut matching_entities = self.world.query(vec![
+			TypeId::of::<PositionComp>(),
+			TypeId::of::<ColorComp>(),
+			TypeId::of::<UniverseComp>(),
+		]);
 		let mut entities = Vec::new();
-		for (pos, color, universe) in query.iter(&self.world) {
-			if universe.universe_id == universe_id {
+		for entity in &matching_entities {
+			if self.world.get_component_ref::<UniverseComp>(*entity).unwrap().universe_id == universe_id {
 				entities.push(ExportEntity {
-					position: pos.pos,
-					blue:     color.blue,
+					position: self.world.get_component_ref::<PositionComp>(*entity).unwrap().pos,
+					blue:     self.world.get_component_ref::<ColorComp>(*entity).unwrap().blue,
 				});
 			}
 		}
 		entities
 	}
 
-	fn init(&mut self, systems: &Vec<SystemType>) {
-		let mut schedule = Schedule::builder();
-		for system in systems.iter() {
-			match system {
-				SystemType::Velocity => schedule.add_system(velocity_system()),
-				SystemType::Acceleration => schedule.add_system(acceleration_system()),
-				SystemType::MapEdge => schedule.add_system(map_edge_system()),
-				SystemType::UpdateTimedLife => schedule.add_system(update_timed_life_system()),
-				SystemType::Shoot => schedule.add_system(shoot_system()),
-				SystemType::DeleteExpired => schedule.add_system(delete_expired_system()),
-				SystemType::PaintNearest => schedule.add_system(paint_nearest_system()),
-			};
-		}
-		self.schedule = Some(schedule.build());
-	}
+	fn init(&mut self, systems: &Vec<SystemType>) {}
 
 	fn tick_systems(&mut self, delta: f32, settings: &SimSettings, systems: &Vec<SystemType>) {
-		let mut resources = Resources::default();
-		resources.insert(delta);
-		resources.insert(settings.clone());
-
-		let mut pos_team_universe = Vec::new();
-		let mut query = <(&PositionComp, &TeamComp, &UniverseComp)>::query();
-		for (pos, team, universe) in query.iter(&self.world) {
-			pos_team_universe.push((*pos, *team, *universe));
+		for system in systems {
+			self.tick_system(system, delta, settings);
 		}
-
-		let mut pos_color = Vec::new();
-		let mut query = <(&PositionComp, &ColorComp)>::query();
-		for (pos, color) in query.iter(&self.world) {
-			pos_color.push((*pos, *color));
-		}
-
-		resources.insert(pos_team_universe);
-		resources.insert(pos_color);
-		resources.insert(settings.clone());
-
-		let schedule = self.schedule.as_mut().unwrap();
-		schedule.execute(&mut self.world, &mut resources);
 	}
 
 	fn tick_system(&mut self, system: &SystemType, delta: f32, settings: &SimSettings) {
 		match system {
 			SystemType::Velocity => {
-				let mut query = <(&mut PositionComp, &VelocityComp)>::query();
-				for (mut pos, vel) in query.iter_mut(&mut self.world) {
-					velocity(&delta, pos, vel)
+				// let mut query = <(&mut PositionComp, &VelocityComp)>::query();
+				// for (mut pos, vel) in query.iter_mut(&mut self.world) {
+				// 	velocity(&delta, pos, vel)
+				// }
+				let mut matching_entities = self
+					.world
+					.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
+
+				for entity in &matching_entities {
+					let mut position = self.world.get_component::<PositionComp>(*entity).unwrap();
+					let velocity = self.world.get_component_ref::<VelocityComp>(*entity).unwrap();
+
+					position.pos += velocity.vel;
+					self.world.return_component(*entity, position);
 				}
 			}
 			SystemType::Acceleration => {
-				let mut query = <(&mut VelocityComp, &AccelerationComp)>::query();
-				for (mut vel, acc) in query.iter_mut(&mut self.world) {
-					acceleration(&delta, vel, acc)
+				// let mut query = <(&mut VelocityComp, &AccelerationComp)>::query();
+				// for (mut vel, acc) in query.iter_mut(&mut self.world) {
+				// 	acceleration(&delta, vel, acc)
+				// }
+				let mut matching_entities = self.world.query(vec![
+					TypeId::of::<VelocityComp>(),
+					TypeId::of::<AccelerationComp>(),
+				]);
+
+				for entity in &matching_entities {
+					let mut velocity = self.world.get_component::<VelocityComp>(*entity).unwrap();
+					let acceleration = self.world.get_component_ref::<AccelerationComp>(*entity).unwrap();
+
+					velocity.vel += acceleration.acc;
+					self.world.return_component(*entity, velocity);
 				}
 			}
 			SystemType::MapEdge => {
-				let mut query = <(&mut PositionComp)>::query();
-				for (mut pos) in query.iter_mut(&mut self.world) {
-					map_edge(pos);
+				// 	let mut query = <(&mut PositionComp)>::query();
+				// 	for (mut pos) in query.iter_mut(&mut self.world) {
+				// 		map_edge(pos);
+				// 	}
+
+				let mut matching_entities = self.world.query(vec![TypeId::of::<PositionComp>()]);
+
+				for entity in &matching_entities {
+					let mut position = self.world.get_component::<PositionComp>(*entity).unwrap();
+					position.pos.x = position.pos.x.rem_euclid(MAP_SIZE);
+					position.pos.y = position.pos.y.rem_euclid(MAP_SIZE);
+
+					self.world.return_component(*entity, position);
 				}
 			}
 			SystemType::UpdateTimedLife => {
-				let mut query = <(&mut TimedLifeComp)>::query();
-				for (mut time) in query.iter_mut(&mut self.world) {
-					update_timed_life(&delta, time);
-				}
+				// let mut query = <(&mut TimedLifeComp)>::query();
+				// for (mut time) in query.iter_mut(&mut self.world) {
+				// 	update_timed_life(&delta, time);
+				// }
 			}
 			SystemType::Shoot => {
-				let mut pos_team_universe = Vec::new();
-				let mut query = <(&PositionComp, &TeamComp, &UniverseComp)>::query();
-				for (pos, team, universe) in query.iter(&self.world) {
-					pos_team_universe.push((*pos, *team, *universe));
-				}
-				let mut buffer = CommandBuffer::new(&mut self.world);
-
-				let mut query = <(&PositionComp, &TeamComp, &UniverseComp, &mut ShooterComp)>::query();
-				for (pos, team, universe, mut shooter) in query.iter_mut(&mut self.world) {
-					shoot(&delta, &pos_team_universe, settings, pos, team, shooter, universe, &mut buffer);
-				}
-				buffer.flush(&mut self.world, &mut Resources::default());
+				// let mut pos_team_universe = Vec::new();
+				// let mut query = <(&PositionComp, &TeamComp, &UniverseComp)>::query();
+				// for (pos, team, universe) in query.iter(&self.world) {
+				// 	pos_team_universe.push((*pos, *team, *universe));
+				// }
+				// let mut buffer = CommandBuffer::new(&mut self.world);
+				//
+				// let mut query = <(&PositionComp, &TeamComp, &UniverseComp, &mut ShooterComp)>::query();
+				// for (pos, team, universe, mut shooter) in query.iter_mut(&mut self.world) {
+				// 	shoot(&delta, &pos_team_universe, settings, pos, team, shooter, universe, &mut buffer);
+				// }
+				// buffer.flush(&mut self.world, &mut Resources::default());
 			}
 			SystemType::DeleteExpired => {
-				let mut buffer = CommandBuffer::new(&self.world);
-				let mut query = <(&TimedLifeComp)>::query();
-
-				for chunk in query.iter_chunks(&self.world) {
-					chunk.into_iter_entities().for_each(|(ent, time)| {
-						delete_expired(time, &ent, &mut buffer);
-					});
-				}
-				buffer.flush(&mut self.world, &mut Resources::default());
+				// let mut buffer = CommandBuffer::new(&self.world);
+				// let mut query = <(&TimedLifeComp)>::query();
+				//
+				// for chunk in query.iter_chunks(&self.world) {
+				// 	chunk.into_iter_entities().for_each(|(ent, time)| {
+				// 		delete_expired(time, &ent, &mut buffer);
+				// 	});
+				// }
+				// buffer.flush(&mut self.world, &mut Resources::default());
 			}
 			SystemType::PaintNearest => {
-				let mut pos_color = Vec::new();
-				let mut query = <(&PositionComp, &ColorComp)>::query();
-				for (pos, color) in query.iter(&self.world) {
-					pos_color.push((*pos, *color));
-				}
-				let mut query = <(Entity, &PositionComp, &mut ColorComp)>::query();
-				for (entity, pos, color) in query.iter_mut(&mut self.world) {
-					paint_nearest(&pos_color, settings, pos, color);
-				}
+				// let mut pos_color = Vec::new();
+				// let mut query = <(&PositionComp, &ColorComp)>::query();
+				// for (pos, color) in query.iter(&self.world) {
+				// 	pos_color.push((*pos, *color));
+				// }
+				// let mut query = <(Entity, &PositionComp, &mut ColorComp)>::query();
+				// for (entity, pos, color) in query.iter_mut(&mut self.world) {
+				// 	paint_nearest(&pos_color, settings, pos, color);
+				// }
 			}
 		}
 	}

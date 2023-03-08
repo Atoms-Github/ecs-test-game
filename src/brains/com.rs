@@ -96,7 +96,7 @@ impl Hash for TimedLifeComp {
 pub struct UniverseComp {
 	pub universe_id: usize,
 }
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Hash)]
 pub struct BlobComp {
 	pub blob: Vec<u8>,
 }

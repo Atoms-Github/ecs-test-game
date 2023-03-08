@@ -91,13 +91,12 @@ impl Lpp {
 		let cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>()?;
 		let shelf_ref = self
 			.lentities
-			.get_mut(&lentity)
-			.expect("Ent doesn't exist")
+			.get_mut(&lentity)?
 			.shelves
 			.get(&TypeId::of::<T>())?;
 		let shelf = cupboard.get_shelf(shelf_ref);
 		let to_ret = match shelf {
-			Shelf::One { data } => Some(data.as_ref().unwrap()),
+			Shelf::One { data } => Some(data.as_ref().expect("Was it already on loan?")),
 			Shelf::Many {
 				data_backup: data, ..
 			} => Some(&*data),
@@ -112,8 +111,7 @@ impl Lpp {
 		let cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>()?;
 		let shelf_ref = self
 			.lentities
-			.get_mut(&lentity)
-			.expect("Ent doesn't exist")
+			.get_mut(&lentity)?
 			.shelves
 			.get(&TypeId::of::<T>())?;
 		let shelf = cupboard.get_shelf(shelf_ref);
