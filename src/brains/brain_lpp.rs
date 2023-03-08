@@ -17,7 +17,7 @@ use crate::brains::com::{
 	VelocityComp,
 };
 use crate::brains::{Brain, SystemType};
-use crate::legionpp::lpp::Lpp;
+use crate::legionpp::lpp::{Lentity, Lpp};
 use crate::simulation_settings::SimSettings;
 use crate::utils::color_from_team;
 use crate::{Point, MAP_SIZE, PROJECTILE_LIFETIME, SHOOT_SPEED};
@@ -75,12 +75,17 @@ impl Brain for BrainLpp {
 		for entity in &matching_entities {
 			if self.world.get_component_ref::<UniverseComp>(*entity).unwrap().universe_id == universe_id {
 				entities.push(ExportEntity {
-					position: self.world.get_component_ref::<PositionComp>(*entity).unwrap().pos,
-					blue:     self.world.get_component_ref::<ColorComp>(*entity).unwrap().blue,
+					position:  self.world.get_component_ref::<PositionComp>(*entity).unwrap().pos,
+					blue:      self.world.get_component_ref::<ColorComp>(*entity).unwrap().blue,
+					entity_id: *entity as u64,
 				});
 			}
 		}
 		entities
+	}
+
+	fn get_image(&mut self, entity_id: u64) -> &Vec<u8> {
+		return &self.world.get_component_ref::<BlobComp>(entity_id as Lentity).unwrap().blob;
 	}
 
 	fn init(&mut self, systems: &Vec<SystemType>) {}

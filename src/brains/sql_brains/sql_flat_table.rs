@@ -252,6 +252,13 @@ SET blue = e1.blue +
 		);
 	}
 
+	fn get_image(&mut self, entity_id: u64) -> SqlStatement {
+		return SqlStatement::new_f32(
+			"SELECT blob FROM entities WHERE id = ?;",
+			vec![entity_id as f32],
+		);
+	}
+
 	fn init_systems<I: SqlInterface>(&mut self, systems: &Vec<SystemType>) -> Vec<SqlStatement> {
 		let mut systems = vec![];
 		match I::get_type() {

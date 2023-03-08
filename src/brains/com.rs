@@ -38,8 +38,9 @@ impl ColorComp {
 	}
 }
 pub struct ExportEntity {
-	pub position: Point,
-	pub blue:     f32,
+	pub position:  Point,
+	pub blue:      f32,
+	pub entity_id: u64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Hash)]
