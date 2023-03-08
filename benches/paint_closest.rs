@@ -7,34 +7,39 @@
 #![allow(unused_parens)]
 
 mod bench_utils;
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use std::time::Duration;
 
-use crate::bench_utils::benchmark;
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use ecs_test_game::brains::brain_legion::BrainLegion;
 use ecs_test_game::challenges::rts::ChallengeRts;
 use ecs_test_game::simulation_settings::{BrainType, Challenge, SimSettings};
 use ecs_test_game::test_controller::TestController;
-use std::time::Duration;
+
+use crate::bench_utils::benchmark;
 
 criterion_group!(benches, color_closest);
 criterion_main!(benches);
 
 fn color_closest(c: &mut Criterion) {
-    let mut group = c.benchmark_group("painting");
-    group.sample_size(10);
-    group.measurement_time(Duration::from_secs(3));
-    group.warm_up_time(Duration::from_millis(100));
+	let mut group = c.benchmark_group("painting");
+	group.sample_size(10);
+	group.measurement_time(Duration::from_secs(3));
+	group.warm_up_time(Duration::from_millis(100));
 
-    let tests = [BrainType::LegionDupey, BrainType::SqlDuck, BrainType::SqlIte];
-    let entity_counts = [5, 10, 20, 50, 70,85, 100, 130, 160, 200, 230, 250];
-    let mut settings = SimSettings::default();
-    settings.challenge_type = Challenge::PaintClosest;
+	let tests = [
+		BrainType::LegionDupey,
+		BrainType::SqlDuck,
+		BrainType::SqlIte,
+	];
+	let entity_counts = [5, 10, 20, 50, 70, 85, 100, 130, 160, 200, 230, 250];
+	let mut settings = SimSettings::default();
+	settings.challenge_type = Challenge::PaintClosest;
 
-    for entity_count in entity_counts {
-        settings.entity_count = entity_count;
-        for test in tests {
-            settings.brain_type = test;
-            benchmark(&mut group, &settings, 3);
-        }
-    }
+	for entity_count in entity_counts {
+		settings.entity_count = entity_count;
+		for test in tests {
+			settings.brain_type = test;
+			benchmark(&mut group, &settings, 3);
+		}
+	}
 }

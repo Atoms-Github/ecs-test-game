@@ -89,11 +89,7 @@ impl Lpp {
 
 	pub fn get_component_ref<T: Clone + Hash + Debug + 'static>(&mut self, lentity: Lentity) -> Option<&T> {
 		let cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>()?;
-		let shelf_ref = self
-			.lentities
-			.get_mut(&lentity)?
-			.shelves
-			.get(&TypeId::of::<T>())?;
+		let shelf_ref = self.lentities.get_mut(&lentity)?.shelves.get(&TypeId::of::<T>())?;
 		let shelf = cupboard.get_shelf(shelf_ref);
 		let to_ret = match shelf {
 			Shelf::One { data } => Some(data.as_ref().expect("Was it already on loan?")),
@@ -109,11 +105,7 @@ impl Lpp {
 
 	pub fn get_component<T: Clone + Hash + Debug + 'static>(&mut self, lentity: Lentity) -> Option<T> {
 		let cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>()?;
-		let shelf_ref = self
-			.lentities
-			.get_mut(&lentity)?
-			.shelves
-			.get(&TypeId::of::<T>())?;
+		let shelf_ref = self.lentities.get_mut(&lentity)?.shelves.get(&TypeId::of::<T>())?;
 		let shelf = cupboard.get_shelf(shelf_ref);
 
 		let to_ret = match shelf {

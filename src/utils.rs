@@ -1,62 +1,57 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+
 use ggez::graphics::Color;
 use glam::Vec2;
 use rand::Rng;
 
 pub fn time_it<F>(to_time: F) -> u128
 where
-    F: FnOnce(),
-{
-    let start = std::time::Instant::now();
-    to_time();
-    let end = std::time::Instant::now();
-    (end - start).as_micros()
+	F: FnOnce(), {
+	let start = std::time::Instant::now();
+	to_time();
+	let end = std::time::Instant::now();
+	(end - start).as_micros()
 }
 
 pub trait GenRandom {
-    fn gen_random() -> Self;
+	fn gen_random() -> Self;
 }
 impl GenRandom for Vec2 {
-    fn gen_random() -> Self {
-        let mut rand = rand::thread_rng();
-        Vec2::new(rand.gen_range(0.0..1.0), rand.gen_range(0.0..1.0))
-    }
+	fn gen_random() -> Self {
+		let mut rand = rand::thread_rng();
+		Vec2::new(rand.gen_range(0.0..1.0), rand.gen_range(0.0..1.0))
+	}
 }
 pub trait FromTeam {
-    fn from_team(team: usize) -> Self;
+	fn from_team(team: usize) -> Self;
 }
 pub fn color_from_team(team: usize) -> f32 {
-    match team {
-        0 => 0.0,
-        1 => 0.5,
-        2 => 1.0,
-        _ => 0.0,
-    }
+	match team {
+		0 => 0.0,
+		1 => 0.5,
+		2 => 1.0,
+		_ => 0.0,
+	}
 }
 
 impl GenRandom for Color {
-    fn gen_random() -> Self {
-        let mut rng = rand::thread_rng();
-        Color::new(
-            rng.gen_range(0.0..1.0),
-            rng.gen_range(0.0..1.0),
-            rng.gen_range(0.0..1.0),
-            1.0,
-        )
-    }
+	fn gen_random() -> Self {
+		let mut rng = rand::thread_rng();
+		Color::new(rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0), 1.0)
+	}
 }
 
-pub trait HashMe{
-    fn hash_me(&self) -> u64;
+pub trait HashMe {
+	fn hash_me(&self) -> u64;
 }
 
-impl<T: Hash> HashMe for T{
-    fn hash_me(&self) -> u64 {
-        let mut hasher = DefaultHasher::new();
-        self.hash(&mut hasher);
-        hasher.finish()
-    }
+impl<T: Hash> HashMe for T {
+	fn hash_me(&self) -> u64 {
+		let mut hasher = DefaultHasher::new();
+		self.hash(&mut hasher);
+		hasher.finish()
+	}
 }
 // macro_rules! cast {
 //     ($target: expr, $pat: path) => {{
