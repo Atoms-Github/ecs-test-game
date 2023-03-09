@@ -35,18 +35,29 @@ impl SqlInterface for InterfaceDuckDB {
 		transaction.commit().unwrap();
 	}
 
-	fn get_entities(&mut self, query_xyc: SqlStatement) -> Vec<ExportEntity> {
-		let mut stmt = self.conn.prepare_cached(query_xyc.statement.as_str()).unwrap();
-		let mut rows = stmt.query(params_from_iter(query_xyc.params)).unwrap();
+	fn get_entities(&mut self, query_xyci: SqlStatement) -> Vec<ExportEntity> {
+		let mut stmt = self.conn.prepare_cached(query_xyci.statement.as_str()).unwrap();
+		let mut rows = stmt.query(params_from_iter(query_xyci.params)).unwrap();
 		let mut ents = Vec::new();
 		while let Some(row) = rows.next().unwrap() {
 			let ent = ExportEntity {
-				position: Point::new(row.get(0).unwrap(), row.get(1).unwrap()),
-				blue:     row.get(2).unwrap(),
+				position:  Point::new(row.get(0).unwrap(), row.get(1).unwrap()),
+				blue:      row.get(2).unwrap(),
+				entity_id: row.get(3).unwrap(),
 			};
 			ents.push(ent);
 		}
 		ents
+	}
+
+	fn get_image(&mut self, query_image: SqlStatement) -> Vec<u8> {
+		let mut stmt = self.conn.prepare_cached(query_image.statement.as_str()).unwrap();
+		let mut rows = stmt.query(params_from_iter(query_image.params)).unwrap();
+		
+		let row = rows.next().unwrap().unwrap();
+		let blob: Vec<u8> = row.get(0).unwrap();
+		assert!(rows.next().unwrap().is_none(), "More than one row returned for image query");
+		blob
 	}
 
 	fn execute_single(&mut self, statement: SqlStatement) {

@@ -43,13 +43,14 @@ impl SqlInterface for InterfaceSqlite {
 		transaction.commit().unwrap();
 	}
 
-	fn get_entities(&mut self, query_xyc: SqlStatement) -> Vec<ExportEntity> {
-		let mut statement = self.connection.prepare_cached(&query_xyc.statement).unwrap();
+	fn get_entities(&mut self, query_xyci: SqlStatement) -> Vec<ExportEntity> {
+		let mut statement = self.connection.prepare_cached(&query_xyci.statement).unwrap();
 		let mut rows = statement
-			.query_map(params_from_iter(query_xyc.params), |row| {
+			.query_map(params_from_iter(query_xyci.params), |row| {
 				Ok(ExportEntity {
-					position: Vec2::new(row.get(0)?, row.get(1)?),
-					blue:     row.get(2)?,
+					position:  Vec2::new(row.get(0)?, row.get(1)?),
+					blue:      row.get(2)?,
+					entity_id: row.get(3)?,
 				})
 			})
 			.unwrap();
@@ -60,6 +61,20 @@ impl SqlInterface for InterfaceSqlite {
 			}
 		}
 		positions_and_teams
+	}
+
+	fn get_image(&mut self, query_image: SqlStatement) -> Vec<u8> {
+		let mut statement = self.connection.prepare_cached(&query_image.statement).unwrap();
+		let mut blobs = statement
+			.query_map(params_from_iter(query_image.params), |row| {
+				let blob: Vec<u8> = row.get(0).unwrap();
+				Ok(blob)
+			})
+			.unwrap();
+
+		let blob = blobs.next().unwrap().unwrap();
+		assert!(blobs.next().is_none());
+		blob
 	}
 
 	fn execute_single(&mut self, statement: SqlStatement) {

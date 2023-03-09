@@ -4,7 +4,9 @@ use std::collections::HashMap;
 use ggez::graphics::Color;
 use ggez::input::mouse::position;
 use glam::*;
+use legion::storage::ComponentStorage;
 use legion::systems::CommandBuffer;
+use legion::world::{ComponentAccess, EntityAccessError, EntryRef};
 use legion::*;
 use rand::Rng;
 
@@ -288,11 +290,20 @@ impl<T: BrainLegionTrait> Brain for BrainLegion<T> {
 		entities
 	}
 
-	fn get_image(&mut self, entity_id: u64) -> Cow<Vec<u8>> {
+	fn get_image<'a>(&'a mut self, entity_id: u64) -> Cow<Vec<u8>> {
 		let entity = unsafe { std::mem::transmute::<u64, Entity>(entity_id) };
-		let blob = self.world.entry_ref(entity).unwrap().get_component::<BlobComp>().unwrap();
-		
-		Cow::Borrowed(&blob.blob)
+
+		let entry_ref: EntryRef<'a> = self.world.entry_ref(entity).unwrap();
+
+		let blob = &entry_ref.get_component::<BlobComp>().as_ref().unwrap().blob;
+
+		// let blob_as_pointer: *const Vec<u8> = blob;
+		//
+		// let blob_as_ref_unsafe = unsafe { &*blob_as_pointer };
+		//
+		// Cow::Borrowed(blob_as_ref_unsafe)
+		let cloned = blob.clone();
+		Cow::Owned(cloned)
 	}
 
 	fn init(&mut self, systems: &Vec<SystemType>) {

@@ -1,4 +1,5 @@
 use std::any::TypeId;
+use std::borrow::Cow;
 
 use legion::systems::CommandBuffer;
 use legion::{Entity, IntoQuery, Resources, Schedule, World};
@@ -84,8 +85,9 @@ impl Brain for BrainLpp {
 		entities
 	}
 
-	fn get_image(&mut self, entity_id: u64) -> &Vec<u8> {
-		return &self.world.get_component_ref::<BlobComp>(entity_id as Lentity).unwrap().blob;
+	fn get_image(&mut self, entity_id: u64) -> Cow<Vec<u8>> {
+		let reference = self.world.get_component_ref::<BlobComp>(entity_id as Lentity).unwrap();
+		Cow::Borrowed(&reference.blob)
 	}
 
 	fn init(&mut self, systems: &Vec<SystemType>) {}
