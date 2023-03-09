@@ -1,4 +1,4 @@
-use std::borrow::{Borrow, BorrowMut};
+use std::borrow::{Borrow, BorrowMut, Cow};
 use std::collections::HashMap;
 
 use ggez::graphics::Color;
@@ -272,15 +272,27 @@ impl<T: BrainLegionTrait> Brain for BrainLegion<T> {
 	fn get_entities(&mut self, universe_id: usize) -> Vec<ExportEntity> {
 		let mut query = <(Read<PositionComp>, Read<ColorComp>, Read<UniverseComp>)>::query();
 		let mut entities = Vec::new();
-		for (pos, color, universe) in query.iter(&self.world) {
-			if universe.universe_id == universe_id {
-				entities.push(ExportEntity {
-					position: pos.pos,
-					blue:     color.blue,
-				});
-			}
+
+		for chunk in query.iter_chunks(&self.world) {
+			chunk.into_iter_entities().for_each(|(ent, (pos, color, universe))| {
+				if universe.universe_id == universe_id {
+					let ent_u64 = unsafe { std::mem::transmute(ent) };
+					entities.push(ExportEntity {
+						position:  pos.pos,
+						blue:      color.blue,
+						entity_id: ent_u64,
+					});
+				}
+			});
 		}
 		entities
+	}
+
+	fn get_image(&mut self, entity_id: u64) -> Cow<Vec<u8>> {
+		let entity = unsafe { std::mem::transmute::<u64, Entity>(entity_id) };
+		let blob = self.world.entry_ref(entity).unwrap().get_component::<BlobComp>().unwrap();
+		
+		Cow::Borrowed(&blob.blob)
 	}
 
 	fn init(&mut self, systems: &Vec<SystemType>) {

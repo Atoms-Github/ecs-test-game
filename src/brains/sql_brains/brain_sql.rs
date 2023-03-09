@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use duckdb::params;
 use ggez::graphics::Color;
 
@@ -29,6 +30,7 @@ pub trait CommandPlanSql {
 	fn add_entity(&mut self, position: Point, velocity: Option<Point>, blue: f32) -> SqlStatement;
 	fn add_entity_blob(&mut self, position: Point, blob: Vec<u8>, blue: f32) -> SqlStatement;
 	fn get_ents_xyc(&mut self, universe_id: usize) -> SqlStatement;
+	fn get_image(&mut self, entity_id: u64) -> SqlStatement;
 	fn init_systems<I: SqlInterface>(&mut self, systems: &Vec<SystemType>) -> Vec<SqlStatement>;
 }
 impl<C, D> BrainSql<C, D> {
@@ -60,6 +62,12 @@ impl<C: CommandPlanSql, I: SqlInterface> Brain for BrainSql<C, I> {
 		let command = self.command_plan.get_ents_xyc(universe_id);
 		let entities = self.database.get_entities(command);
 		return entities;
+	}
+
+	fn get_image(&mut self, entity_id: u64) -> Cow<Vec<u8>> {
+		let command = self.command_plan.get_image(entity_id);
+		let image = self.database.get_image(command);
+		Cow::Owned(image)
 	}
 
 	fn init(&mut self, systems: &Vec<SystemType>) {

@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt;
 use std::time::Duration;
 
@@ -22,6 +23,7 @@ pub trait Brain {
 	fn add_entity_blob(&mut self, position: Point, blob: Vec<u8>, blue: f32);
 
 	fn get_entities(&mut self, universe_id: usize) -> Vec<ExportEntity>;
+	fn get_image(&mut self, entity_id: u64) -> Cow<Vec<u8>>;
 
 	fn init(&mut self, systems: &Vec<SystemType>);
 

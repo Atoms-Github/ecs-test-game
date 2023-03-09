@@ -16,6 +16,7 @@ pub trait SqlInterface {
 	fn new() -> Self;
 	fn execute_batch(&mut self, statements: Vec<SqlStatement>);
 	fn get_entities(&mut self, query_xyc: SqlStatement) -> Vec<ExportEntity>;
+	fn get_image(&mut self, query_image: SqlStatement) -> Vec<u8>;
 	fn execute_single(&mut self, statement: SqlStatement);
 	fn get_type() -> InterfaceType;
 }
