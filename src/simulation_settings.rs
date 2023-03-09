@@ -39,7 +39,7 @@ impl SimSettings {
 			.show_ui(ui, |ui| {
 				ui.selectable_value(&mut self.challenge_type, Challenge::Rts {}, "Rts");
 				ui.selectable_value(&mut self.challenge_type, Challenge::PaintClosest {}, "Get Nearest");
-				ui.selectable_value(&mut self.challenge_type, Challenge::Blobular {}, "Blob");
+				ui.selectable_value(&mut self.challenge_type, Challenge::Blob {}, "Blob");
 				ui.selectable_value(
 					&mut self.challenge_type,
 					Challenge::IdenticalEntities,
@@ -81,11 +81,11 @@ pub enum Challenge {
 	PaintClosest,
 	SpacialArray,
 	IdenticalEntities,
-	Blobular,
+	Blob,
 }
 impl Default for Challenge {
 	fn default() -> Self {
-		Challenge::Blobular
+		Challenge::Blob
 	}
 }
 impl Default for BrainType {

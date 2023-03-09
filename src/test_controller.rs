@@ -49,7 +49,7 @@ impl TestController {
 			Challenge::Rts => Box::new(ChallengeRts {}),
 			Challenge::PaintClosest => Box::new(ChallengeGetNearest {}),
 			Challenge::IdenticalEntities => Box::new(ChallengeIdenticalEntities {}),
-			Challenge::Blobular => Box::new(ChallengeBlob {}),
+			Challenge::Blob => Box::new(ChallengeBlob {}),
 		};
 
 		let mut controller = TestController::new(new_brain, new_challenge);
