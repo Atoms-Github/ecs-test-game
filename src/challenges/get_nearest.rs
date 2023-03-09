@@ -1,4 +1,5 @@
 use ggez::graphics::Color;
+use ggez::Context;
 use rand::Rng;
 
 use crate::brains::{Brain, SystemType};
@@ -11,7 +12,13 @@ use crate::{Point, MAP_SIZE};
 #[derive(Clone, Debug, PartialEq)]
 pub struct ChallengeGetNearest {}
 impl ChallengeTrait for ChallengeGetNearest {
-	fn init(&mut self, brain: &mut dyn Brain, universe_count: usize, settings: &SimSettings) {
+	fn init(
+		&mut self,
+		ctx: &mut Context,
+		brain: &mut dyn Brain,
+		universe_count: usize,
+		settings: &SimSettings,
+	) {
 		let mut rand = rand::thread_rng();
 		const SPEED: f32 = 30.0;
 		// Create units. Distribute them evenly across universes.

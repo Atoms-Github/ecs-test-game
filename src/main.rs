@@ -8,6 +8,7 @@
 #![allow(unused_macros)]
 
 use std::io::read_to_string;
+use std::{env, path};
 
 use ecs_test_game::brains::brain_legion::BrainLegion;
 use ecs_test_game::brains::sql_brains::brain_sql::BrainSql;
@@ -20,9 +21,11 @@ use ecs_test_game::challenges::get_nearest::ChallengeGetNearest;
 use ecs_test_game::challenges::rts::ChallengeRts;
 use ecs_test_game::challenges::spacial_array::ChallengeSpatialArray;
 use ecs_test_game::challenges::ChallengeTrait;
+use ecs_test_game::simulation_settings::Challenge;
 use ecs_test_game::test_controller::TestController;
 use ecs_test_game::ui::ui_settings::GuiSettings;
 use ecs_test_game::{test_controller, MAP_SIZE};
+use egui::epaint::image;
 use ggez::graphics::{Color, Drawable};
 use ggez::input::mouse::position;
 use ggez::{Context, GameResult};
@@ -30,10 +33,13 @@ use glam::Vec2;
 
 pub struct MainState {
 	pub test_controller: TestController,
-	pub egui_backend:    ggez_egui::EguiBackend,
-	pub gui_settings:    GuiSettings,
-	pub draw_time:       u128,
-	pub update_time:     u128,
+	pub egui_backend: ggez_egui::EguiBackend,
+	pub gui_settings: GuiSettings,
+	pub draw_time: u128,
+	pub update_time: u128,
+	pub entity_image_index: usize,
+	pub frames: usize,
+	pub image: Option<ggez::graphics::Image>,
 }
 
 impl MainState {
@@ -41,16 +47,20 @@ impl MainState {
 		let settings = GuiSettings::new();
 
 		MainState {
-			test_controller: TestController::gen_test_controller(&settings.simulation_settings),
-			egui_backend:    ggez_egui::EguiBackend::new(ctx),
-			gui_settings:    settings,
-			draw_time:       0,
-			update_time:     0,
+			test_controller: TestController::gen_test_controller(ctx, &settings.simulation_settings),
+			egui_backend: ggez_egui::EguiBackend::new(ctx),
+			gui_settings: settings,
+			draw_time: 0,
+			update_time: 0,
+			entity_image_index: 0,
+			frames: 0,
+			image: None,
 		}
 	}
 
-	fn reload(&mut self) {
-		self.test_controller = TestController::gen_test_controller(&self.gui_settings.simulation_settings);
+	fn reload(&mut self, ctx: &mut Context) {
+		self.test_controller =
+			TestController::gen_test_controller(ctx, &self.gui_settings.simulation_settings);
 	}
 }
 
@@ -76,7 +86,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
 				self.test_controller.save_graph("graph.png");
 			}
 			if ui.button("Reload").clicked() {
-				self.reload();
+				self.reload(ctx);
 			}
 		});
 		self.update_time = start.elapsed().as_micros();
@@ -91,7 +101,9 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
 		let start = std::time::Instant::now();
 		// Batch draw the units:
 		let mut batch = ggez::graphics::MeshBuilder::new();
-		for entity in self.test_controller.brain.get_entities(self.gui_settings.view_universe) {
+		let entities = self.test_controller.brain.get_entities(self.gui_settings.view_universe);
+
+		for entity in &entities {
 			batch
 				.circle(
 					ggez::graphics::DrawMode::fill(),
@@ -108,11 +120,25 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
 			ggez::graphics::draw(ctx, &existing_mesh, (Vec2::new(0., 0.),))?;
 		}
 
+		if self.gui_settings.simulation_settings.challenge_type == Challenge::Blob {
+			if self.frames % 100 == 0 {
+				self.entity_image_index = (self.entity_image_index + 1) % entities.len();
+				let image = self
+					.test_controller
+					.brain
+					.get_image(entities[self.entity_image_index].entity_id);
+				println!("{}", image.len());
+				self.image = Some(ggez::graphics::Image::from_rgba8(ctx, 4000, 4000, &**image).unwrap());
+			}
+			ggez::graphics::draw(ctx, self.image.as_ref().unwrap(), (Vec2::new(0., 0.),))?;
+		}
+
 		let end = std::time::Instant::now();
 		self.draw_time = (end - start).as_micros();
 
 		ggez::graphics::draw(ctx, &self.egui_backend, ([0.0, 0.0],))?;
 		ggez::graphics::present(ctx).unwrap();
+		self.frames += 1;
 		Ok(())
 	}
 
@@ -142,7 +168,15 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
 }
 
 pub fn main() -> GameResult {
-	let mut cb = ggez::ContextBuilder::new("ECS Benchmark", "ggez");
+	let resource_dir = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
+		let mut path = path::PathBuf::from(manifest_dir);
+		path.push("resources");
+		path
+	} else {
+		path::PathBuf::from("./resources")
+	};
+
+	let mut cb = ggez::ContextBuilder::new("ECS Benchmark", "ggez").add_resource_path(resource_dir);
 
 	cb = cb.window_setup(ggez::conf::WindowSetup::default().title("Ecs Performance Benchmark"));
 	let window_size_multiplier = 1.3;

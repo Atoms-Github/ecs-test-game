@@ -1,5 +1,6 @@
 use ggez::graphics::Color;
 use ggez::winit::dpi::Position;
+use ggez::Context;
 use glam::Vec2;
 use rand::prelude::SliceRandom;
 use rand::rngs::StdRng;
@@ -19,7 +20,13 @@ pub struct ChallengeSpatialArray {
 	pub unique_velocity_fraction: f64,
 }
 impl ChallengeTrait for ChallengeSpatialArray {
-	fn init(&mut self, brain: &mut dyn Brain, universe_count: usize, settings: &SimSettings) {
+	fn init(
+		&mut self,
+		ctx: &mut Context,
+		brain: &mut dyn Brain,
+		universe_count: usize,
+		settings: &SimSettings,
+	) {
 		let mut rand = rand::thread_rng();
 		const SPEED: f32 = 30.0;
 		// Create units. Distribute them evenly across universes.

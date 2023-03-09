@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use ggez::Context;
 use plotters::prelude::*;
 
 use crate::brains::brain_legion::{BrainLegion, BrainLegionCounted, BrainLegionDupey};
@@ -29,7 +30,7 @@ pub struct TestController {
 }
 
 impl TestController {
-	pub fn gen_test_controller(settings: &SimSettings) -> TestController {
+	pub fn gen_test_controller(ctx: &mut Context, settings: &SimSettings) -> TestController {
 		let new_brain: Box<dyn Brain> = match settings.brain_type {
 			BrainType::LegionDupey => Box::new(BrainLegion::<BrainLegionDupey>::new()),
 			BrainType::LegionCounted => Box::new(BrainLegion::<BrainLegionCounted>::new()),
@@ -53,7 +54,7 @@ impl TestController {
 		};
 
 		let mut controller = TestController::new(new_brain, new_challenge);
-		controller.init(settings);
+		controller.init(ctx, settings);
 		controller
 	}
 
@@ -67,10 +68,10 @@ impl TestController {
 		}
 	}
 
-	pub fn init(&mut self, settings: &SimSettings) {
+	pub fn init(&mut self, ctx: &mut Context, settings: &SimSettings) {
 		self.brain.init(&self.challenge.get_tick_systems());
 		let time = crate::utils::time_it(|| {
-			self.challenge.init(&mut *self.brain, self.universe_count, settings);
+			self.challenge.init(ctx, &mut *self.brain, self.universe_count, settings);
 		});
 		self.register_time(String::from("init"), time);
 	}

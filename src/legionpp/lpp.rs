@@ -98,8 +98,6 @@ impl Lpp {
 			} => Some(&*data),
 		};
 
-		println!("Getting component ref. Lentity: {:?}, {:?}, {:?}", lentity, to_ret, shelf_ref);
-
 		to_ret
 	}
 
@@ -120,7 +118,6 @@ impl Lpp {
 			} => Some(*data.take().expect("Was it already on loan?")),
 		};
 
-		println!("Getting component. Lentity: {:?}, {:?}", lentity, to_ret);
 		to_ret
 	}
 

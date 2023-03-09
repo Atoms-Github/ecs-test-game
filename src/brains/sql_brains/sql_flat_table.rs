@@ -247,16 +247,13 @@ SET blue = e1.blue +
 
 	fn get_ents_xyc(&mut self, universe_id: usize) -> SqlStatement {
 		return SqlStatement::new_f32(
-			"SELECT position_x, position_y, blue FROM entities WHERE universe_id = ?;",
+			"SELECT position_x, position_y, blue, id FROM entities WHERE universe_id = ?;",
 			vec![universe_id as f32],
 		);
 	}
 
 	fn get_image(&mut self, entity_id: u64) -> SqlStatement {
-		return SqlStatement::new_f32(
-			"SELECT blob FROM entities WHERE id = ?;",
-			vec![entity_id as f32],
-		);
+		return SqlStatement::new_f32("SELECT blob FROM entities WHERE id = ?;", vec![entity_id as f32]);
 	}
 
 	fn init_systems<I: SqlInterface>(&mut self, systems: &Vec<SystemType>) -> Vec<SqlStatement> {

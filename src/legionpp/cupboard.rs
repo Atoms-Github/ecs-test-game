@@ -23,8 +23,6 @@ impl<T: Clone + Hash + Debug> Cupboard<T> {
 		// hash the data
 		let hash = new_data.hash_me();
 
-		println!("Adding component ({:?})", new_data);
-
 		let maybe_existing = self.hash_shelf_lookup.get(&hash);
 		match maybe_existing {
 			Some(existing) => {

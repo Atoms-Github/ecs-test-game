@@ -1,7 +1,10 @@
+use std::{env, path};
+
 use duckdb::ffi::rand;
 use ggez::graphics::Color;
 use ggez::input::mouse::position;
 use ggez::winit::dpi::Position;
+use ggez::Context;
 use glam::Vec2;
 use rand::prelude::SliceRandom;
 use rand::rngs::StdRng;
@@ -17,10 +20,28 @@ use crate::{utils, Point, MAP_SIZE};
 #[derive(Clone, Debug, PartialEq)]
 pub struct ChallengeBlob {}
 impl ChallengeTrait for ChallengeBlob {
-	fn init(&mut self, brain: &mut dyn Brain, universe_count: usize, settings: &SimSettings) {
-		for i in 0..settings.entity_count {
-			let mut blob = vec![2; 100];
-			brain.add_entity_blob(Point::new(20.0, 30.0), blob, 1.0);
+	fn init(
+		&mut self,
+		ctx: &mut Context,
+		brain: &mut dyn Brain,
+		universe_count: usize,
+		settings: &SimSettings,
+	) {
+		let image_paths = vec!["plants.jpg", "shark.jpg", "stars.jpg"];
+
+		let mut images = Vec::new();
+
+		for image in &image_paths {
+			let image = ggez::graphics::Image::new(ctx, format!("/{}", image)).unwrap();
+
+			let blob = image.to_rgba8(ctx).unwrap();
+			images.push(blob);
+		}
+
+		for i in 0..settings.entity_count / 3 {
+			for blob in &images {
+				brain.add_entity_blob(Point::new(20.0, 20.0), blob.clone(), 1.0);
+			}
 		}
 	}
 
