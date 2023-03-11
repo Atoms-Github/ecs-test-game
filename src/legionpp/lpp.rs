@@ -1,6 +1,6 @@
 use std::any::TypeId;
 use std::borrow::Borrow;
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
@@ -15,14 +15,32 @@ use crate::utils::HashMe;
 pub type TypeSig = BTreeSet<TypeId>;
 
 pub struct Lpp {
-	pub cupboards:  CloneTypeMap,
-	pub lentities:  HashMap<Lentity, InternalEntity>,
-	pub archetypes: HashMap<TypeSig, Vec<Lentity>>,
+	pub cupboards:       CloneTypeMap,
+	pub lentities:       HashMap<Lentity, InternalEntity>,
+	pub archetypes:      HashMap<TypeSig, Vec<Lentity>>,
+	pub uniques_by_type: HashMap<BTreeSet<(TypeId, ShelfRef)>, Vec<Lentity>>,
 }
+
 pub struct InternalEntity {
 	pub shelves: HashMap<TypeId, ShelfRef>,
 }
 pub type Lentity = usize;
+pub type GroupedLentity = Lentity;
+
+fn lentity_to_grouped_lentity(lentity: Lentity) -> GroupedLentity {
+	assert!(lentity < u32::MAX as usize / 2);
+	lentity + u32::MAX as usize / 2
+}
+fn grouped_lentity_to_lentity(lentity: GroupedLentity) -> Lentity {
+	assert!(lentity >= u32::MAX as usize / 2);
+	lentity - u32::MAX as usize / 2
+}
+fn is_grouped_lentity(lentity: usize) -> bool {
+	lentity >= u32::MAX as usize / 2
+}
+fn is_lentity(lentity: usize) -> bool {
+	lentity < u32::MAX as usize / 2
+}
 
 impl<T: 'static + Clone> TypeMapKey for OurKey<T> {
 	type Value = T;
@@ -37,9 +55,10 @@ impl Lpp {
 
 	pub fn new() -> Lpp {
 		Lpp {
-			cupboards:  CloneTypeMap::new(),
-			lentities:  Default::default(),
-			archetypes: Default::default(),
+			cupboards:       CloneTypeMap::new(),
+			lentities:       Default::default(),
+			archetypes:      Default::default(),
+			uniques_by_type: Default::default(),
 		}
 	}
 
@@ -71,6 +90,24 @@ impl Lpp {
 	pub fn complete_entity(&mut self, lentity: Lentity) {
 		let type_sig = self.get_entity(lentity).shelves.keys().cloned().collect();
 		self.archetypes.entry(type_sig).or_insert_with(|| Vec::new()).push(lentity);
+	}
+
+	pub fn query_uniques(&mut self, type_sig: Vec<TypeId>) -> Vec<GroupedLentity> {
+		self.uniques_by_type.clear();
+
+		let query_results = self.query(type_sig);
+		for lentity in query_results {
+			let ent_internal = self.get_entity(lentity);
+			let mut uniques = BTreeSet::new();
+			for (type_id, shelf_ref) in ent_internal.shelves.iter() {
+				uniques.insert((*type_id, *shelf_ref));
+			}
+			self.uniques_by_type.entry(uniques).or_insert_with(|| Vec::new()).push(lentity);
+		}
+		self.uniques_by_type
+			.values()
+			.map(|v| lentity_to_grouped_lentity(v[0]))
+			.collect()
 	}
 
 	pub fn query(&mut self, type_sig: Vec<TypeId>) -> Vec<Lentity> {

@@ -127,7 +127,6 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
 					.test_controller
 					.brain
 					.get_image(entities[self.entity_image_index].entity_id);
-				println!("{}", image.len());
 				self.image = Some(ggez::graphics::Image::from_rgba8(ctx, 4000, 4000, &**image).unwrap());
 			}
 			ggez::graphics::draw(ctx, self.image.as_ref().unwrap(), (Vec2::new(0., 0.),))?;
