@@ -19,6 +19,25 @@ impl<T: Clone + Hash + Debug> Cupboard<T> {
 		}
 	}
 
+	pub fn add_qty(&mut self, shelf_ref: ShelfRef, qty: u32) {
+		let shelf = self.vec.get_mut(shelf_ref).unwrap();
+		match shelf {
+			Shelf::One { data } => {
+				let mut new_shelf = Shelf::Many {
+					data_backup: data.take().unwrap().clone(),
+					data: Some(Box::new(data.take().unwrap())),
+					qty,
+				};
+				std::mem::swap(shelf, &mut new_shelf);
+			}
+			Shelf::Many {
+				qty: existing_qty, ..
+			} => {
+				*existing_qty += qty;
+			}
+		}
+	}
+
 	pub fn add_component(&mut self, new_data: T) -> ShelfRef {
 		// hash the data
 		let hash = new_data.hash_me();

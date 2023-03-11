@@ -15,10 +15,11 @@ use crate::utils::HashMe;
 pub type TypeSig = BTreeSet<TypeId>;
 
 pub struct Lpp {
-	pub cupboards:       CloneTypeMap,
-	pub lentities:       HashMap<Lentity, InternalEntity>,
-	pub archetypes:      HashMap<TypeSig, Vec<Lentity>>,
+	pub cupboards: CloneTypeMap,
+	pub lentities: HashMap<Lentity, InternalEntity>,
+	pub archetypes: HashMap<TypeSig, Vec<Lentity>>,
 	pub uniques_by_type: HashMap<BTreeSet<(TypeId, ShelfRef)>, Vec<Lentity>>,
+	pub current_unique_type_ids: Vec<TypeId>,
 }
 
 pub struct InternalEntity {
@@ -55,10 +56,11 @@ impl Lpp {
 
 	pub fn new() -> Lpp {
 		Lpp {
-			cupboards:       CloneTypeMap::new(),
-			lentities:       Default::default(),
-			archetypes:      Default::default(),
+			cupboards: CloneTypeMap::new(),
+			lentities: Default::default(),
+			archetypes: Default::default(),
 			uniques_by_type: Default::default(),
+			current_unique_type_ids: vec![],
 		}
 	}
 
@@ -93,6 +95,7 @@ impl Lpp {
 	}
 
 	pub fn query_uniques(&mut self, type_sig: Vec<TypeId>) -> Vec<GroupedLentity> {
+		self.current_unique_type_ids = type_sig.clone();
 		self.uniques_by_type.clear();
 
 		let query_results = self.query(type_sig);
@@ -171,8 +174,8 @@ impl Lpp {
 
 		let cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>().unwrap();
 		let internal_ent = self.lentities.get_mut(&lentity).expect("Ent doesn't exist");
-		let shelf_ref = internal_ent.shelves.get_mut(&TypeId::of::<T>()).unwrap();
-		let shelf = cupboard.get_shelf_mut(shelf_ref);
+		let shelf_ref = *internal_ent.shelves.get_mut(&TypeId::of::<T>()).unwrap();
+		let shelf = cupboard.get_shelf_mut(&shelf_ref);
 
 		println!("Returning component");
 
@@ -188,7 +191,7 @@ impl Lpp {
 				let mut identical = false;
 
 				if let Some(maybe_shelf_new_comp) = maybe_shelf_new_comp {
-					if maybe_shelf_new_comp == *shelf_ref {
+					if maybe_shelf_new_comp == shelf_ref {
 						identical = true;
 					}
 				}
@@ -198,25 +201,65 @@ impl Lpp {
 					*data = Some(Box::new(component));
 				} else {
 					println!("It's changed!!");
+					if is_lentity(lentity) {
+						// Decrease the qty of the shelf
+						*qty -= 1;
 
-					// Decrease the qty of the shelf
-					*qty -= 1;
+						// if the quantity is 1, set the shelf to be a one
+						if *qty == 1 {
+							println!("qty == 1");
 
-					// if the quantity is 1, set the shelf to be a one
-					if *qty == 1 {
-						println!("qty == 1");
+							let mut new_shelf = Shelf::One {
+								data: Some(data_backup.clone()),
+							};
+							std::mem::swap(shelf, &mut new_shelf);
+						} else {
+							println!("qty != 1");
+							*data = Some(Box::new(data_backup.clone()));
+						}
 
-						let mut new_shelf = Shelf::One {
-							data: Some(data_backup.clone()),
-						};
-						std::mem::swap(shelf, &mut new_shelf);
+						let new_ent_shelf_ref = cupboard.add_component(component);
+						*internal_ent.shelves.get_mut(&TypeId::of::<T>()).unwrap() = new_ent_shelf_ref;
+					} else if is_grouped_lentity(lentity) {
+						let my_key = self
+							.current_unique_type_ids
+							.iter()
+							.map(|x| (*x, *internal_ent.shelves.get(x).unwrap()))
+							.collect();
+						let duplicates = self.uniques_by_type.get_mut(&my_key).unwrap();
+
+						let old_qty = *qty;
+						// Decrease the qty of the shelf
+						*qty -= duplicates.len() as u32;
+						if *qty == 0 {
+							*data = Some(Box::new(component.clone()));
+							*data_backup = component;
+
+							return;
+						}
+
+						// if the quantity is 1, set the shelf to be a one
+						if *qty == 1 {
+							println!("qty == 1");
+
+							let mut new_shelf = Shelf::One {
+								data: Some(data_backup.clone()),
+							};
+							std::mem::swap(shelf, &mut new_shelf);
+						} else if *qty > 1 {
+							println!("qty > 1");
+							*data = Some(Box::new(data_backup.clone()));
+						}
+
+						let new_ent_shelf_ref = cupboard.add_component(component);
+						for relocated_ent_id in duplicates.iter() {
+							let relocated_ent = self.lentities.get_mut(relocated_ent_id).unwrap();
+							*relocated_ent.shelves.get_mut(&TypeId::of::<T>()).unwrap() = new_ent_shelf_ref;
+						}
+						cupboard.add_qty(new_ent_shelf_ref, duplicates.len() as u32 - 1);
 					} else {
-						println!("qty != 1");
-						*data = Some(Box::new(data_backup.clone()));
+						panic!("Not a lentity or grouped lentity");
 					}
-
-					let new_ent_shelf_ref = cupboard.add_component(component);
-					*shelf_ref = new_ent_shelf_ref;
 				}
 			}
 		}
