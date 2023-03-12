@@ -24,7 +24,7 @@ impl<T: Clone + Hash + Debug> Cupboard<T> {
 		match shelf {
 			Shelf::One { data } => {
 				let mut new_shelf = Shelf::Many {
-					data_backup: data.take().unwrap().clone(),
+					data_backup: data.clone().take().unwrap(),
 					data: Some(Box::new(data.take().unwrap())),
 					qty,
 				};

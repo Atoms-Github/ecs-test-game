@@ -127,7 +127,10 @@ impl Lpp {
 		lentities
 	}
 
-	pub fn get_component_ref<T: Clone + Hash + Debug + 'static>(&self, lentity: Lentity) -> Option<&T> {
+	pub fn get_component_ref<T: Clone + Hash + Debug + 'static>(&self, mut lentity: Lentity) -> Option<&T> {
+		if is_grouped_lentity(lentity) {
+			lentity = grouped_lentity_to_lentity(lentity);
+		}
 		let cupboard = self.cupboards.get::<OurKey<Cupboard<T>>>()?;
 		let shelf_ref = self.lentities.get(&lentity)?.shelves.get(&TypeId::of::<T>())?;
 		let shelf = cupboard.get_shelf(shelf_ref);
@@ -141,7 +144,11 @@ impl Lpp {
 		to_ret
 	}
 
-	pub fn get_component<T: Clone + Hash + Debug + 'static>(&mut self, lentity: Lentity) -> Option<T> {
+	pub fn get_component<T: Clone + Hash + Debug + 'static>(&mut self, mut lentity: Lentity) -> Option<T> {
+		if is_grouped_lentity(lentity) {
+			lentity = grouped_lentity_to_lentity(lentity);
+		}
+
 		let cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>()?;
 		let shelf_ref = self.lentities.get_mut(&lentity)?.shelves.get(&TypeId::of::<T>())?;
 		let shelf = cupboard.get_shelf_mut(shelf_ref);
@@ -161,7 +168,15 @@ impl Lpp {
 		to_ret
 	}
 
-	pub fn return_component<T: Clone + Hash + Debug + 'static>(&mut self, lentity: Lentity, component: T) {
+	pub fn return_component<T: Clone + Hash + Debug + 'static>(
+		&mut self,
+		mut lentity: Lentity,
+		component: T,
+	) {
+		let is_grouped = is_grouped_lentity(lentity);
+		if is_grouped {
+			lentity = grouped_lentity_to_lentity(lentity);
+		}
 		let cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>().unwrap();
 		let internal_ent = self.lentities.get_mut(&lentity).expect("Ent doesn't exist");
 		let shelf_ref = internal_ent.shelves.get(&TypeId::of::<T>()).unwrap();
@@ -201,7 +216,7 @@ impl Lpp {
 					*data = Some(Box::new(component));
 				} else {
 					println!("It's changed!!");
-					if is_lentity(lentity) {
+					if !is_grouped {
 						// Decrease the qty of the shelf
 						*qty -= 1;
 
@@ -220,7 +235,8 @@ impl Lpp {
 
 						let new_ent_shelf_ref = cupboard.add_component(component);
 						*internal_ent.shelves.get_mut(&TypeId::of::<T>()).unwrap() = new_ent_shelf_ref;
-					} else if is_grouped_lentity(lentity) {
+					} else {
+						// is_grouped. Its a grouped lentity.
 						let my_key = self
 							.current_unique_type_ids
 							.iter()
@@ -257,8 +273,6 @@ impl Lpp {
 							*relocated_ent.shelves.get_mut(&TypeId::of::<T>()).unwrap() = new_ent_shelf_ref;
 						}
 						cupboard.add_qty(new_ent_shelf_ref, duplicates.len() as u32 - 1);
-					} else {
-						panic!("Not a lentity or grouped lentity");
 					}
 				}
 			}
@@ -469,5 +483,55 @@ mod tests {
 			expected_velocities.remove(index);
 		}
 		assert_eq!(expected_velocities.len(), 0);
+	}
+	fn create_pv(lpp: &mut Lpp, pos: Point, vel: Point) -> Lentity {
+		let mut entity = lpp.create_entity();
+		lpp.add_component(entity, PositionComp { pos });
+		lpp.add_component(entity, VelocityComp { vel });
+		lpp.complete_entity(entity);
+		entity
+	}
+	#[test]
+	fn test_basic_dupey_processing() {
+		let mut lpp = Lpp::new();
+		create_pv(&mut lpp, Point::new(0.0, 0.0), Point::new(1.0, 0.0));
+		create_pv(&mut lpp, Point::new(0.0, 0.0), Point::new(1.0, 0.0));
+		create_pv(&mut lpp, Point::new(0.0, 0.0), Point::new(0.0, 1.0));
+		create_pv(&mut lpp, Point::new(2.0, 0.0), Point::new(1.0, 0.0));
+		create_pv(&mut lpp, Point::new(2.0, 0.0), Point::new(0.0, 1.0));
+
+		let matching_entities =
+			lpp.query_uniques(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
+
+		assert_eq!(matching_entities.len(), 4);
+		for entity in &matching_entities {
+			let mut position = lpp.get_component::<PositionComp>(*entity).unwrap();
+			let velocity = lpp.get_component_ref::<VelocityComp>(*entity).unwrap();
+			// Increment the position by the velocity
+			position.pos += velocity.vel;
+			lpp.return_component(*entity, position);
+		}
+		// Assert that both entities have correct positions
+		let mut matching_entities =
+			lpp.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
+		let mut expected_positions = vec![
+			Point::new(1.0, 0.0),
+			Point::new(1.0, 0.0),
+			Point::new(0.0, 1.0),
+			Point::new(3.0, 0.0),
+			Point::new(2.0, 1.0),
+		];
+		for entity in &matching_entities {
+			let position = lpp.get_component_ref::<PositionComp>(*entity).unwrap();
+			// Remove the position from the expected positions
+
+			println!("{}", &position.pos);
+			let index = expected_positions
+				.iter()
+				.position(|x| *x == position.pos)
+				.expect(format!("Position was wrong! {}", position.pos).as_str());
+			expected_positions.remove(index);
+		}
+		assert_eq!(expected_positions.len(), 0);
 	}
 }
