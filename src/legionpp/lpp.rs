@@ -162,7 +162,12 @@ impl Lpp {
 				data_backup,
 				data,
 				qty,
-			} => Some(*data.take().expect("Was it already on loan?")),
+			} => {
+				if data.is_none() {
+					*data = Some(Box::new(data_backup.clone()));
+				}
+				Some(*data.take().unwrap())
+			}
 		};
 
 		to_ret
@@ -230,7 +235,6 @@ impl Lpp {
 							std::mem::swap(shelf, &mut new_shelf);
 						} else {
 							println!("qty != 1");
-							*data = Some(Box::new(data_backup.clone()));
 						}
 
 						let new_ent_shelf_ref = cupboard.add_component(component);
@@ -244,15 +248,12 @@ impl Lpp {
 							.collect();
 						let duplicates = self.uniques_by_type.get_mut(&my_key).unwrap();
 
-						let old_qty = *qty;
-						// Decrease the qty of the shelf
-						*qty -= duplicates.len() as u32;
-						if *qty == 0 {
-							*data = Some(Box::new(component.clone()));
+						if *qty == duplicates.len() as u32 {
 							*data_backup = component;
 
 							return;
 						}
+						*qty -= duplicates.len() as u32;
 
 						// if the quantity is 1, set the shelf to be a one
 						if *qty == 1 {
@@ -264,7 +265,6 @@ impl Lpp {
 							std::mem::swap(shelf, &mut new_shelf);
 						} else if *qty > 1 {
 							println!("qty > 1");
-							*data = Some(Box::new(data_backup.clone()));
 						}
 
 						let new_ent_shelf_ref = cupboard.add_component(component);

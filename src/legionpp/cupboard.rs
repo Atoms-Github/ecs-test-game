@@ -20,13 +20,16 @@ impl<T: Clone + Hash + Debug> Cupboard<T> {
 	}
 
 	pub fn add_qty(&mut self, shelf_ref: ShelfRef, qty: u32) {
+		if qty == 0 {
+			return;
+		}
 		let shelf = self.vec.get_mut(shelf_ref).unwrap();
 		match shelf {
 			Shelf::One { data } => {
 				let mut new_shelf = Shelf::Many {
-					data_backup: data.clone().take().unwrap(),
-					data: Some(Box::new(data.take().unwrap())),
-					qty,
+					data_backup: data.take().unwrap(),
+					data:        None,
+					qty:         qty + 1,
 				};
 				std::mem::swap(shelf, &mut new_shelf);
 			}
