@@ -41,49 +41,63 @@ impl<T: Clone + Hash + Debug> Cupboard<T> {
 		}
 	}
 
+	pub fn add_component_ref(&mut self, new_data: &T) -> ShelfRef {
+		let hash = new_data.hash_me();
+
+		let maybe_existing = self.hash_shelf_lookup.get(&hash);
+		match maybe_existing {
+			Some(shelf_ref) => self.increment_shelf_ref_qty(None, *shelf_ref),
+			None => self.create_new_component(new_data.clone(), hash),
+		}
+	}
+
 	pub fn add_component(&mut self, new_data: T) -> ShelfRef {
 		// hash the data
 		let hash = new_data.hash_me();
 
 		let maybe_existing = self.hash_shelf_lookup.get(&hash);
 		match maybe_existing {
-			Some(existing) => {
-				println!("(Found existing)");
-				let shelf = self.vec.get_mut(*existing).unwrap();
-				match shelf {
-					Shelf::One {
-						data: existing_data,
-					} => {
-						println!("=> Existing is One");
-						let mut new_shelf = Shelf::Many {
-							data_backup: existing_data.take().unwrap(),
-							data:        Some(Box::new(new_data)),
-							qty:         2,
-						};
-						std::mem::swap(shelf, &mut new_shelf);
-						*existing
-					}
-					Shelf::Many {
-						data_backup: data,
-						data: available_copy,
-						qty,
-					} => {
-						println!("=> Existing is currently Many was: {} now: {}", qty, *qty + 1);
-						*qty += 1;
-						*available_copy = Some(Box::new(new_data));
-						*existing
-					}
-				}
-			}
-			None => {
-				println!("(doesn't exist)");
-				let shelf = Shelf::One {
-					data: Some(new_data),
-				};
-				let comp_index = self.vec.push(shelf);
+			Some(shelf_ref) => self.increment_shelf_ref_qty(Some(new_data), *shelf_ref),
+			None => self.create_new_component(new_data, hash),
+		}
+	}
 
-				self.hash_shelf_lookup.insert(hash, comp_index);
-				comp_index
+	fn create_new_component(&mut self, new_data: T, hash: u64) -> usize {
+		println!("(doesn't exist)");
+		let shelf = Shelf::One {
+			data: Some(new_data),
+		};
+		let comp_index = self.vec.push(shelf);
+
+		self.hash_shelf_lookup.insert(hash, comp_index);
+		comp_index
+	}
+
+	fn increment_shelf_ref_qty(&mut self, new_data: Option<T>, existing: ShelfRef) -> ShelfRef {
+		println!("(Found existing)");
+		let shelf = self.vec.get_mut(existing).unwrap();
+		match shelf {
+			Shelf::One {
+				data: existing_data,
+			} => {
+				println!("=> Existing is One");
+				let mut new_shelf = Shelf::Many {
+					data_backup: existing_data.take().unwrap(),
+					data:        new_data.map(|a| Box::new(a)),
+					qty:         2,
+				};
+				std::mem::swap(shelf, &mut new_shelf);
+				existing
+			}
+			Shelf::Many {
+				data_backup,
+				data,
+				qty,
+			} => {
+				println!("=> Existing is currently Many was: {} now: {}", qty, *qty + 1);
+				*qty += 1;
+				*data = new_data.map(|a| Box::new(a));
+				existing
 			}
 		}
 	}

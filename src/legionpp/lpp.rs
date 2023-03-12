@@ -89,6 +89,13 @@ impl Lpp {
 		self.get_entity(lentity).shelves.insert(TypeId::of::<T>(), shelf_ref);
 	}
 
+	pub fn add_component_ref<T: Clone + Hash + Debug + 'static>(&mut self, lentity: Lentity, component: &T) {
+		self.create_cupboard_if_needed::<T>();
+		let mut cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>().unwrap();
+		let shelf_ref = cupboard.add_component_ref(component);
+		self.get_entity(lentity).shelves.insert(TypeId::of::<T>(), shelf_ref);
+	}
+
 	pub fn complete_entity(&mut self, lentity: Lentity) {
 		let type_sig = self.get_entity(lentity).shelves.keys().cloned().collect();
 		self.archetypes.entry(type_sig).or_insert_with(|| Vec::new()).push(lentity);
