@@ -1,10 +1,11 @@
 use std::any::TypeId;
 use std::borrow::Borrow;
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
 
+use futures::stream::iter;
 use ggez::filesystem::create;
 use legion::Entity;
 use trait_bound_typemap::{AnyTypeMap, CloneTypeMap, TypeMap, TypeMapKey};
@@ -20,6 +21,7 @@ pub struct Lpp {
 	pub archetypes: HashMap<TypeSig, Vec<Lentity>>,
 	pub uniques_by_type: HashMap<BTreeSet<(TypeId, ShelfRef)>, Vec<Lentity>>,
 	pub current_unique_type_ids: Vec<TypeId>,
+	pub indexes: HashMap<TypeId, HashMap<u32, HashSet<Lentity>>>,
 }
 
 pub struct InternalEntity {
@@ -43,6 +45,10 @@ fn is_lentity(lentity: usize) -> bool {
 	lentity < u32::MAX as usize / 2
 }
 
+fn index_from_component<T>(comp_ref: &T) -> u32 {
+	*unsafe { std::mem::transmute::<&T, &u32>(comp_ref) }
+}
+
 impl<T: 'static + Clone> TypeMapKey for OurKey<T> {
 	type Value = T;
 }
@@ -61,7 +67,23 @@ impl Lpp {
 			archetypes: Default::default(),
 			uniques_by_type: Default::default(),
 			current_unique_type_ids: vec![],
+			indexes: Default::default(),
 		}
+	}
+
+	pub fn query_index<T: Copy + 'static>(&self, desired_index: i32) -> Vec<&Lentity> {
+		self.indexes
+			.get(&TypeId::of::<T>())
+			.unwrap()
+			.get(&(desired_index as u32))
+			.unwrap()
+			.iter()
+			.collect()
+	}
+
+	pub fn create_index<T: Copy + 'static>(&mut self) {
+		let type_id = TypeId::of::<T>();
+		self.indexes.insert(type_id, Default::default());
 	}
 
 	pub fn create_entity(&mut self) -> Lentity {
@@ -86,7 +108,24 @@ impl Lpp {
 		self.create_cupboard_if_needed::<T>();
 		let mut cupboard = self.cupboards.get_mut::<OurKey<Cupboard<T>>>().unwrap();
 		let shelf_ref = cupboard.add_component(component);
-		self.get_entity(lentity).shelves.insert(TypeId::of::<T>(), shelf_ref);
+
+		let type_id = TypeId::of::<T>();
+		self.get_entity(lentity).shelves.insert(type_id, shelf_ref);
+
+		let comp_ref: &T = self.get_component_ref::<T>(lentity).unwrap();
+		let new_index = index_from_component(comp_ref);
+
+		if let Some(index) = self.indexes.get_mut(&type_id) {
+			index.entry(new_index).or_insert_with(|| HashSet::new()).insert(lentity);
+		}
+	}
+
+	fn update_entity_index<T: 'static>(&mut self, lentity: Lentity, new_index: u32, old_index: u32) {
+		let type_id = TypeId::of::<T>();
+		self.indexes.get_mut(&type_id).map(|index| {
+			index.entry(old_index).or_insert_with(|| HashSet::new()).remove(&lentity);
+			index.entry(new_index).or_insert_with(|| HashSet::new()).insert(lentity);
+		});
 	}
 
 	pub fn add_component_ref<T: Clone + Hash + Debug + 'static>(&mut self, lentity: Lentity, component: &T) {
@@ -228,6 +267,9 @@ impl Lpp {
 					*data = Some(Box::new(component));
 				} else {
 					println!("It's changed!!");
+					let new_index = index_from_component(&component);
+					let old_index = index_from_component(data_backup);
+
 					if !is_grouped {
 						// Decrease the qty of the shelf
 						*qty -= 1;
@@ -246,6 +288,8 @@ impl Lpp {
 
 						let new_ent_shelf_ref = cupboard.add_component(component);
 						*internal_ent.shelves.get_mut(&TypeId::of::<T>()).unwrap() = new_ent_shelf_ref;
+
+						self.update_entity_index::<T>(lentity, new_index, old_index);
 					} else {
 						// is_grouped. Its a grouped lentity.
 						let my_key = self
@@ -280,6 +324,10 @@ impl Lpp {
 							*relocated_ent.shelves.get_mut(&TypeId::of::<T>()).unwrap() = new_ent_shelf_ref;
 						}
 						cupboard.add_qty(new_ent_shelf_ref, duplicates.len() as u32 - 1);
+
+						for lentity in duplicates.clone().iter() {
+							self.update_entity_index::<T>(*lentity, new_index, old_index);
+						}
 					}
 				}
 			}
@@ -540,5 +588,23 @@ mod tests {
 			expected_positions.remove(index);
 		}
 		assert_eq!(expected_positions.len(), 0);
+	}
+
+	#[test]
+	fn test_indexing() {
+		let mut lpp = Lpp::new();
+		lpp.create_index::<UniverseComp>();
+		for i in 0..10 {
+			let mut entity = lpp.create_entity();
+			lpp.add_component(entity, PositionComp {
+				pos: Point::new(2.0, i as f32),
+			});
+			lpp.add_component(entity, UniverseComp { universe_id: i % 5 });
+			lpp.complete_entity(entity);
+		}
+		let index_results = lpp.query_index::<UniverseComp>(3);
+		assert_eq!(index_results.len(), 2);
+		let index_results = lpp.query_index::<UniverseComp>(1);
+		assert_eq!(index_results.len(), 2);
 	}
 }
