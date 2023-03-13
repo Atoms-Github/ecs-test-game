@@ -26,7 +26,7 @@ use ecs_test_game::test_controller::TestController;
 use ecs_test_game::ui::ui_settings::GuiSettings;
 use ecs_test_game::{test_controller, MAP_SIZE};
 use egui::epaint::image;
-use ggez::graphics::{Color, Drawable};
+use ggez::graphics::{Color, DrawParam, Drawable};
 use ggez::input::mouse::position;
 use ggez::{Context, GameResult};
 use glam::Vec2;
@@ -120,7 +120,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
 			ggez::graphics::draw(ctx, &existing_mesh, (Vec2::new(0., 0.),))?;
 		}
 
-		if self.gui_settings.simulation_settings.challenge_type == Challenge::Blob {
+		if self.gui_settings.simulation_settings.challenge_type == Challenge::Slideshow {
 			if self.frames % 100 == 0 {
 				self.entity_image_index = (self.entity_image_index + 1) % entities.len();
 				let image = self
@@ -130,6 +130,21 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
 				self.image = Some(ggez::graphics::Image::from_rgba8(ctx, 4000, 4000, &**image).unwrap());
 			}
 			ggez::graphics::draw(ctx, self.image.as_ref().unwrap(), (Vec2::new(0., 0.),))?;
+		}
+		if self.gui_settings.simulation_settings.challenge_type == Challenge::ImageEditing {
+			for entity in &entities {
+				let image = self.test_controller.brain.get_image(entity.entity_id);
+				let mut params = DrawParam::new();
+				params =
+					params.scale(Vec2::new(self.gui_settings.image_scale, self.gui_settings.image_scale));
+				params =
+					params.dest(Vec2::new(self.gui_settings.image_offset, self.gui_settings.image_offset));
+				params = params.dest(Vec2::new(entity.position.x, entity.position.y));
+
+				// TODO: This is slow.
+				self.image = Some(ggez::graphics::Image::from_rgba8(ctx, 117, 117, &**image).unwrap());
+				ggez::graphics::draw(ctx, self.image.as_ref().unwrap(), params)?;
+			}
 		}
 
 		let end = std::time::Instant::now();

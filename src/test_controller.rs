@@ -14,7 +14,8 @@ use crate::brains::sql_interfaces::SqlInterface;
 use crate::brains::Brain;
 use crate::challenges::get_nearest::ChallengeGetNearest;
 use crate::challenges::identical_entities::ChallengeIdenticalEntities;
-use crate::challenges::image_entites::ChallengeBlob;
+use crate::challenges::image_editing::ChallengeImageEditing;
+use crate::challenges::image_slideshow::ChallengeSlideshow;
 use crate::challenges::rts::ChallengeRts;
 use crate::challenges::spacial_array::ChallengeSpatialArray;
 use crate::challenges::ChallengeTrait;
@@ -50,7 +51,8 @@ impl TestController {
 			Challenge::Rts => Box::new(ChallengeRts {}),
 			Challenge::PaintClosest => Box::new(ChallengeGetNearest {}),
 			Challenge::IdenticalEntities => Box::new(ChallengeIdenticalEntities {}),
-			Challenge::Blob => Box::new(ChallengeBlob {}),
+			Challenge::Slideshow => Box::new(ChallengeSlideshow {}),
+			Challenge::ImageEditing => Box::new(ChallengeImageEditing {}),
 		};
 
 		let mut controller = TestController::new(new_brain, new_challenge);

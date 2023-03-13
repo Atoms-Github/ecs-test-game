@@ -10,6 +10,7 @@ use rand::prelude::SliceRandom;
 use rand::rngs::StdRng;
 use rand::{thread_rng, Rng, SeedableRng};
 
+use crate::brains::com::BlobComp;
 use crate::brains::{Brain, SystemType};
 use crate::challenges::ChallengeTrait;
 use crate::simulation_settings::SimSettings;
@@ -18,8 +19,8 @@ use crate::utils::GenRandom;
 use crate::{utils, Point, MAP_SIZE};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ChallengeBlob {}
-impl ChallengeTrait for ChallengeBlob {
+pub struct ChallengeSlideshow {}
+impl ChallengeTrait for ChallengeSlideshow {
 	fn init(
 		&mut self,
 		ctx: &mut Context,
@@ -35,12 +36,12 @@ impl ChallengeTrait for ChallengeBlob {
 			let image = ggez::graphics::Image::new(ctx, format!("/{}", image)).unwrap();
 
 			let blob = image.to_rgba8(ctx).unwrap();
-			images.push(blob);
+			images.push(BlobComp { blob });
 		}
 
-		for i in 0..settings.entity_count / 3 {
+		for i in 0..settings.entity_count / images.len() {
 			for blob in &images {
-				brain.add_entity_blob(Point::new(20.0, 20.0), blob.clone(), 1.0);
+				brain.add_entity_blob(Point::new(20.0, 20.0), blob, 1.0, None);
 			}
 		}
 	}

@@ -3,7 +3,7 @@ use std::process::id;
 use duckdb::ffi::system;
 use ggez::graphics::Color;
 
-use crate::brains::com::ExportEntity;
+use crate::brains::com::{BlobComp, ExportEntity};
 use crate::brains::sql_brains::brain_sql::CommandPlanSql;
 use crate::brains::sql_interfaces::{InterfaceType, SqlArgument, SqlInterface, SqlStatement};
 use crate::brains::{Brain, SystemType};
@@ -27,6 +27,9 @@ impl CommandPlanSql for BrainSqlFlatTable {
 		settings: &SimSettings,
 	) -> Vec<SqlStatement> {
 		let mut statements: Vec<SqlStatement> = match sys {
+			SystemType::EditTeamOneImage => {
+				unimplemented!("BrainSqlFlatTable::systems()::EditTeamTwoImage")
+			}
 			SystemType::Velocity => {
 				vec![
                     SqlStatement::new_f32("UPDATE entities SET position_x = position_x + velocity_x * ? WHERE velocity_x IS NOT NULL;", vec![delta]),
@@ -233,13 +236,19 @@ SET blue = e1.blue +
 		};
 	}
 
-	fn add_entity_blob(&mut self, position: Point, blob: Vec<u8>, blue: f32) -> SqlStatement {
+	fn add_entity_blob(
+		&mut self,
+		position: Point,
+		blob: &BlobComp,
+		blue: f32,
+		team: Option<usize>,
+	) -> SqlStatement {
 		return SqlStatement::new(
 			"INSERT INTO entities (position_x, position_y, blob, universe_id, blue) VALUES (?, ?, ?, 0, ?);",
 			vec![
 				SqlArgument::Float(position.x),
 				SqlArgument::Float(position.y),
-				SqlArgument::Blob(blob),
+				SqlArgument::Blob(blob.blob.clone()),
 				SqlArgument::Float(blue),
 			],
 		);

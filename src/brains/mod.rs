@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use ggez::graphics::Color;
 
-use crate::brains::com::ExportEntity;
+use crate::brains::com::{BlobComp, ExportEntity, TeamComp};
 use crate::simulation_settings::SimSettings;
 use crate::ui::ui_settings::GuiSettings;
 use crate::Point;
@@ -20,7 +20,7 @@ pub mod sql_interfaces;
 pub trait Brain {
 	fn add_entity_unit(&mut self, position: Point, velocity: Point, team: usize, universe_id: usize);
 	fn add_entity(&mut self, position: Point, velocity: Option<Point>, blue: f32);
-	fn add_entity_blob(&mut self, position: Point, blob: Vec<u8>, blue: f32);
+	fn add_entity_blob(&mut self, position: Point, blob: &BlobComp, blue: f32, team: Option<usize>);
 
 	fn get_entities(&mut self, universe_id: usize) -> Vec<ExportEntity>;
 	fn get_image(&mut self, entity_id: u64) -> Cow<Vec<u8>>;
@@ -41,6 +41,7 @@ pub enum SystemType {
 	Shoot,
 	DeleteExpired,
 	PaintNearest,
+	EditTeamOneImage,
 }
 impl SystemType {
 	pub fn get_name(&self) -> String {

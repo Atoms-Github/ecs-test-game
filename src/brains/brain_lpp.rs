@@ -3,6 +3,7 @@ use std::borrow::Cow;
 
 use legion::systems::CommandBuffer;
 use legion::{Entity, IntoQuery, Resources, Schedule, World};
+use rand::Rng;
 
 use crate::brains::brain_legion::BrainLegionTrait;
 use crate::brains::com::{
@@ -57,12 +58,15 @@ impl Brain for BrainLpp {
 		self.world.complete_entity(entity);
 	}
 
-	fn add_entity_blob(&mut self, position: Point, blob: Vec<u8>, blue: f32) {
+	fn add_entity_blob(&mut self, position: Point, blob: &BlobComp, blue: f32, team: Option<usize>) {
 		let mut entity = self.world.create_entity();
 		self.world.add_component(entity, PositionComp { pos: position });
 		self.world.add_component(entity, ColorComp { blue });
-		self.world.add_component(entity, BlobComp { blob });
+		self.world.add_component_ref(entity, blob);
 		self.world.add_component(entity, UniverseComp { universe_id: 0 });
+		if let Some(team) = team {
+			self.world.add_component(entity, TeamComp { team });
+		}
 		self.world.complete_entity(entity);
 	}
 
@@ -100,6 +104,20 @@ impl Brain for BrainLpp {
 
 	fn tick_system(&mut self, system: &SystemType, delta: f32, settings: &SimSettings) {
 		match system {
+			SystemType::EditTeamOneImage => {
+				let mut matching_entities = self.world.query(vec![
+					TypeId::of::<PositionComp>(),
+					TypeId::of::<TeamComp>(),
+					TypeId::of::<BlobComp>(),
+				]);
+				for entity in &matching_entities {
+					if self.world.get_component_ref::<TeamComp>(*entity).unwrap().team == 1 {
+						let mut blob = self.world.get_component::<BlobComp>(*entity).unwrap();
+						crate::challenges::image_editing::edit_image(&mut blob.blob);
+						self.world.return_component(*entity, blob);
+					}
+				}
+			}
 			SystemType::Velocity => {
 				// let mut query = <(&mut PositionComp, &VelocityComp)>::query();
 				// for (mut pos, vel) in query.iter_mut(&mut self.world) {

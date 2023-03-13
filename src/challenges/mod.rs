@@ -6,7 +6,8 @@ use crate::ui::ui_settings::GuiSettings;
 
 pub mod get_nearest;
 pub mod identical_entities;
-pub mod image_entites;
+pub mod image_editing;
+pub mod image_slideshow;
 pub mod rts;
 pub mod spacial_array;
 

@@ -1,8 +1,9 @@
 use std::borrow::Cow;
+
 use duckdb::params;
 use ggez::graphics::Color;
 
-use crate::brains::com::ExportEntity;
+use crate::brains::com::{BlobComp, ExportEntity, TeamComp};
 use crate::brains::sql_interfaces::{SqlInterface, SqlStatement};
 use crate::brains::{Brain, SystemType};
 use crate::simulation_settings::SimSettings;
@@ -28,7 +29,13 @@ pub trait CommandPlanSql {
 		universe_id: usize,
 	) -> SqlStatement;
 	fn add_entity(&mut self, position: Point, velocity: Option<Point>, blue: f32) -> SqlStatement;
-	fn add_entity_blob(&mut self, position: Point, blob: Vec<u8>, blue: f32) -> SqlStatement;
+	fn add_entity_blob(
+		&mut self,
+		position: Point,
+		blob: &BlobComp,
+		blue: f32,
+		team: Option<usize>,
+	) -> SqlStatement;
 	fn get_ents_xyc(&mut self, universe_id: usize) -> SqlStatement;
 	fn get_image(&mut self, entity_id: u64) -> SqlStatement;
 	fn init_systems<I: SqlInterface>(&mut self, systems: &Vec<SystemType>) -> Vec<SqlStatement>;
@@ -53,8 +60,8 @@ impl<C: CommandPlanSql, I: SqlInterface> Brain for BrainSql<C, I> {
 		self.database.execute_batch(vec![command]);
 	}
 
-	fn add_entity_blob(&mut self, position: Point, blob: Vec<u8>, blue: f32) {
-		let command = self.command_plan.add_entity_blob(position, blob, blue);
+	fn add_entity_blob(&mut self, position: Point, blob: &BlobComp, blue: f32, team: Option<usize>) {
+		let command = self.command_plan.add_entity_blob(position, blob, blue, team);
 		self.database.execute_batch(vec![command]);
 	}
 

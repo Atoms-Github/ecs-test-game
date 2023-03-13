@@ -59,7 +59,7 @@ impl BrainLegionTrait for BrainLegionCounted {
 		assert_eq!(found, None);
 	}
 
-	fn add_entity_blob(&mut self, world: &mut World, position: Point, blob: Vec<u8>) {
+	fn add_entity_blob(&mut self, world: &mut World, position: Point, blob: Vec<u8>, team: Option<usize>) {
 		let mut found_ent = None;
 
 		// Try and find if an identical entity already exists.
@@ -77,13 +77,25 @@ impl BrainLegionTrait for BrainLegionCounted {
 			*count += 1;
 			return;
 		}
-		// Try and find if an identical entity already exists.
-		let ent_id = world.push((
-			PositionComp { pos: position },
-			blob,
-			UniverseComp { universe_id: 0 },
-			ColorComp { blue: 1.0 },
-		));
+		let ent_id = if let Some(team) = team {
+			world.push((
+				PositionComp { pos: position },
+				BlobComp { blob },
+				UniverseComp { universe_id: 0 },
+				ColorComp {
+					blue: color_from_team(team),
+				},
+				TeamComp { team },
+			))
+		} else {
+			world.push((
+				PositionComp { pos: position },
+				blob,
+				UniverseComp { universe_id: 0 },
+				ColorComp { blue: 1.0 },
+			))
+		};
+
 		let found = self.counts.insert(ent_id, 1);
 		assert_eq!(found, None);
 	}
@@ -93,7 +105,7 @@ pub struct BrainLegionDupey {}
 
 pub trait BrainLegionTrait {
 	fn add_entity(&mut self, world: &mut World, position: Point, velocity: Option<Point>, blue: f32);
-	fn add_entity_blob(&mut self, world: &mut World, position: Point, blob: Vec<u8>);
+	fn add_entity_blob(&mut self, world: &mut World, position: Point, blob: Vec<u8>, team: Option<usize>);
 }
 
 impl BrainLegionTrait for BrainLegionDupey {
@@ -112,13 +124,25 @@ impl BrainLegionTrait for BrainLegionDupey {
 		}
 	}
 
-	fn add_entity_blob(&mut self, world: &mut World, position: Point, blob: Vec<u8>) {
-		world.push((
-			PositionComp { pos: position },
-			BlobComp { blob },
-			UniverseComp { universe_id: 0 },
-			ColorComp { blue: 1.0 },
-		));
+	fn add_entity_blob(&mut self, world: &mut World, position: Point, blob: Vec<u8>, team: Option<usize>) {
+		if let Some(team) = team {
+			world.push((
+				PositionComp { pos: position },
+				BlobComp { blob },
+				UniverseComp { universe_id: 0 },
+				ColorComp {
+					blue: color_from_team(team),
+				},
+				TeamComp { team },
+			))
+		} else {
+			world.push((
+				PositionComp { pos: position },
+				blob,
+				UniverseComp { universe_id: 0 },
+				ColorComp { blue: 1.0 },
+			))
+		};
 	}
 }
 
@@ -220,6 +244,13 @@ fn shoot(
 }
 
 #[system(for_each)]
+fn edit_team_two_image(blob: &mut BlobComp, team: &TeamComp) {
+	if team.team == 1 {
+		crate::challenges::image_editing::edit_image(&mut blob.blob);
+	}
+}
+
+#[system(for_each)]
 fn paint_nearest(
 	#[resource] pos_color: &Vec<(PositionComp, ColorComp)>,
 	#[resource] settings: &SimSettings,
@@ -267,8 +298,9 @@ impl<T: BrainLegionTrait> Brain for BrainLegion<T> {
 		self.trait_data.add_entity(&mut self.world, position, velocity, blue);
 	}
 
-	fn add_entity_blob(&mut self, position: Point, blob: Vec<u8>, blue: f32) {
-		self.trait_data.add_entity_blob(&mut self.world, position, blob);
+	fn add_entity_blob(&mut self, position: Point, blob: &BlobComp, blue: f32, team: Option<usize>) {
+		self.trait_data
+			.add_entity_blob(&mut self.world, position, blob.blob.clone(), team);
 	}
 
 	fn get_entities(&mut self, universe_id: usize) -> Vec<ExportEntity> {
@@ -317,6 +349,7 @@ impl<T: BrainLegionTrait> Brain for BrainLegion<T> {
 				SystemType::Shoot => schedule.add_system(shoot_system()),
 				SystemType::DeleteExpired => schedule.add_system(delete_expired_system()),
 				SystemType::PaintNearest => schedule.add_system(paint_nearest_system()),
+				SystemType::EditTeamOneImage => schedule.add_system(edit_team_two_image_system()),
 			};
 		}
 		self.schedule = Some(schedule.build());
@@ -408,6 +441,9 @@ impl<T: BrainLegionTrait> Brain for BrainLegion<T> {
 				for (entity, pos, color) in query.iter_mut(&mut self.world) {
 					paint_nearest(&pos_color, settings, pos, color);
 				}
+			}
+			SystemType::EditTeamOneImage => {
+				unimplemented!("Single thread not supported.")
 			}
 		}
 	}
