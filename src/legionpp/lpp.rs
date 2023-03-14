@@ -144,15 +144,18 @@ impl Lpp {
 		self.current_unique_type_ids = type_sig.clone();
 		self.uniques_by_type.clear();
 
-		let query_results = self.query(type_sig);
+		let query_results = self.query(type_sig.clone());
 		for lentity in query_results {
 			let ent_internal = self.get_entity(lentity);
 			let mut uniques = BTreeSet::new();
 			for (type_id, shelf_ref) in ent_internal.shelves.iter() {
-				uniques.insert((*type_id, *shelf_ref));
+				if type_sig.contains(type_id) {
+					uniques.insert((*type_id, *shelf_ref));
+				}
 			}
 			self.uniques_by_type.entry(uniques).or_insert_with(|| Vec::new()).push(lentity);
 		}
+		println!("uniques_by_type: {:#?}", self.uniques_by_type);
 		self.uniques_by_type
 			.values()
 			.map(|v| lentity_to_grouped_lentity(v[0]))
@@ -242,8 +245,6 @@ impl Lpp {
 		let internal_ent = self.lentities.get_mut(&lentity).expect("Ent doesn't exist");
 		let shelf_ref = *internal_ent.shelves.get_mut(&TypeId::of::<T>()).unwrap();
 		let shelf = cupboard.get_shelf_mut(&shelf_ref);
-
-		println!("Returning component");
 
 		match shelf {
 			Shelf::One { data } => {

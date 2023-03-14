@@ -141,7 +141,6 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
 					params.dest(Vec2::new(self.gui_settings.image_offset, self.gui_settings.image_offset));
 				params = params.dest(Vec2::new(entity.position.x, entity.position.y));
 
-				// TODO: This is slow.
 				self.image = Some(ggez::graphics::Image::from_rgba8(ctx, 117, 117, &**image).unwrap());
 				ggez::graphics::draw(ctx, self.image.as_ref().unwrap(), params)?;
 			}

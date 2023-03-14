@@ -105,11 +105,9 @@ impl Brain for BrainLpp {
 	fn tick_system(&mut self, system: &SystemType, delta: f32, settings: &SimSettings) {
 		match system {
 			SystemType::EditTeamOneImage => {
-				let mut matching_entities = self.world.query(vec![
-					TypeId::of::<PositionComp>(),
-					TypeId::of::<TeamComp>(),
-					TypeId::of::<BlobComp>(),
-				]);
+				let mut matching_entities = self
+					.world
+					.query_uniques(vec![TypeId::of::<TeamComp>(), TypeId::of::<BlobComp>()]);
 				for entity in &matching_entities {
 					if self.world.get_component_ref::<TeamComp>(*entity).unwrap().team == 1 {
 						let mut blob = self.world.get_component::<BlobComp>(*entity).unwrap();

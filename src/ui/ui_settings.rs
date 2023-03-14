@@ -27,7 +27,7 @@ impl GuiSettings {
 		Self {
 			view_universe:       0,
 			simulation_settings: SimSettings::default(),
-			image_scale:         0.05,
+			image_scale:         2.3,
 			image_offset:        0.0,
 		}
 	}
