@@ -19,7 +19,7 @@ use crate::utils::GenRandom;
 use crate::{utils, Point, MAP_SIZE};
 
 pub fn edit_image(blob: &mut Vec<u8>) {
-	const BLUR: i32 = 3;
+	const BLUR: i32 = 1;
 
 	// Set every u8 in the array to the average value of the closest 16 pixel
 	let mut rng = StdRng::from_entropy();
@@ -28,7 +28,7 @@ pub fn edit_image(blob: &mut Vec<u8>) {
 		let mut count = 0;
 		for x in -BLUR..BLUR {
 			for y in -BLUR..BLUR {
-				let index = (i as i32 + x + y * MAP_SIZE as i32) as usize;
+				let index = (i as i32 + x + y * 127 as i32) as usize;
 				if index < blob.len() {
 					sum += blob[index] as i32;
 					count += 1;

@@ -41,6 +41,7 @@ impl Brain for BrainLpp {
 		self.world.add_component(entity, VelocityComp { vel: velocity });
 		self.world.add_component(entity, UniverseComp { universe_id });
 		self.world.add_component(entity, ShooterComp { cooldown: 0.0 });
+		self.world.add_component(entity, TeamComp { team });
 		self.world.add_component(entity, ColorComp {
 			blue: color_from_team(team),
 		});
@@ -94,7 +95,11 @@ impl Brain for BrainLpp {
 		Cow::Borrowed(&reference.blob)
 	}
 
-	fn init(&mut self, systems: &Vec<SystemType>) {}
+	fn init(&mut self, systems: &Vec<SystemType>) {
+		if systems.contains(&SystemType::EditTeamOneColor) {
+			self.world.create_index::<TeamComp>()
+		}
+	}
 
 	fn tick_systems(&mut self, delta: f32, settings: &SimSettings, systems: &Vec<SystemType>) {
 		for system in systems {
@@ -227,6 +232,16 @@ impl Brain for BrainLpp {
 					color.blend(closest_color, &settings);
 
 					self.world.return_component(*entity, color);
+				}
+			}
+			SystemType::EditTeamOneColor => {
+				let mut matching_entities = self.world.query_index::<TeamComp>(1);
+				println!("{}", matching_entities.len());
+
+				for entity in matching_entities {
+					let mut color = self.world.get_component::<ColorComp>(entity).unwrap();
+					color.blue = 0.5;
+					self.world.return_component(entity, color);
 				}
 			}
 		}

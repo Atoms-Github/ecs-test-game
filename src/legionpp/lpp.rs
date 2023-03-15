@@ -71,13 +71,14 @@ impl Lpp {
 		}
 	}
 
-	pub fn query_index<T: Copy + 'static>(&self, desired_index: i32) -> Vec<&Lentity> {
+	pub fn query_index<T: Copy + 'static>(&self, desired_index: i32) -> Vec<Lentity> {
 		self.indexes
 			.get(&TypeId::of::<T>())
 			.unwrap()
 			.get(&(desired_index as u32))
 			.unwrap()
 			.iter()
+			.cloned()
 			.collect()
 	}
 
@@ -155,7 +156,6 @@ impl Lpp {
 			}
 			self.uniques_by_type.entry(uniques).or_insert_with(|| Vec::new()).push(lentity);
 		}
-		println!("uniques_by_type: {:#?}", self.uniques_by_type);
 		self.uniques_by_type
 			.values()
 			.map(|v| lentity_to_grouped_lentity(v[0]))
@@ -264,10 +264,8 @@ impl Lpp {
 				}
 
 				if identical {
-					println!("(Unchanged)");
 					*data = Some(Box::new(component));
 				} else {
-					println!("It's changed!!");
 					let new_index = index_from_component(&component);
 					let old_index = index_from_component(data_backup);
 

@@ -276,6 +276,12 @@ fn delete_expired(time: &TimedLifeComp, entity: &Entity, command_buffer: &mut Co
 		command_buffer.remove(*entity);
 	}
 }
+#[system(for_each)]
+fn edit_team_one_color(team: &TeamComp, color: &mut ColorComp) {
+	if team.team == 1 {
+		color.blue = 0.5;
+	}
+}
 
 impl<T: Default + BrainLegionTrait> BrainLegion<T> {
 	pub fn new() -> Self {
@@ -342,6 +348,7 @@ impl<T: BrainLegionTrait> Brain for BrainLegion<T> {
 		let mut schedule = Schedule::builder();
 		for system in systems.iter() {
 			match system {
+				SystemType::EditTeamOneColor => schedule.add_system(edit_team_one_color_system()),
 				SystemType::Velocity => schedule.add_system(velocity_system()),
 				SystemType::Acceleration => schedule.add_system(acceleration_system()),
 				SystemType::MapEdge => schedule.add_system(map_edge_system()),
@@ -443,6 +450,9 @@ impl<T: BrainLegionTrait> Brain for BrainLegion<T> {
 				}
 			}
 			SystemType::EditTeamOneImage => {
+				unimplemented!("Single thread not supported.")
+			}
+			SystemType::EditTeamOneColor => {
 				unimplemented!("Single thread not supported.")
 			}
 		}

@@ -78,9 +78,12 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
 			ui.label(format!("Time delta: {}ms", ggez::timer::delta(ctx).as_millis()));
 			self.gui_settings.draw(ui);
 
-			let ent_count = self.test_controller.brain.get_entities(self.gui_settings.view_universe).len();
-
-			ui.label(format!("Entity count: {}", ent_count));
+			// If query challenge:
+			if self.gui_settings.simulation_settings.challenge_type != Challenge::QueryChallenge {
+				let ent_count =
+					self.test_controller.brain.get_entities(self.gui_settings.view_universe).len();
+				ui.label(format!("Entity count: {}", ent_count));
+			}
 
 			if ui.button("Save Graph").clicked() {
 				self.test_controller.save_graph("graph.png");
@@ -101,48 +104,50 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
 		let start = std::time::Instant::now();
 		// Batch draw the units:
 		let mut batch = ggez::graphics::MeshBuilder::new();
-		let entities = self.test_controller.brain.get_entities(self.gui_settings.view_universe);
 
-		for entity in &entities {
-			batch
-				.circle(
-					ggez::graphics::DrawMode::fill(),
-					entity.position,
-					5.0,
-					0.1,
-					Color::from((1.0, 1.0, entity.blue, 1.0)),
-				)
-				.unwrap();
-		}
+		if self.gui_settings.simulation_settings.challenge_type != Challenge::QueryChallenge {
+			let entities = self.test_controller.brain.get_entities(self.gui_settings.view_universe);
 
-		let mesh = batch.build(ctx);
-		if let Ok(existing_mesh) = mesh {
-			ggez::graphics::draw(ctx, &existing_mesh, (Vec2::new(0., 0.),))?;
-		}
-
-		if self.gui_settings.simulation_settings.challenge_type == Challenge::Slideshow {
-			if self.frames % 100 == 0 {
-				self.entity_image_index = (self.entity_image_index + 1) % entities.len();
-				let image = self
-					.test_controller
-					.brain
-					.get_image(entities[self.entity_image_index].entity_id);
-				self.image = Some(ggez::graphics::Image::from_rgba8(ctx, 4000, 4000, &**image).unwrap());
-			}
-			ggez::graphics::draw(ctx, self.image.as_ref().unwrap(), (Vec2::new(0., 0.),))?;
-		}
-		if self.gui_settings.simulation_settings.challenge_type == Challenge::ImageEditing {
 			for entity in &entities {
-				let image = self.test_controller.brain.get_image(entity.entity_id);
-				let mut params = DrawParam::new();
-				params =
-					params.scale(Vec2::new(self.gui_settings.image_scale, self.gui_settings.image_scale));
-				params =
-					params.dest(Vec2::new(self.gui_settings.image_offset, self.gui_settings.image_offset));
-				params = params.dest(Vec2::new(entity.position.x, entity.position.y));
+				batch
+					.circle(
+						ggez::graphics::DrawMode::fill(),
+						entity.position,
+						5.0,
+						0.1,
+						Color::from((1.0, 1.0, entity.blue, 1.0)),
+					)
+					.unwrap();
+			}
 
-				self.image = Some(ggez::graphics::Image::from_rgba8(ctx, 117, 117, &**image).unwrap());
-				ggez::graphics::draw(ctx, self.image.as_ref().unwrap(), params)?;
+			let mesh = batch.build(ctx);
+			if let Ok(existing_mesh) = mesh {
+				ggez::graphics::draw(ctx, &existing_mesh, (Vec2::new(0., 0.),))?;
+			}
+			if self.gui_settings.simulation_settings.challenge_type == Challenge::Slideshow {
+				if self.frames % 100 == 0 {
+					self.entity_image_index = (self.entity_image_index + 1) % entities.len();
+					let image = self
+						.test_controller
+						.brain
+						.get_image(entities[self.entity_image_index].entity_id);
+					self.image = Some(ggez::graphics::Image::from_rgba8(ctx, 4000, 4000, &**image).unwrap());
+				}
+				ggez::graphics::draw(ctx, self.image.as_ref().unwrap(), (Vec2::new(0., 0.),))?;
+			}
+			if self.gui_settings.simulation_settings.challenge_type == Challenge::ImageEditing {
+				for entity in &entities {
+					let image = self.test_controller.brain.get_image(entity.entity_id);
+					let mut params = DrawParam::new();
+					params =
+						params.scale(Vec2::new(self.gui_settings.image_scale, self.gui_settings.image_scale));
+					params = params
+						.dest(Vec2::new(self.gui_settings.image_offset, self.gui_settings.image_offset));
+					params = params.dest(Vec2::new(entity.position.x, entity.position.y));
+
+					self.image = Some(ggez::graphics::Image::from_rgba8(ctx, 117, 117, &**image).unwrap());
+					ggez::graphics::draw(ctx, self.image.as_ref().unwrap(), params)?;
+				}
 			}
 		}
 

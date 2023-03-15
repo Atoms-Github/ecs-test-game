@@ -16,6 +16,7 @@ use crate::challenges::get_nearest::ChallengeGetNearest;
 use crate::challenges::identical_entities::ChallengeIdenticalEntities;
 use crate::challenges::image_editing::ChallengeImageEditing;
 use crate::challenges::image_slideshow::ChallengeSlideshow;
+use crate::challenges::query_challenge::ChallengeQuery;
 use crate::challenges::rts::ChallengeRts;
 use crate::challenges::spacial_array::ChallengeSpatialArray;
 use crate::challenges::ChallengeTrait;
@@ -53,6 +54,7 @@ impl TestController {
 			Challenge::IdenticalEntities => Box::new(ChallengeIdenticalEntities {}),
 			Challenge::Slideshow => Box::new(ChallengeSlideshow {}),
 			Challenge::ImageEditing => Box::new(ChallengeImageEditing {}),
+			Challenge::QueryChallenge => Box::new(ChallengeQuery {}),
 		};
 
 		let mut controller = TestController::new(new_brain, new_challenge);

@@ -42,6 +42,7 @@ pub enum SystemType {
 	DeleteExpired,
 	PaintNearest,
 	EditTeamOneImage,
+	EditTeamOneColor,
 }
 impl SystemType {
 	pub fn get_name(&self) -> String {

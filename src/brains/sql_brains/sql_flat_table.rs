@@ -189,6 +189,12 @@ SET blue = e1.blue +
 					}
 				}
 			}
+			SystemType::EditTeamOneColor => {
+				vec![SqlStatement::new_f32(
+					"UPDATE entities SET blue = 0.5 WHERE team = 1;",
+					vec![],
+				)]
+			}
 		};
 		return statements;
 	}

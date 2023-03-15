@@ -45,6 +45,7 @@ impl SimSettings {
 					Challenge::IdenticalEntities,
 					"Identical Entities",
 				);
+				ui.selectable_value(&mut self.challenge_type, Challenge::QueryChallenge {}, "Query");
 			})
 			.response;
 
@@ -83,15 +84,16 @@ pub enum Challenge {
 	IdenticalEntities,
 	Slideshow,
 	ImageEditing,
+	QueryChallenge,
 }
 impl Default for Challenge {
 	fn default() -> Self {
-		Challenge::ImageEditing
+		Challenge::QueryChallenge
 	}
 }
 impl Default for BrainType {
 	fn default() -> Self {
-		BrainType::Lpp
+		BrainType::SqlDuck
 	}
 }
 impl Default for SimSettings {
