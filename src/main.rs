@@ -133,7 +133,9 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
 						.get_image(entities[self.entity_image_index].entity_id);
 					self.image = Some(ggez::graphics::Image::from_rgba8(ctx, 4000, 4000, &**image).unwrap());
 				}
-				ggez::graphics::draw(ctx, self.image.as_ref().unwrap(), (Vec2::new(0., 0.),))?;
+				if let Some(image) = &self.image {
+					ggez::graphics::draw(ctx, image, (Vec2::new(0., 0.),))?;
+				}
 			}
 			if self.gui_settings.simulation_settings.challenge_type == Challenge::ImageEditing {
 				for entity in &entities {
