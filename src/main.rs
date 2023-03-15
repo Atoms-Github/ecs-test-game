@@ -125,7 +125,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
 				ggez::graphics::draw(ctx, &existing_mesh, (Vec2::new(0., 0.),))?;
 			}
 			if self.gui_settings.simulation_settings.challenge_type == Challenge::Slideshow {
-				if self.frames % 100 == 0 {
+				if self.frames % 100 == 0 && entities.len() > 0 {
 					self.entity_image_index = (self.entity_image_index + 1) % entities.len();
 					let image = self
 						.test_controller

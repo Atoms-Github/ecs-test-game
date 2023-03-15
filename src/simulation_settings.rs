@@ -30,7 +30,6 @@ impl SimSettings {
 				ui.selectable_value(&mut self.brain_type, BrainType::LegionCounted, "LegionCounted");
 				ui.selectable_value(&mut self.brain_type, BrainType::SqlDuck, "Sql duck");
 				ui.selectable_value(&mut self.brain_type, BrainType::SqlIte, "Sqlite");
-				ui.selectable_value(&mut self.brain_type, BrainType::SqlPostgres, "Postgres");
 				ui.selectable_value(&mut self.brain_type, BrainType::Lpp, "Lpp");
 			})
 			.response;
@@ -68,7 +67,6 @@ pub enum BrainType {
 	LegionCounted,
 	SqlDuck,
 	SqlIte,
-	SqlPostgres,
 	Lpp,
 }
 impl fmt::Display for BrainType {
@@ -88,19 +86,19 @@ pub enum Challenge {
 }
 impl Default for Challenge {
 	fn default() -> Self {
-		Challenge::QueryChallenge
+		Challenge::Slideshow
 	}
 }
 impl Default for BrainType {
 	fn default() -> Self {
-		BrainType::SqlDuck
+		BrainType::Lpp
 	}
 }
 impl Default for SimSettings {
 	fn default() -> Self {
 		Self {
 			universe_count: 1,
-			entity_count:   3,
+			entity_count:   0,
 			brain_type:     Default::default(),
 			challenge_type: Default::default(),
 			all_at_once:    true,

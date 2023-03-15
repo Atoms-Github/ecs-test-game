@@ -38,9 +38,6 @@ impl TestController {
 			BrainType::LegionCounted => Box::new(BrainLegion::<BrainLegionCounted>::new()),
 			BrainType::SqlDuck => Box::new(BrainSql::new(BrainSqlFlatTable::new(), InterfaceDuckDB::new())),
 			BrainType::SqlIte => Box::new(BrainSql::new(BrainSqlFlatTable::new(), InterfaceSqlite::new())),
-			BrainType::SqlPostgres => {
-				Box::new(BrainSql::new(BrainSqlFlatTable::new(), InterfacePostgres::new()))
-			}
 			BrainType::Lpp => Box::new(BrainLpp::new()),
 		};
 		let new_challenge: Box<dyn ChallengeTrait> = match settings.challenge_type {

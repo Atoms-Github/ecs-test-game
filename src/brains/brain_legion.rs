@@ -138,7 +138,7 @@ impl BrainLegionTrait for BrainLegionDupey {
 		} else {
 			world.push((
 				PositionComp { pos: position },
-				blob,
+				BlobComp { blob },
 				UniverseComp { universe_id: 0 },
 				ColorComp { blue: 1.0 },
 			))
