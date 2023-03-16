@@ -41,7 +41,7 @@ impl SimSettings {
 				ui.selectable_value(&mut self.challenge_type, Challenge::Slideshow {}, "Blob");
 				ui.selectable_value(
 					&mut self.challenge_type,
-					Challenge::IdenticalEntities,
+					Challenge::IdenticalEntitiesVelocity,
 					"Identical Entities",
 				);
 				ui.selectable_value(&mut self.challenge_type, Challenge::QueryChallenge {}, "Query");
@@ -79,7 +79,7 @@ pub enum Challenge {
 	Rts,
 	PaintClosest,
 	SpacialArray,
-	IdenticalEntities,
+	IdenticalEntitiesVelocity,
 	Slideshow,
 	ImageEditing,
 	QueryChallenge,

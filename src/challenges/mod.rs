@@ -4,13 +4,13 @@ use crate::brains::{Brain, SystemType};
 use crate::simulation_settings::SimSettings;
 use crate::ui::ui_settings::GuiSettings;
 
-pub mod get_nearest;
-pub mod identical_entities;
-pub mod image_editing;
-pub mod image_slideshow;
-pub mod query_challenge;
-pub mod rts;
-pub mod spacial_array;
+pub mod ch_complex_query;
+pub mod ch_identical_entities;
+pub mod ch_image_editing;
+pub mod ch_image_slideshow;
+pub mod ch_paint_closest;
+pub mod ch_spatial_array;
+pub mod ch_units_shooting;
 
 pub trait ChallengeTrait {
 	fn init(

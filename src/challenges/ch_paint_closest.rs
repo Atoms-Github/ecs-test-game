@@ -10,8 +10,8 @@ use crate::utils::GenRandom;
 use crate::{Point, MAP_SIZE};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ChallengeGetNearest {}
-impl ChallengeTrait for ChallengeGetNearest {
+pub struct ChallengePaintClosest {}
+impl ChallengeTrait for ChallengePaintClosest {
 	fn init(
 		&mut self,
 		ctx: &mut Context,

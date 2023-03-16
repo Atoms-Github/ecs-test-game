@@ -116,7 +116,7 @@ impl Brain for BrainLpp {
 				for entity in &matching_entities {
 					if self.world.get_component_ref::<TeamComp>(*entity).unwrap().team == 1 {
 						let mut blob = self.world.get_component::<BlobComp>(*entity).unwrap();
-						crate::challenges::image_editing::edit_image(&mut blob.blob);
+						crate::challenges::ch_image_editing::edit_image(&mut blob.blob);
 						self.world.return_component(*entity, blob);
 					}
 				}

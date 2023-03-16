@@ -12,13 +12,13 @@ use crate::brains::sql_interfaces::postgresql::InterfacePostgres;
 use crate::brains::sql_interfaces::sqlite::InterfaceSqlite;
 use crate::brains::sql_interfaces::SqlInterface;
 use crate::brains::Brain;
-use crate::challenges::get_nearest::ChallengeGetNearest;
-use crate::challenges::identical_entities::ChallengeIdenticalEntities;
-use crate::challenges::image_editing::ChallengeImageEditing;
-use crate::challenges::image_slideshow::ChallengeSlideshow;
-use crate::challenges::query_challenge::ChallengeQuery;
-use crate::challenges::rts::ChallengeRts;
-use crate::challenges::spacial_array::ChallengeSpatialArray;
+use crate::challenges::ch_complex_query::ChallengeQuery;
+use crate::challenges::ch_identical_entities::ChallengeIdenticalEntities;
+use crate::challenges::ch_image_editing::ChallengeImageEditing;
+use crate::challenges::ch_image_slideshow::ChallengeSlideshow;
+use crate::challenges::ch_paint_closest::ChallengePaintClosest;
+use crate::challenges::ch_spatial_array::ChallengeSpatialArray;
+use crate::challenges::ch_units_shooting::ChallengeRts;
 use crate::challenges::ChallengeTrait;
 use crate::simulation_settings::{BrainType, Challenge, SimSettings};
 use crate::ui::ui_settings::GuiSettings;
@@ -47,8 +47,8 @@ impl TestController {
 				unique_velocity_fraction: 0.001,
 			}),
 			Challenge::Rts => Box::new(ChallengeRts {}),
-			Challenge::PaintClosest => Box::new(ChallengeGetNearest {}),
-			Challenge::IdenticalEntities => Box::new(ChallengeIdenticalEntities {}),
+			Challenge::PaintClosest => Box::new(ChallengePaintClosest {}),
+			Challenge::IdenticalEntitiesVelocity => Box::new(ChallengeIdenticalEntities {}),
 			Challenge::Slideshow => Box::new(ChallengeSlideshow {}),
 			Challenge::ImageEditing => Box::new(ChallengeImageEditing {}),
 			Challenge::QueryChallenge => Box::new(ChallengeQuery {}),

@@ -11,7 +11,7 @@ use std::time::Duration;
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use ecs_test_game::brains::brain_legion::{BrainLegion, BrainLegionCounted};
-use ecs_test_game::challenges::rts::ChallengeRts;
+use ecs_test_game::challenges::ch_units_shooting::ChallengeRts;
 use ecs_test_game::simulation_settings::{BrainType, Challenge, SimSettings};
 use ecs_test_game::test_controller::TestController;
 
@@ -29,7 +29,7 @@ fn query_complex(c: &mut Criterion) {
 	let mut settings = SimSettings::default();
 	settings.challenge_type = Challenge::QueryChallenge;
 
-	for entity_count in (1..2).map(|x| x * 2) {
+	for entity_count in (1..4).map(|x| x * 2) {
 		settings.entity_count = entity_count;
 		for test in [
 			BrainType::LegionDupey,

@@ -246,7 +246,7 @@ fn shoot(
 #[system(for_each)]
 fn edit_team_two_image(blob: &mut BlobComp, team: &TeamComp) {
 	if team.team == 1 {
-		crate::challenges::image_editing::edit_image(&mut blob.blob);
+		crate::challenges::ch_image_editing::edit_image(&mut blob.blob);
 	}
 }
 

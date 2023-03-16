@@ -11,17 +11,17 @@ use std::time::Duration;
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use ecs_test_game::brains::brain_legion::BrainLegion;
-use ecs_test_game::challenges::rts::ChallengeRts;
+use ecs_test_game::challenges::ch_units_shooting::ChallengeRts;
 use ecs_test_game::simulation_settings::{BrainType, Challenge, SimSettings};
 use ecs_test_game::test_controller::TestController;
 
 use crate::bench_utils::benchmark;
 
-criterion_group!(benches, color_closest);
+criterion_group!(benches, paint_closest);
 criterion_main!(benches);
 
-fn color_closest(c: &mut Criterion) {
-	let mut group = c.benchmark_group("painting");
+fn paint_closest(c: &mut Criterion) {
+	let mut group = c.benchmark_group("paint_closest");
 	group.sample_size(10);
 	group.measurement_time(Duration::from_secs(3));
 	group.warm_up_time(Duration::from_millis(100));
