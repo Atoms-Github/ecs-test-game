@@ -26,6 +26,7 @@ use ecs_test_game::test_controller::TestController;
 use ecs_test_game::ui::ui_settings::GuiSettings;
 use ecs_test_game::{test_controller, MAP_SIZE};
 use egui::epaint::image;
+use ggez::event::{quit, KeyCode, KeyMods};
 use ggez::graphics::{Color, DrawParam, Drawable};
 use ggez::input::mouse::position;
 use ggez::{Context, GameResult};
@@ -184,6 +185,14 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
 
 	fn mouse_motion_event(&mut self, _ctx: &mut Context, x: f32, y: f32, _dx: f32, _dy: f32) {
 		self.egui_backend.input.mouse_motion_event(x, y);
+	}
+
+	fn key_down_event(&mut self, ctx: &mut Context, keycode: KeyCode, keymods: KeyMods, _repeat: bool) {
+		self.egui_backend.input.key_down_event(keycode, keymods)
+	}
+
+	fn text_input_event(&mut self, _ctx: &mut Context, _character: char) {
+		self.egui_backend.input.text_input_event(_character)
 	}
 }
 
