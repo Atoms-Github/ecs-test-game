@@ -236,7 +236,6 @@ impl Brain for BrainLpp {
 			}
 			SystemType::EditTeamOneColor => {
 				let mut matching_entities = self.world.query_index::<TeamComp>(1);
-				println!("{}", matching_entities.len());
 
 				for entity in matching_entities {
 					let mut color = self.world.get_component::<ColorComp>(entity).unwrap();
