@@ -28,7 +28,7 @@ impl CommandPlanSql for BrainSqlFlatTable {
 	) -> Vec<SqlStatement> {
 		let mut statements: Vec<SqlStatement> = match sys {
 			SystemType::EditTeamOneImage => {
-				unimplemented!("BrainSqlFlatTable::systems()::EditTeamTwoImage")
+				unimplemented!();
 			}
 			SystemType::Velocity => {
 				vec![

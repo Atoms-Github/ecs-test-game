@@ -29,7 +29,7 @@ fn b_identical_entities(c: &mut Criterion) {
 	let mut settings = SimSettings::default();
 	settings.challenge_type = Challenge::IdenticalEntities;
 
-	let entity_counts = [500, 2_000];
+	let entity_counts = [5000, 20_000];
 	// let entity_counts = [500, 5000, 15_000, 35_000, 50_000, 100_000];
 
 	for entity_count in entity_counts {

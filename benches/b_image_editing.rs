@@ -17,11 +17,11 @@ use ecs_test_game::test_controller::TestController;
 
 use crate::bench_utils::benchmark;
 
-criterion_group!(benches, identical_entities);
+criterion_group!(benches, b_image_editing);
 criterion_main!(benches);
 
-fn identical_entities(c: &mut Criterion) {
-	let mut group = c.benchmark_group("identical_entities");
+fn b_image_editing(c: &mut Criterion) {
+	let mut group = c.benchmark_group("b_image_editing");
 	group.sample_size(10);
 	group.measurement_time(Duration::from_secs(3));
 	group.warm_up_time(Duration::from_millis(100));
@@ -36,9 +36,9 @@ fn identical_entities(c: &mut Criterion) {
 		settings.entity_count = entity_count;
 		for test in [
 			BrainType::Legion,
-			// BrainType::LegionCounted,
-			BrainType::Duck_DB,
-			BrainType::Sqlite_DB,
+			BrainType::Legion_Plus_Plus, // BrainType::LegionCounted,
+			                             // BrainType::Duck_DB,
+			                             // BrainType::Sqlite_DB,
 		] {
 			settings.brain_type = test;
 			benchmark(&mut group, &settings, 3);
