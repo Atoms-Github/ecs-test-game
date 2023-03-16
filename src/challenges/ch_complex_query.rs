@@ -25,11 +25,16 @@ impl ChallengeTrait for ChallengeQuery {
 		universe_count: usize,
 		settings: &SimSettings,
 	) {
-		for i in 0..settings.entity_count * 5_000 {
-			brain.add_entity_unit(Point::new(0.0, 0.0), Point::new(0.0, 0.0), 0, 0);
+		let mut target_team = (settings.entity_count / 1000).max(1);
+		if settings.entity_count == 0 {
+			target_team = 0;
 		}
-		for i in 0..settings.entity_count {
+		for i in 0..target_team {
 			brain.add_entity_unit(Point::new(0.0, 0.0), Point::new(0.0, 0.0), 1, 0);
+		}
+		let non_target_team = settings.entity_count - target_team;
+		for i in 0..non_target_team {
+			brain.add_entity_unit(Point::new(0.0, 0.0), Point::new(0.0, 0.0), 0, 0);
 		}
 	}
 
