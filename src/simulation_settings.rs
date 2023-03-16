@@ -36,20 +36,20 @@ impl SimSettings {
 		let resp_challenge = egui::ComboBox::from_label("Challenge type")
 			.selected_text(format!("{:?}", self.challenge_type))
 			.show_ui(ui, |ui| {
-				ui.selectable_value(&mut self.challenge_type, Challenge::Rts {}, "Rts");
+				ui.selectable_value(&mut self.challenge_type, Challenge::UnitsShooting {}, "Rts");
 				ui.selectable_value(&mut self.challenge_type, Challenge::PaintClosest {}, "Get Nearest");
 				ui.selectable_value(&mut self.challenge_type, Challenge::Slideshow {}, "Blob");
 				ui.selectable_value(
 					&mut self.challenge_type,
-					Challenge::IdenticalEntitiesVelocity,
+					Challenge::IdenticalEntities,
 					"Identical Entities",
 				);
-				ui.selectable_value(&mut self.challenge_type, Challenge::QueryChallenge {}, "Query");
+				ui.selectable_value(&mut self.challenge_type, Challenge::ComplexQuery {}, "Query");
 			})
 			.response;
 
 		match &mut self.challenge_type {
-			Challenge::Rts {} => {
+			Challenge::UnitsShooting {} => {
 				ui.label("Rts range");
 				ui.add(egui::DragValue::new(&mut self.rts_range).speed(0.1));
 			}
@@ -76,13 +76,13 @@ impl fmt::Display for BrainType {
 }
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Challenge {
-	Rts,
-	PaintClosest,
-	SpacialArray,
-	IdenticalEntitiesVelocity,
-	Slideshow,
+	ComplexQuery,
+	IdenticalEntities,
 	ImageEditing,
-	QueryChallenge,
+	PaintClosest,
+	Slideshow,
+	SpacialArray,
+	UnitsShooting,
 }
 impl Default for Challenge {
 	fn default() -> Self {

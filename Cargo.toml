@@ -20,22 +20,24 @@ plotters = "0.3.4"
 duckdb = "0.6.0"
 backtrace = "0.3.66"
 rusqlite = "0.28.0"
-#sparsey = "0.10.0"
-#jemallocator = "0.5"
-#jemalloc-sys = {version = "0.5", features = ["stats"]}
-#libc = "0.2"
-#duckdb = {version = "0.5.1", features = ["bundled"]}
 sqlx = { version = "0.6", features = [  "runtime-async-std-native-tls", "postgres" ] }
 trait-bound-typemap = "0.3.3"
 
 [[bench]]
-name = "paint_closest"
+name = "b_paint_closest"
 harness = false
 
 [[bench]]
-name = "identical_entities_velocity"
+name = "b_identical_entities"
 harness = false
 
 [[bench]]
-name = "query_complex"
+name = "b_complex_query"
+harness = false
+
+[[bench]]
+name = "b_units_shooting"
+harness = false
+[[bench]]
+name = "b_image_editing"
 harness = false

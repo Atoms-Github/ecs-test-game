@@ -79,7 +79,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
 			self.gui_settings.draw(ui);
 
 			// If query challenge:
-			if self.gui_settings.simulation_settings.challenge_type != Challenge::QueryChallenge {
+			if self.gui_settings.simulation_settings.challenge_type != Challenge::ComplexQuery {
 				let ent_count =
 					self.test_controller.brain.get_entities(self.gui_settings.view_universe).len();
 				ui.label(format!("Entity count: {}", ent_count));
@@ -105,7 +105,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
 		// Batch draw the units:
 		let mut batch = ggez::graphics::MeshBuilder::new();
 
-		if self.gui_settings.simulation_settings.challenge_type != Challenge::QueryChallenge {
+		if self.gui_settings.simulation_settings.challenge_type != Challenge::ComplexQuery {
 			let entities = self.test_controller.brain.get_entities(self.gui_settings.view_universe);
 
 			for entity in &entities {

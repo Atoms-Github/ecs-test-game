@@ -46,12 +46,12 @@ impl TestController {
 				dupe_entity_fraction:     1.0,
 				unique_velocity_fraction: 0.001,
 			}),
-			Challenge::Rts => Box::new(ChallengeRts {}),
+			Challenge::UnitsShooting => Box::new(ChallengeRts {}),
 			Challenge::PaintClosest => Box::new(ChallengePaintClosest {}),
-			Challenge::IdenticalEntitiesVelocity => Box::new(ChallengeIdenticalEntities {}),
+			Challenge::IdenticalEntities => Box::new(ChallengeIdenticalEntities {}),
 			Challenge::Slideshow => Box::new(ChallengeSlideshow {}),
 			Challenge::ImageEditing => Box::new(ChallengeImageEditing {}),
-			Challenge::QueryChallenge => Box::new(ChallengeQuery {}),
+			Challenge::ComplexQuery => Box::new(ChallengeQuery {}),
 		};
 
 		let mut controller = TestController::new(new_brain, new_challenge);

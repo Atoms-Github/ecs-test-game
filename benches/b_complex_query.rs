@@ -27,7 +27,7 @@ fn query_complex(c: &mut Criterion) {
 	group.warm_up_time(Duration::from_millis(100));
 
 	let mut settings = SimSettings::default();
-	settings.challenge_type = Challenge::QueryChallenge;
+	settings.challenge_type = Challenge::ComplexQuery;
 
 	for entity_count in (1..4).map(|x| x * 2) {
 		settings.entity_count = entity_count;

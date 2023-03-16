@@ -27,7 +27,7 @@ fn identical_entities(c: &mut Criterion) {
 	group.warm_up_time(Duration::from_millis(100));
 
 	let mut settings = SimSettings::default();
-	settings.challenge_type = Challenge::IdenticalEntities;
+	settings.challenge_type = Challenge::ImageEditing;
 
 	for entity_count in (1..10).map(|x| x * 1000) {
 		settings.entity_count = entity_count;
