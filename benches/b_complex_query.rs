@@ -17,11 +17,11 @@ use ecs_test_game::test_controller::TestController;
 
 use crate::bench_utils::benchmark;
 
-criterion_group!(benches, query_complex);
+criterion_group!(benches, b_complex_query);
 criterion_main!(benches);
 
-fn query_complex(c: &mut Criterion) {
-	let mut group = c.benchmark_group("query_complex");
+fn b_complex_query(c: &mut Criterion) {
+	let mut group = c.benchmark_group("b_complex_query");
 	group.sample_size(10);
 	group.measurement_time(Duration::from_secs(3));
 	group.warm_up_time(Duration::from_millis(100));
@@ -29,13 +29,16 @@ fn query_complex(c: &mut Criterion) {
 	let mut settings = SimSettings::default();
 	settings.challenge_type = Challenge::ComplexQuery;
 
-	for entity_count in (1..4).map(|x| x * 2) {
+	let entity_counts = [5000, 20000];
+	// let entity_counts = [500, 5000, 15_000, 35_000, 50_000, 100_000, 150_000, 200_000, 250_000];
+
+	for entity_count in entity_counts {
 		settings.entity_count = entity_count;
 		for test in [
-			BrainType::LegionDupey,
-			BrainType::LegionCounted,
-			BrainType::SqlDuck,
-			BrainType::SqlIte,
+			BrainType::Legion,
+			BrainType::Legion_Plus_Plus,
+			BrainType::Duck_DB,
+			BrainType::Sqlite_DB,
 		] {
 			settings.brain_type = test;
 			benchmark(&mut group, &settings, 3);

@@ -17,27 +17,29 @@ use ecs_test_game::test_controller::TestController;
 
 use crate::bench_utils::benchmark;
 
-criterion_group!(benches, paint_closest);
+criterion_group!(benches, b_paint_closest);
 criterion_main!(benches);
 
-fn paint_closest(c: &mut Criterion) {
-	let mut group = c.benchmark_group("paint_closest");
+fn b_paint_closest(c: &mut Criterion) {
+	let mut group = c.benchmark_group("b_paint_closest");
 	group.sample_size(10);
 	group.measurement_time(Duration::from_secs(3));
 	group.warm_up_time(Duration::from_millis(100));
 
-	let tests = [
-		BrainType::LegionDupey,
-		BrainType::SqlDuck,
-		BrainType::SqlIte,
-	];
-	let entity_counts = [5, 10, 20, 50, 70, 85, 100, 130, 160, 200, 230, 250];
 	let mut settings = SimSettings::default();
-	settings.challenge_type = Challenge::PaintClosest;
+	settings.challenge_type = Challenge::ImageEditing;
+
+	let entity_counts = [2, 6, 30];
+	// let entity_counts = [2, 4, 6, 10, 16, 30, 50, 76];
 
 	for entity_count in entity_counts {
 		settings.entity_count = entity_count;
-		for test in tests {
+		for test in [
+			BrainType::Legion_Plus_Plus,
+			BrainType::Legion,
+			BrainType::Duck_DB,
+			BrainType::Sqlite_DB,
+		] {
 			settings.brain_type = test;
 			benchmark(&mut group, &settings, 3);
 		}

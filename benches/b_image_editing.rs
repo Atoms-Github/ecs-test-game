@@ -29,13 +29,16 @@ fn identical_entities(c: &mut Criterion) {
 	let mut settings = SimSettings::default();
 	settings.challenge_type = Challenge::ImageEditing;
 
-	for entity_count in (1..10).map(|x| x * 1000) {
+	let entity_counts = [2, 6, 30];
+	// let entity_counts = [2, 4, 6, 10, 16, 30, 50, 76];
+
+	for entity_count in entity_counts {
 		settings.entity_count = entity_count;
 		for test in [
-			BrainType::LegionDupey,
-			BrainType::LegionCounted,
-			BrainType::SqlDuck,
-			BrainType::SqlIte,
+			BrainType::Legion,
+			// BrainType::LegionCounted,
+			BrainType::Duck_DB,
+			BrainType::Sqlite_DB,
 		] {
 			settings.brain_type = test;
 			benchmark(&mut group, &settings, 3);

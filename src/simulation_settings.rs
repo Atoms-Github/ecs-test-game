@@ -26,11 +26,11 @@ impl SimSettings {
 		let resp_brain = egui::ComboBox::from_label("Brain type")
 			.selected_text(format!("{:?}", self.brain_type))
 			.show_ui(ui, |ui| {
-				ui.selectable_value(&mut self.brain_type, BrainType::LegionDupey, "LegionDupey");
+				ui.selectable_value(&mut self.brain_type, BrainType::Legion, "LegionDupey");
 				ui.selectable_value(&mut self.brain_type, BrainType::LegionCounted, "LegionCounted");
-				ui.selectable_value(&mut self.brain_type, BrainType::SqlDuck, "Sql duck");
-				ui.selectable_value(&mut self.brain_type, BrainType::SqlIte, "Sqlite");
-				ui.selectable_value(&mut self.brain_type, BrainType::Lpp, "Lpp");
+				ui.selectable_value(&mut self.brain_type, BrainType::Duck_DB, "Sql duck");
+				ui.selectable_value(&mut self.brain_type, BrainType::Sqlite_DB, "Sqlite");
+				ui.selectable_value(&mut self.brain_type, BrainType::Legion_Plus_Plus, "Lpp");
 			})
 			.response;
 		let resp_challenge = egui::ComboBox::from_label("Challenge type")
@@ -63,11 +63,11 @@ impl SimSettings {
 }
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum BrainType {
-	LegionDupey,
+	Legion,
 	LegionCounted,
-	SqlDuck,
-	SqlIte,
-	Lpp,
+	Duck_DB,
+	Sqlite_DB,
+	Legion_Plus_Plus,
 }
 impl fmt::Display for BrainType {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -91,7 +91,7 @@ impl Default for Challenge {
 }
 impl Default for BrainType {
 	fn default() -> Self {
-		BrainType::Lpp
+		BrainType::Legion_Plus_Plus
 	}
 }
 impl Default for SimSettings {

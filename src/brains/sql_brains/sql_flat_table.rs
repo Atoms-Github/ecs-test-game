@@ -7,7 +7,7 @@ use crate::brains::com::{BlobComp, ExportEntity};
 use crate::brains::sql_brains::brain_sql::CommandPlanSql;
 use crate::brains::sql_interfaces::{InterfaceType, SqlArgument, SqlInterface, SqlStatement};
 use crate::brains::{Brain, SystemType};
-use crate::simulation_settings::BrainType::SqlIte;
+use crate::simulation_settings::BrainType::Sqlite_DB;
 use crate::simulation_settings::{BrainType, SimSettings};
 use crate::ui::ui_settings::GuiSettings;
 use crate::utils::{color_from_team, FromTeam};

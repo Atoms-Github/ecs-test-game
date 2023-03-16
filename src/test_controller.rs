@@ -34,11 +34,11 @@ pub struct TestController {
 impl TestController {
 	pub fn gen_test_controller(ctx: &mut Context, settings: &SimSettings) -> TestController {
 		let new_brain: Box<dyn Brain> = match settings.brain_type {
-			BrainType::LegionDupey => Box::new(BrainLegion::<BrainLegionDupey>::new()),
+			BrainType::Legion => Box::new(BrainLegion::<BrainLegionDupey>::new()),
 			BrainType::LegionCounted => Box::new(BrainLegion::<BrainLegionCounted>::new()),
-			BrainType::SqlDuck => Box::new(BrainSql::new(BrainSqlFlatTable::new(), InterfaceDuckDB::new())),
-			BrainType::SqlIte => Box::new(BrainSql::new(BrainSqlFlatTable::new(), InterfaceSqlite::new())),
-			BrainType::Lpp => Box::new(BrainLpp::new()),
+			BrainType::Duck_DB => Box::new(BrainSql::new(BrainSqlFlatTable::new(), InterfaceDuckDB::new())),
+			BrainType::Sqlite_DB => Box::new(BrainSql::new(BrainSqlFlatTable::new(), InterfaceSqlite::new())),
+			BrainType::Legion_Plus_Plus => Box::new(BrainLpp::new()),
 		};
 		let new_challenge: Box<dyn ChallengeTrait> = match settings.challenge_type {
 			Challenge::SpacialArray => Box::new(ChallengeSpatialArray {
