@@ -44,3 +44,7 @@ harness = false
 [[bench]]
 name = "identical_entities"
 harness = false
+
+[[bench]]
+name = "query_complex"
+harness = false
