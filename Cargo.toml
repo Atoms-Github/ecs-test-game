@@ -29,10 +29,6 @@ sqlx = { version = "0.6", features = [  "runtime-async-std-native-tls", "postgre
 trait-bound-typemap = "0.3.3"
 
 [[bench]]
-name = "violin"
-harness = false
-
-[[bench]]
 name = "paint_closest"
 harness = false
 
