@@ -10,12 +10,12 @@ use ggez::filesystem::create;
 use legion::Entity;
 use trait_bound_typemap::{AnyTypeMap, CloneTypeMap, TypeMap, TypeMapKey};
 
-use crate::legionpp::cupboard::{Cupboard, Shelf, ShelfRef};
+use crate::rc_ecs::cupboard::{Cupboard, Shelf, ShelfRef};
 use crate::utils::HashMe;
 
 pub type TypeSig = BTreeSet<TypeId>;
 
-pub struct Lpp {
+pub struct RcEcs {
 	pub cupboards: CloneTypeMap,
 	pub lentities: HashMap<Lentity, InternalEntity>,
 	pub archetypes: HashMap<TypeSig, Vec<Lentity>>,
@@ -55,13 +55,13 @@ impl<T: 'static + Clone> TypeMapKey for OurKey<T> {
 pub struct OurKey<T> {
 	_t: T,
 }
-impl Lpp {
+impl RcEcs {
 	pub fn add<T: Clone + 'static>(&mut self, cupboard: Cupboard<T>) {
 		self.cupboards.insert::<OurKey<Cupboard<T>>>(cupboard);
 	}
 
-	pub fn new() -> Lpp {
-		Lpp {
+	pub fn new() -> RcEcs {
+		RcEcs {
 			cupboards: CloneTypeMap::new(),
 			lentities: Default::default(),
 			archetypes: Default::default(),
@@ -344,68 +344,68 @@ mod tests {
 
 	#[test]
 	fn basic() {
-		let mut lpp = Lpp::new();
+		let mut rc_ecs = RcEcs::new();
 		let position_comp = PositionComp {
 			pos: Point::new(1.0, 0.0),
 		};
-		let mut entity = lpp.create_entity();
-		lpp.add_component(entity, position_comp);
+		let mut entity = rc_ecs.create_entity();
+		rc_ecs.add_component(entity, position_comp);
 
 		let velocity_comp = VelocityComp {
 			vel: Point::new(0.0, 333.0),
 		};
-		lpp.add_component(entity, velocity_comp);
+		rc_ecs.add_component(entity, velocity_comp);
 
-		lpp.complete_entity(entity);
+		rc_ecs.complete_entity(entity);
 
 		// Query for all entities with a position component
 		let mut matching_entities =
-			lpp.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
+			rc_ecs.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
 
 		assert_eq!(matching_entities.len(), 1);
 		for entity in &matching_entities {
-			let mut position = lpp.get_component::<PositionComp>(*entity).unwrap();
-			let velocity = lpp.get_component_ref::<VelocityComp>(*entity).unwrap();
+			let mut position = rc_ecs.get_component::<PositionComp>(*entity).unwrap();
+			let velocity = rc_ecs.get_component_ref::<VelocityComp>(*entity).unwrap();
 			// Increment the position by the velocity
 			position.pos += velocity.vel;
 			// println!("Entity {:?} has position {:?} and velocity {:?}", entity, position, velocity);
-			lpp.return_component(*entity, position);
+			rc_ecs.return_component(*entity, position);
 		}
 		// Assert that the position has been incremented
-		let position = lpp.get_component::<PositionComp>(entity).unwrap();
+		let position = rc_ecs.get_component::<PositionComp>(entity).unwrap();
 		assert_eq!(position.pos, Point::new(1.0, 333.0));
 	}
 	#[test]
 	fn test_position_deduplication() {
-		let mut lpp = Lpp::new();
+		let mut rc_ecs = RcEcs::new();
 		for i in 0..2 {
-			let mut entity = lpp.create_entity();
-			lpp.add_component(entity, PositionComp {
+			let mut entity = rc_ecs.create_entity();
+			rc_ecs.add_component(entity, PositionComp {
 				pos: Point::new(0.0, 0.0),
 			});
-			lpp.add_component(entity, VelocityComp {
+			rc_ecs.add_component(entity, VelocityComp {
 				vel: Point::new(0.0, i as f32),
 			});
-			lpp.complete_entity(entity);
+			rc_ecs.complete_entity(entity);
 		}
 		// Query for all entities with a position component
 		let mut matching_entities =
-			lpp.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
+			rc_ecs.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
 
 		assert_eq!(matching_entities.len(), 2);
 		for entity in &matching_entities {
-			let mut position = lpp.get_component::<PositionComp>(*entity).unwrap();
-			let velocity = lpp.get_component_ref::<VelocityComp>(*entity).unwrap();
+			let mut position = rc_ecs.get_component::<PositionComp>(*entity).unwrap();
+			let velocity = rc_ecs.get_component_ref::<VelocityComp>(*entity).unwrap();
 			// Increment the position by the velocity
 			position.pos += velocity.vel;
-			lpp.return_component(*entity, position);
+			rc_ecs.return_component(*entity, position);
 		}
 		// Assert that both entities have correct positions
 		let mut matching_entities =
-			lpp.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
+			rc_ecs.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
 		let mut expected_positions = vec![Point::new(0.0, 0.0), Point::new(0.0, 1.0)];
 		for entity in &matching_entities {
-			let position = lpp.get_component_ref::<PositionComp>(*entity).unwrap();
+			let position = rc_ecs.get_component_ref::<PositionComp>(*entity).unwrap();
 			// Remove the position from the expected positions
 
 			// println!("{}", &position.pos);
@@ -419,83 +419,83 @@ mod tests {
 	}
 	#[test]
 	pub fn test_vel_pos_acc() {
-		let mut lpp = Lpp::new();
+		let mut rc_ecs = RcEcs::new();
 		for i in 0..10 {
-			let mut entity = lpp.create_entity();
-			lpp.add_component(entity, PositionComp {
+			let mut entity = rc_ecs.create_entity();
+			rc_ecs.add_component(entity, PositionComp {
 				pos: Point::new(2.0, 2.0),
 			});
-			lpp.add_component(entity, VelocityComp {
+			rc_ecs.add_component(entity, VelocityComp {
 				vel: Point::new(0.0, 2.0),
 			});
-			lpp.complete_entity(entity);
+			rc_ecs.complete_entity(entity);
 		}
 		for i in 0..5 {
-			let mut entity = lpp.create_entity();
-			lpp.add_component(entity, PositionComp {
+			let mut entity = rc_ecs.create_entity();
+			rc_ecs.add_component(entity, PositionComp {
 				pos: Point::new(2.0, 0.0),
 			});
-			lpp.add_component(entity, VelocityComp {
+			rc_ecs.add_component(entity, VelocityComp {
 				vel: Point::new(0.0, 4.0),
 			});
-			lpp.add_component(entity, AccelerationComp {
+			rc_ecs.add_component(entity, AccelerationComp {
 				acc: Point::new(0.0, 2.0),
 			});
-			lpp.complete_entity(entity);
+			rc_ecs.complete_entity(entity);
 		}
 		for i in 0..2 {
-			let mut entity = lpp.create_entity();
-			lpp.add_component(entity, PositionComp {
+			let mut entity = rc_ecs.create_entity();
+			rc_ecs.add_component(entity, PositionComp {
 				pos: Point::new(2.0, 10.0),
 			});
-			lpp.complete_entity(entity);
+			rc_ecs.complete_entity(entity);
 		}
 		{
 			// Velocity
 
 			// Query for all entities with a position component
 			let mut matching_entities =
-				lpp.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
+				rc_ecs.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
 
 			assert_eq!(matching_entities.len(), 15);
 			for entity in &matching_entities {
-				let mut position = lpp.get_component::<PositionComp>(*entity).unwrap();
-				let velocity = lpp.get_component_ref::<VelocityComp>(*entity).unwrap();
+				let mut position = rc_ecs.get_component::<PositionComp>(*entity).unwrap();
+				let velocity = rc_ecs.get_component_ref::<VelocityComp>(*entity).unwrap();
 				// Increment the position by the velocity
 				position.pos += velocity.vel;
-				lpp.return_component(*entity, position);
+				rc_ecs.return_component(*entity, position);
 			}
 		}
 		{
 			// Acc
 
-			let mut matching_entities = lpp.query(vec![
+			let mut matching_entities = rc_ecs.query(vec![
 				TypeId::of::<PositionComp>(),
 				TypeId::of::<VelocityComp>(),
 				TypeId::of::<AccelerationComp>(),
 			]);
 			assert_eq!(matching_entities.len(), 5);
 			for entity in &matching_entities {
-				let mut vel = lpp.get_component::<VelocityComp>(*entity).unwrap();
-				let acc = lpp.get_component_ref::<AccelerationComp>(*entity).unwrap();
+				let mut vel = rc_ecs.get_component::<VelocityComp>(*entity).unwrap();
+				let acc = rc_ecs.get_component_ref::<AccelerationComp>(*entity).unwrap();
 				// Increment the position by the velocity
 				vel.vel += acc.acc;
-				lpp.return_component(*entity, vel);
+				rc_ecs.return_component(*entity, vel);
 			}
 		}
 		{
 			// Velocity
 
 			let mut matching_entities =
-				lpp.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
+				rc_ecs.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
 
 			assert_eq!(matching_entities.len(), 15);
 			for entity in &matching_entities {
-				let mut position = lpp.get_component::<PositionComp>(*entity).unwrap();
-				let velocity = lpp.get_component_ref::<VelocityComp>(*entity).unwrap();
+				let mut position = rc_ecs.get_component::<PositionComp>(*entity).unwrap();
+				let velocity = rc_ecs.get_component_ref::<VelocityComp>(*entity).unwrap();
 				// Increment the position by the velocity
 				position.pos += velocity.vel;
-				lpp.return_component(*entity, position);
+				rc_ecs.return_component(*entity, position);
 			}
 		}
 
@@ -509,9 +509,9 @@ mod tests {
 		for i in 0..7 {
 			expected_positions.push(Point::new(2.0, 10.0));
 		}
-		let mut matching_entities = lpp.query(vec![TypeId::of::<PositionComp>()]);
+		let mut matching_entities = rc_ecs.query(vec![TypeId::of::<PositionComp>()]);
 		for entity in &matching_entities {
-			let position = lpp.get_component_ref::<PositionComp>(*entity).unwrap();
+			let position = rc_ecs.get_component_ref::<PositionComp>(*entity).unwrap();
 			let index = expected_positions
 				.iter()
 				.position(|x| *x == position.pos)
@@ -527,9 +527,9 @@ mod tests {
 		for i in 0..5 {
 			expected_velocities.push(Point::new(0.0, 6.0));
 		}
-		let mut matching_entities = lpp.query(vec![TypeId::of::<VelocityComp>()]);
+		let mut matching_entities = rc_ecs.query(vec![TypeId::of::<VelocityComp>()]);
 		for entity in &matching_entities {
-			let velocity = lpp.get_component_ref::<VelocityComp>(*entity).unwrap();
+			let velocity = rc_ecs.get_component_ref::<VelocityComp>(*entity).unwrap();
 			let index = expected_velocities
 				.iter()
 				.position(|x| *x == velocity.vel)
@@ -538,36 +538,36 @@ mod tests {
 		}
 		assert_eq!(expected_velocities.len(), 0);
 	}
-	fn create_pv(lpp: &mut Lpp, pos: Point, vel: Point) -> Lentity {
-		let mut entity = lpp.create_entity();
-		lpp.add_component(entity, PositionComp { pos });
-		lpp.add_component(entity, VelocityComp { vel });
-		lpp.complete_entity(entity);
+	fn create_pv(rc_ecs: &mut RcEcs, pos: Point, vel: Point) -> Lentity {
+		let mut entity = rc_ecs.create_entity();
+		rc_ecs.add_component(entity, PositionComp { pos });
+		rc_ecs.add_component(entity, VelocityComp { vel });
+		rc_ecs.complete_entity(entity);
 		entity
 	}
 	#[test]
 	fn test_basic_dupey_processing() {
-		let mut lpp = Lpp::new();
-		create_pv(&mut lpp, Point::new(0.0, 0.0), Point::new(1.0, 0.0));
-		create_pv(&mut lpp, Point::new(0.0, 0.0), Point::new(1.0, 0.0));
-		create_pv(&mut lpp, Point::new(0.0, 0.0), Point::new(0.0, 1.0));
-		create_pv(&mut lpp, Point::new(2.0, 0.0), Point::new(1.0, 0.0));
-		create_pv(&mut lpp, Point::new(2.0, 0.0), Point::new(0.0, 1.0));
+		let mut rc_ecs = RcEcs::new();
+		create_pv(&mut rc_ecs, Point::new(0.0, 0.0), Point::new(1.0, 0.0));
+		create_pv(&mut rc_ecs, Point::new(0.0, 0.0), Point::new(1.0, 0.0));
+		create_pv(&mut rc_ecs, Point::new(0.0, 0.0), Point::new(0.0, 1.0));
+		create_pv(&mut rc_ecs, Point::new(2.0, 0.0), Point::new(1.0, 0.0));
+		create_pv(&mut rc_ecs, Point::new(2.0, 0.0), Point::new(0.0, 1.0));
 
 		let matching_entities =
-			lpp.query_uniques(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
+			rc_ecs.query_uniques(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
 
 		assert_eq!(matching_entities.len(), 4);
 		for entity in &matching_entities {
-			let mut position = lpp.get_component::<PositionComp>(*entity).unwrap();
-			let velocity = lpp.get_component_ref::<VelocityComp>(*entity).unwrap();
+			let mut position = rc_ecs.get_component::<PositionComp>(*entity).unwrap();
+			let velocity = rc_ecs.get_component_ref::<VelocityComp>(*entity).unwrap();
 			// Increment the position by the velocity
 			position.pos += velocity.vel;
-			lpp.return_component(*entity, position);
+			rc_ecs.return_component(*entity, position);
 		}
 		// Assert that both entities have correct positions
 		let mut matching_entities =
-			lpp.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
+			rc_ecs.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
 		let mut expected_positions = vec![
 			Point::new(1.0, 0.0),
 			Point::new(1.0, 0.0),
@@ -576,7 +576,7 @@ mod tests {
 			Point::new(2.0, 1.0),
 		];
 		for entity in &matching_entities {
-			let position = lpp.get_component_ref::<PositionComp>(*entity).unwrap();
+			let position = rc_ecs.get_component_ref::<PositionComp>(*entity).unwrap();
 			// Remove the position from the expected positions
 
 			// println!("{}", &position.pos);
@@ -591,19 +591,19 @@ mod tests {
 
 	#[test]
 	fn test_indexing() {
-		let mut lpp = Lpp::new();
-		lpp.create_index::<UniverseComp>();
+		let mut rc_ecs = RcEcs::new();
+		rc_ecs.create_index::<UniverseComp>();
 		for i in 0..10 {
-			let mut entity = lpp.create_entity();
-			lpp.add_component(entity, PositionComp {
+			let mut entity = rc_ecs.create_entity();
+			rc_ecs.add_component(entity, PositionComp {
 				pos: Point::new(2.0, i as f32),
 			});
-			lpp.add_component(entity, UniverseComp { universe_id: i % 5 });
-			lpp.complete_entity(entity);
+			rc_ecs.add_component(entity, UniverseComp { universe_id: i % 5 });
+			rc_ecs.complete_entity(entity);
 		}
-		let index_results = lpp.query_index::<UniverseComp>(3);
+		let index_results = rc_ecs.query_index::<UniverseComp>(3);
 		assert_eq!(index_results.len(), 2);
-		let index_results = lpp.query_index::<UniverseComp>(1);
+		let index_results = rc_ecs.query_index::<UniverseComp>(1);
 		assert_eq!(index_results.len(), 2);
 	}
 }

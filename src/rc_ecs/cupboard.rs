@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 
-use crate::legionpp::unmoving_vec::UnmovingVec;
+use crate::rc_ecs::unmoving_vec::UnmovingVec;
 use crate::utils::HashMe;
 
 #[derive(Clone)]

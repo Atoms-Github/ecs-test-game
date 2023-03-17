@@ -30,7 +30,7 @@ impl SimSettings {
 				ui.selectable_value(&mut self.brain_type, BrainType::LegionCounted, "LegionCounted");
 				ui.selectable_value(&mut self.brain_type, BrainType::Duck_DB, "Sql duck");
 				ui.selectable_value(&mut self.brain_type, BrainType::Sqlite_DB, "Sqlite");
-				ui.selectable_value(&mut self.brain_type, BrainType::Legion_Plus_Plus, "Lpp");
+				ui.selectable_value(&mut self.brain_type, BrainType::Legion_Plus_Plus, "RcEcs");
 			})
 			.response;
 		let resp_challenge = egui::ComboBox::from_label("Challenge type")

@@ -4,7 +4,7 @@ use ggez::Context;
 use plotters::prelude::*;
 
 use crate::brains::brain_legion::{BrainLegion, BrainLegionCounted, BrainLegionDupey};
-use crate::brains::brain_lpp::BrainLpp;
+use crate::brains::brain_rc_ecs::BrainRcEcs;
 use crate::brains::sql_brains::brain_sql::BrainSql;
 use crate::brains::sql_brains::sql_flat_table::BrainSqlFlatTable;
 use crate::brains::sql_interfaces::duckdb::InterfaceDuckDB;
@@ -38,7 +38,7 @@ impl TestController {
 			BrainType::LegionCounted => Box::new(BrainLegion::<BrainLegionCounted>::new()),
 			BrainType::Duck_DB => Box::new(BrainSql::new(BrainSqlFlatTable::new(), InterfaceDuckDB::new())),
 			BrainType::Sqlite_DB => Box::new(BrainSql::new(BrainSqlFlatTable::new(), InterfaceSqlite::new())),
-			BrainType::Legion_Plus_Plus => Box::new(BrainLpp::new()),
+			BrainType::Legion_Plus_Plus => Box::new(BrainRcEcs::new()),
 		};
 		let new_challenge: Box<dyn ChallengeTrait> = match settings.challenge_type {
 			Challenge::SpacialArray => Box::new(ChallengeSpatialArray {

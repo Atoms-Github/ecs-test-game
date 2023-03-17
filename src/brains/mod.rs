@@ -13,7 +13,7 @@ pub mod brain_legion;
 pub mod com;
 pub mod ecs_concepts;
 // pub mod sparsey;
-pub mod brain_lpp;
+pub mod brain_rc_ecs;
 pub mod sql_brains;
 pub mod sql_interfaces;
 

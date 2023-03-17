@@ -1,4 +1,4 @@
 pub mod cupboard;
-pub mod lpp;
+pub mod rc_ecs;
 pub mod unmoving_vec;
 pub mod utils;

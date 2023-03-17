@@ -10,7 +10,7 @@ extern crate core;
 
 pub mod brains;
 pub mod challenges;
-pub mod legionpp;
+pub mod rc_ecs;
 pub mod simulation_settings;
 pub mod test_controller;
 pub mod thread_controller;

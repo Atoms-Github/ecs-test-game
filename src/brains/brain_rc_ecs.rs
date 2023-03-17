@@ -19,22 +19,24 @@ use crate::brains::com::{
 	VelocityComp,
 };
 use crate::brains::{Brain, SystemType};
-use crate::legionpp::lpp::{Lentity, Lpp};
+use crate::rc_ecs::rc_ecs::{Lentity, RcEcs};
 use crate::simulation_settings::SimSettings;
 use crate::utils::color_from_team;
 use crate::{Point, MAP_SIZE, PROJECTILE_LIFETIME, SHOOT_SPEED};
 
-pub struct BrainLpp {
-	world: Lpp,
+pub struct BrainRcEcs {
+	world: RcEcs,
 }
 
-impl BrainLpp {
+impl BrainRcEcs {
 	pub fn new() -> Self {
-		Self { world: Lpp::new() }
+		Self {
+			world: RcEcs::new(),
+		}
 	}
 }
 
-impl Brain for BrainLpp {
+impl Brain for BrainRcEcs {
 	fn add_entity_unit(&mut self, position: Point, velocity: Point, team: usize, universe_id: usize) {
 		let mut entity = self.world.create_entity();
 		self.world.add_component(entity, PositionComp { pos: position });
