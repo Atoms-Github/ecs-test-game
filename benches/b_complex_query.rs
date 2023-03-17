@@ -38,7 +38,7 @@ fn b_complex_query(c: &mut Criterion) {
 		settings.entity_count = entity_count;
 		for test in [
 			BrainType::Legion,
-			BrainType::Legion_Plus_Plus,
+			BrainType::Rc_Ecs,
 			BrainType::Duck_DB,
 			BrainType::Sqlite_DB,
 		] {

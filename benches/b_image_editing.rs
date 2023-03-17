@@ -36,9 +36,9 @@ fn b_image_editing(c: &mut Criterion) {
 		settings.entity_count = entity_count;
 		for test in [
 			BrainType::Legion,
-			BrainType::Legion_Plus_Plus, // BrainType::LegionCounted,
-			                             // BrainType::Duck_DB,
-			                             // BrainType::Sqlite_DB,
+			BrainType::Rc_Ecs, // BrainType::LegionCounted,
+			                   // BrainType::Duck_DB,
+			                   // BrainType::Sqlite_DB,
 		] {
 			settings.brain_type = test;
 			benchmark(&mut group, &settings, 3);

@@ -35,7 +35,7 @@ fn b_paint_closest(c: &mut Criterion) {
 	for entity_count in entity_counts {
 		settings.entity_count = entity_count;
 		for test in [
-			BrainType::Legion_Plus_Plus,
+			BrainType::Rc_Ecs,
 			BrainType::Legion,
 			BrainType::Duck_DB,
 			BrainType::Sqlite_DB,

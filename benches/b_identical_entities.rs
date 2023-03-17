@@ -39,7 +39,7 @@ fn b_identical_entities(c: &mut Criterion) {
 			BrainType::LegionCounted,
 			BrainType::Duck_DB,
 			// BrainType::Sqlite_DB,
-			BrainType::Legion_Plus_Plus,
+			BrainType::Rc_Ecs,
 		] {
 			settings.brain_type = test;
 			benchmark(&mut group, &settings, 3);

@@ -38,7 +38,7 @@ impl TestController {
 			BrainType::LegionCounted => Box::new(BrainLegion::<BrainLegionCounted>::new()),
 			BrainType::Duck_DB => Box::new(BrainSql::new(BrainSqlFlatTable::new(), InterfaceDuckDB::new())),
 			BrainType::Sqlite_DB => Box::new(BrainSql::new(BrainSqlFlatTable::new(), InterfaceSqlite::new())),
-			BrainType::Legion_Plus_Plus => Box::new(BrainRcEcs::new()),
+			BrainType::Rc_Ecs => Box::new(BrainRcEcs::new()),
 		};
 		let new_challenge: Box<dyn ChallengeTrait> = match settings.challenge_type {
 			Challenge::SpacialArray => Box::new(ChallengeSpatialArray {
