@@ -22,15 +22,15 @@ criterion_main!(benches);
 
 fn b_paint_closest(c: &mut Criterion) {
 	let mut group = c.benchmark_group("b_paint_closest");
-	group.sample_size(10);
-	group.measurement_time(Duration::from_secs(3));
-	group.warm_up_time(Duration::from_millis(100));
+	// group.sample_size(10);
+	// group.measurement_time(Duration::from_secs(3));
+	// group.warm_up_time(Duration::from_millis(100));
 
 	let mut settings = SimSettings::default();
 	settings.challenge_type = Challenge::PaintClosest;
 
-	let entity_counts = [10, 30, 100];
-	// let entity_counts = [2, 4, 6, 10, 16, 30, 50, 76];
+	// let entity_counts = [10, 30, 100];
+	let entity_counts = [2, 6, 10, 16, 30, 50, 76, 100, 130, 160];
 
 	for entity_count in entity_counts {
 		settings.entity_count = entity_count;

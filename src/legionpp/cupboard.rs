@@ -63,7 +63,7 @@ impl<T: Clone + Hash + Debug> Cupboard<T> {
 	}
 
 	fn create_new_component(&mut self, new_data: T, hash: u64) -> usize {
-		println!("(doesn't exist)");
+		// println!("(doesn't exist)");
 		let shelf = Shelf::One {
 			data: Some(new_data),
 		};
@@ -74,13 +74,13 @@ impl<T: Clone + Hash + Debug> Cupboard<T> {
 	}
 
 	fn increment_shelf_ref_qty(&mut self, new_data: Option<T>, existing: ShelfRef) -> ShelfRef {
-		println!("(Found existing)");
+		// println!("(Found existing)");
 		let shelf = self.vec.get_mut(existing).unwrap();
 		match shelf {
 			Shelf::One {
 				data: existing_data,
 			} => {
-				println!("=> Existing is One");
+				// println!("=> Existing is One");
 				let mut new_shelf = Shelf::Many {
 					data_backup: existing_data.take().unwrap(),
 					data:        new_data.map(|a| Box::new(a)),
@@ -94,7 +94,7 @@ impl<T: Clone + Hash + Debug> Cupboard<T> {
 				data,
 				qty,
 			} => {
-				println!("=> Existing is currently Many was: {} now: {}", qty, *qty + 1);
+				// println!("=> Existing is currently Many was: {} now: {}", qty, *qty + 1);
 				*qty += 1;
 				*data = new_data.map(|a| Box::new(a));
 				existing

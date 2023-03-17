@@ -22,9 +22,9 @@ criterion_main!(benches);
 
 fn b_identical_entities(c: &mut Criterion) {
 	let mut group = c.benchmark_group("b_identical_entities");
-	group.sample_size(10);
-	group.measurement_time(Duration::from_secs(3));
-	group.warm_up_time(Duration::from_millis(100));
+	// group.sample_size(10);
+	// group.measurement_time(Duration::from_secs(3));
+	// group.warm_up_time(Duration::from_millis(100));
 
 	let mut settings = SimSettings::default();
 	settings.challenge_type = Challenge::IdenticalEntities;
@@ -38,7 +38,7 @@ fn b_identical_entities(c: &mut Criterion) {
 			BrainType::Legion,
 			BrainType::LegionCounted,
 			BrainType::Duck_DB,
-			BrainType::Sqlite_DB,
+			// BrainType::Sqlite_DB,
 			BrainType::Legion_Plus_Plus,
 		] {
 			settings.brain_type = test;

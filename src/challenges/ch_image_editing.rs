@@ -55,7 +55,7 @@ impl ChallengeTrait for ChallengeImageEditing {
 
 		for image in &image_paths {
 			let image = ggez::graphics::Image::new(ctx, format!("/{}", image)).unwrap();
-			println!("Loaded image");
+			// println!("Loaded image");
 			let blob = image.to_rgba8(ctx).unwrap();
 			images.push(BlobComp { blob });
 		}

@@ -128,7 +128,7 @@ impl Brain for BrainLpp {
 				// }
 				let mut matching_entities = self
 					.world
-					.query_uniques(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
+					.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
 
 				for entity in &matching_entities {
 					let mut position = self.world.get_component::<PositionComp>(*entity).unwrap();

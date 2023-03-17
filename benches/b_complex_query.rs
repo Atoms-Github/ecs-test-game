@@ -22,15 +22,17 @@ criterion_main!(benches);
 
 fn b_complex_query(c: &mut Criterion) {
 	let mut group = c.benchmark_group("b_complex_query");
-	group.sample_size(10);
-	group.measurement_time(Duration::from_secs(3));
-	group.warm_up_time(Duration::from_millis(100));
+	// group.sample_size(10);
+	// group.measurement_time(Duration::from_secs(3));
+	// group.warm_up_time(Duration::from_millis(100));
 
 	let mut settings = SimSettings::default();
 	settings.challenge_type = Challenge::ComplexQuery;
 
-	let entity_counts = [5000, 20000, 60_000];
-	// let entity_counts = [500, 5000, 15_000, 35_000, 50_000, 100_000, 150_000, 200_000, 250_000];
+	// let entity_counts = [5000, 20000, 60_000];
+	let entity_counts = [
+		500, 5000, 15_000, 35_000, 50_000, 100_000, 150_000, 200_000, 250_000,
+	];
 
 	for entity_count in entity_counts {
 		settings.entity_count = entity_count;

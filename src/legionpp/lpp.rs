@@ -275,14 +275,14 @@ impl Lpp {
 
 						// if the quantity is 1, set the shelf to be a one
 						if *qty == 1 {
-							println!("qty == 1");
+							// println!("qty == 1");
 
 							let mut new_shelf = Shelf::One {
 								data: Some(data_backup.clone()),
 							};
 							std::mem::swap(shelf, &mut new_shelf);
 						} else {
-							println!("qty != 1");
+							// println!("qty != 1");
 						}
 
 						let new_ent_shelf_ref = cupboard.add_component(component);
@@ -307,14 +307,14 @@ impl Lpp {
 
 						// if the quantity is 1, set the shelf to be a one
 						if *qty == 1 {
-							println!("qty == 1");
+							// println!("qty == 1");
 
 							let mut new_shelf = Shelf::One {
 								data: Some(data_backup.clone()),
 							};
 							std::mem::swap(shelf, &mut new_shelf);
 						} else if *qty > 1 {
-							println!("qty > 1");
+							// println!("qty > 1");
 						}
 
 						let new_ent_shelf_ref = cupboard.add_component(component);
@@ -368,7 +368,7 @@ mod tests {
 			let velocity = lpp.get_component_ref::<VelocityComp>(*entity).unwrap();
 			// Increment the position by the velocity
 			position.pos += velocity.vel;
-			println!("Entity {:?} has position {:?} and velocity {:?}", entity, position, velocity);
+			// println!("Entity {:?} has position {:?} and velocity {:?}", entity, position, velocity);
 			lpp.return_component(*entity, position);
 		}
 		// Assert that the position has been incremented
@@ -408,7 +408,7 @@ mod tests {
 			let position = lpp.get_component_ref::<PositionComp>(*entity).unwrap();
 			// Remove the position from the expected positions
 
-			println!("{}", &position.pos);
+			// println!("{}", &position.pos);
 			let index = expected_positions
 				.iter()
 				.position(|x| *x == position.pos)
@@ -579,7 +579,7 @@ mod tests {
 			let position = lpp.get_component_ref::<PositionComp>(*entity).unwrap();
 			// Remove the position from the expected positions
 
-			println!("{}", &position.pos);
+			// println!("{}", &position.pos);
 			let index = expected_positions
 				.iter()
 				.position(|x| *x == position.pos)

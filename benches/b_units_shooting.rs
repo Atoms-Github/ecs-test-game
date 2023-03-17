@@ -22,19 +22,19 @@ criterion_main!(benches);
 
 fn b_units_shooting(c: &mut Criterion) {
 	let mut group = c.benchmark_group("b_units_shooting");
-	group.sample_size(10);
-	group.measurement_time(Duration::from_secs(3));
-	group.warm_up_time(Duration::from_millis(100));
+	// group.sample_size(10);
+	// group.measurement_time(Duration::from_secs(3));
+	// group.warm_up_time(Duration::from_millis(100));
 
 	let mut settings = SimSettings::default();
 	settings.challenge_type = Challenge::UnitsShooting;
 
-	let entity_counts = [5, 30, 100];
-	// let entity_counts = [2, 4, 6, 10, 16, 30, 50, 76];
+	// let entity_counts = [5, 30];
+	let entity_counts = [2, 4, 6, 10, 16, 30, 50, 76];
 
 	for entity_count in entity_counts {
 		settings.entity_count = entity_count;
-		for test in [BrainType::Legion, BrainType::Duck_DB, BrainType::Sqlite_DB] {
+		for test in [BrainType::Duck_DB, BrainType::Legion, BrainType::Sqlite_DB] {
 			settings.brain_type = test;
 			benchmark(&mut group, &settings, 3);
 		}
