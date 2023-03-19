@@ -29,16 +29,16 @@ fn b_identical_entities(c: &mut Criterion) {
 	let mut settings = SimSettings::default();
 	settings.challenge_type = Challenge::IdenticalEntities;
 
-	let entity_counts = [5000, 20_000];
-	// let entity_counts = [500, 5000, 15_000, 35_000, 50_000, 100_000];
+	// let entity_counts = [5000, 20_000];
+	let entity_counts = [500, 5000, 15_000, 35_000, 50_000, 100_000];
 
 	for entity_count in entity_counts {
 		settings.entity_count = entity_count;
 		for test in [
-			// BrainType::Legion,
+			BrainType::Legion,
 			// BrainType::LegionCounted,
 			BrainType::Duck_DB,
-			// BrainType::Sqlite_DB,
+			BrainType::Sqlite_DB,
 			BrainType::Rc_Ecs,
 		] {
 			settings.brain_type = test;

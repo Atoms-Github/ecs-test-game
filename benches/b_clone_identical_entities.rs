@@ -31,8 +31,8 @@ fn b_clone_identical_entities(c: &mut Criterion) {
 	let mut settings = SimSettings::default();
 	settings.challenge_type = Challenge::IdenticalEntities;
 
-	let entity_counts = [1000, 3000];
-	// let entity_counts = [10, 100, 500, 2500, 5_000];
+	// let entity_counts = [1000, 3000];
+	let entity_counts = [10, 100, 500, 2500, 5_000];
 
 	for entity_count in entity_counts {
 		settings.entity_count = entity_count;
