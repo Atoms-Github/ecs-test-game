@@ -31,6 +31,7 @@ pub trait Brain {
 	fn tick_system(&mut self, system: &SystemType, delta: f32, settings: &SimSettings);
 
 	fn get_name(&self) -> String;
+	fn clone_box(&self) -> Box<dyn Brain>;
 }
 #[derive(Debug, PartialEq, Clone)]
 pub enum SystemType {

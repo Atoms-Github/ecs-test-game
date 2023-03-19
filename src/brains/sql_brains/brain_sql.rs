@@ -102,4 +102,8 @@ impl<C: CommandPlanSql, I: SqlInterface> Brain for BrainSql<C, I> {
 	fn get_name(&self) -> String {
 		return "BrainSql".to_string();
 	}
+
+	fn clone_box(&self) -> Box<dyn Brain> {
+		unimplemented!("Nope")
+	}
 }

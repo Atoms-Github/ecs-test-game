@@ -1,14 +1,20 @@
 use std::borrow::{Borrow, BorrowMut, Cow};
 use std::collections::HashMap;
 
+use bincode::Deserializer;
+use bincode::ErrorKind::SizeLimit;
+use duckdb::arrow::compute::filter;
 use ggez::graphics::Color;
 use ggez::input::mouse::position;
+use ggez::winit::dpi::Position;
 use glam::*;
+use legion::serialize::{set_entity_serializer, Canon};
 use legion::storage::ComponentStorage;
 use legion::systems::CommandBuffer;
 use legion::world::{ComponentAccess, EntityAccessError, EntryRef};
 use legion::*;
 use rand::Rng;
+use serde::de::DeserializeSeed;
 
 use crate::brains::com::*;
 use crate::brains::{Brain, SystemType};
@@ -18,7 +24,7 @@ use crate::ui::ui_settings::GuiSettings;
 use crate::utils::{color_from_team, FromTeam};
 use crate::{Point, MAP_SIZE, PROJECTILE_LIFETIME, SHOOT_SPEED};
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct BrainLegionCounted {
 	counts: HashMap<Entity, u32>,
 }
@@ -100,10 +106,10 @@ impl BrainLegionTrait for BrainLegionCounted {
 		assert_eq!(found, None);
 	}
 }
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct BrainLegionDupey {}
 
-pub trait BrainLegionTrait {
+pub trait BrainLegionTrait: Clone {
 	fn add_entity(&mut self, world: &mut World, position: Point, velocity: Option<Point>, blue: f32);
 	fn add_entity_blob(&mut self, world: &mut World, position: Point, blob: Vec<u8>, team: Option<usize>);
 }
@@ -146,7 +152,7 @@ impl BrainLegionTrait for BrainLegionDupey {
 	}
 }
 
-pub struct BrainLegion<T: BrainLegionTrait> {
+pub struct BrainLegion<T: BrainLegionTrait + Clone> {
 	schedule:   Option<Schedule>,
 	world:      World,
 	trait_data: T,
@@ -295,7 +301,7 @@ impl<T: Default + BrainLegionTrait> BrainLegion<T> {
 	}
 }
 
-impl<T: BrainLegionTrait> Brain for BrainLegion<T> {
+impl<T: BrainLegionTrait + 'static> Brain for BrainLegion<T> {
 	fn add_entity_unit(&mut self, position: Point, velocity: Point, team: usize, universe_id: usize) {
 		make_unit(&mut self.world, position, velocity, team, universe_id);
 	}
@@ -460,5 +466,48 @@ impl<T: BrainLegionTrait> Brain for BrainLegion<T> {
 
 	fn get_name(&self) -> String {
 		String::from("Legion scheduled")
+	}
+
+	fn clone_box(&self) -> Box<dyn Brain> {
+		// create a registry which uses strings as the external type ID
+		let mut registry = Registry::<String>::default();
+		registry.register::<PositionComp>("position".to_string());
+		registry.register::<VelocityComp>("velocity".to_string());
+		registry.register::<UniverseComp>("universe".to_string());
+		registry.register::<ColorComp>("color".to_string());
+
+		let filter = legion::any();
+		let entity_serializer = Canon::default();
+		let json = serde_json::to_value(&self.world.as_serializable(filter, &registry, &entity_serializer))
+			.expect("Failed to serialize world!");
+
+		// registries are also serde deserializers
+		use serde::de::DeserializeSeed;
+		let new_world: World = registry
+			.as_deserialize(&entity_serializer)
+			.deserialize(json)
+			.expect("Failed to deserialize world!");
+
+		return Box::new(Self {
+			schedule:   None,
+			world:      new_world,
+			trait_data: self.trait_data.clone(),
+		});
+
+		// let bytes = bincode::serialize(&self.world.as_serializable(filter, &registry, &entity_serializer))
+		// 	.expect("Failed to serialize world!");
+		//
+		// let d = bincode::de::Deserializer::new(&mut some_reader, SizeLimit::new());
+		// // serde::Deserialize::deserialize(&mut deserializer);
+		// // let bytes_read = d.bytes_read();
+		// // let e: World = bincode::deserialize(&bytes).unwrap();
+		// registry.as_deserialize(&entity_serializer).deserialize(&d).unwrap();
+
+		// // registries are also serde deserializers
+		// use serde::de::DeserializeSeed;
+		// let _world: World = registry
+		// 	.as_deserialize(&entity_serializer)
+		// 	.deserialize(json)
+		// 	.expect("Failed to deserialize world!");
 	}
 }

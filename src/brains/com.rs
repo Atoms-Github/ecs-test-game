@@ -1,13 +1,14 @@
 use std::hash::Hash;
 
 use ggez::graphics::Color;
+use serde::{Deserialize, Serialize};
 
 use crate::simulation_settings::SimSettings;
 use crate::ui::ui_settings::GuiSettings;
 use crate::Point;
 
 // a component is any type that is 'static, sized, send and sync
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PositionComp {
 	pub pos: Point,
 }
@@ -19,7 +20,7 @@ impl Hash for PositionComp {
 	}
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ColorComp {
 	pub blue: f32,
 }
@@ -59,7 +60,7 @@ impl Hash for AccelerationComp {
 	}
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VelocityComp {
 	pub vel: Point,
 }
@@ -93,7 +94,7 @@ impl Hash for TimedLifeComp {
 	}
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Hash, Serialize, Deserialize)]
 pub struct UniverseComp {
 	pub universe_id: usize,
 }

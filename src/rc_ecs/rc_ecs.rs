@@ -16,6 +16,7 @@ use crate::utils::HashMe;
 
 pub type TypeSig = BTreeSet<TypeId>;
 
+#[derive(Clone)]
 pub struct RcEcs {
 	pub cupboards: CloneTypeMap,
 	pub lentities: HashMap<Lentity, InternalEntity, nohash_hasher::BuildNoHashHasher<usize>>,
@@ -26,6 +27,7 @@ pub struct RcEcs {
 	pub indexes: HashMap<TypeId, HashMap<u32, HashSet<Lentity>>>,
 }
 
+#[derive(Clone)]
 pub struct InternalEntity {
 	pub shelves: HashMap<TypeId, ShelfRef>,
 	/// The u64 is a hashed Vec<TypeId> to a hashed BTreeSet<(TypeId, ShelfRef)>

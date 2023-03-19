@@ -24,6 +24,7 @@ use crate::simulation_settings::SimSettings;
 use crate::utils::color_from_team;
 use crate::{Point, MAP_SIZE, PROJECTILE_LIFETIME, SHOOT_SPEED};
 
+#[derive(Clone)]
 pub struct BrainRcEcs {
 	world: RcEcs,
 }
@@ -250,5 +251,9 @@ impl Brain for BrainRcEcs {
 
 	fn get_name(&self) -> String {
 		String::from("Legion scheduled")
+	}
+
+	fn clone_box(&self) -> Box<dyn Brain> {
+		Box::new(self.clone())
 	}
 }

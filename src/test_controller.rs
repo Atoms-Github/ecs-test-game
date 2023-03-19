@@ -30,6 +30,17 @@ pub struct TestController {
 	pub ticks:          u32,
 	pub universe_count: usize,
 }
+impl Clone for TestController {
+	fn clone(&self) -> Self {
+		TestController {
+			brain:          self.brain.clone_box(),
+			challenge:      self.challenge.clone_box(),
+			timings:        self.timings.clone(),
+			ticks:          self.ticks,
+			universe_count: self.universe_count,
+		}
+	}
+}
 
 impl TestController {
 	pub fn gen_test_controller(ctx: &mut Context, settings: &SimSettings) -> TestController {
