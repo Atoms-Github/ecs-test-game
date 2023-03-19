@@ -48,9 +48,5 @@ name = "b_image_editing"
 harness = false
 
 [[bench]]
-name = "b_clone_identical_entities"
-harness = false
-
-[[bench]]
 name = "b_clone_paint_closest"
 harness = false

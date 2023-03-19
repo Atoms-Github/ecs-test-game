@@ -21,7 +21,7 @@ criterion_group!(benches, b_image_editing);
 criterion_main!(benches);
 
 fn b_image_editing(c: &mut Criterion) {
-	let mut group = c.benchmark_group("b_image_editing");
+	let mut group = c.benchmark_group("Large Data Modification");
 	// group.sample_size(10);
 	// group.measurement_time(Duration::from_secs(3));
 	// group.warm_up_time(Duration::from_millis(100));
@@ -35,7 +35,7 @@ fn b_image_editing(c: &mut Criterion) {
 	for entity_count in entity_counts {
 		settings.entity_count = entity_count;
 		for test in [
-			BrainType::Legion,
+			// BrainType::Legion,
 			BrainType::Rc_Ecs, // BrainType::LegionCounted,
 			                   // BrainType::Duck_DB,
 			                   // BrainType::Sqlite_DB,

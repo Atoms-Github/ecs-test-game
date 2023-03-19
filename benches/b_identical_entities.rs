@@ -21,7 +21,7 @@ criterion_group!(benches, b_identical_entities);
 criterion_main!(benches);
 
 fn b_identical_entities(c: &mut Criterion) {
-	let mut group = c.benchmark_group("b_identical_entities");
+	let mut group = c.benchmark_group("Identical Entities");
 	group.sample_size(10);
 	group.measurement_time(Duration::from_secs(3));
 	group.warm_up_time(Duration::from_millis(100));

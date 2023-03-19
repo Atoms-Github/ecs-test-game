@@ -21,7 +21,7 @@ criterion_group!(benches, b_units_shooting);
 criterion_main!(benches);
 
 fn b_units_shooting(c: &mut Criterion) {
-	let mut group = c.benchmark_group("b_units_shooting");
+	let mut group = c.benchmark_group("Units Shooting");
 	// group.sample_size(10);
 	// group.measurement_time(Duration::from_secs(3));
 	// group.warm_up_time(Duration::from_millis(100));

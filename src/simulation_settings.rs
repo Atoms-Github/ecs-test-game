@@ -41,6 +41,11 @@ impl SimSettings {
 				ui.selectable_value(&mut self.challenge_type, Challenge::Slideshow {}, "Blob");
 				ui.selectable_value(
 					&mut self.challenge_type,
+					Challenge::ImageEditing {},
+					"Data Manipulation",
+				);
+				ui.selectable_value(
+					&mut self.challenge_type,
 					Challenge::IdenticalEntities,
 					"Identical Entities",
 				);

@@ -21,7 +21,7 @@ criterion_group!(benches, b_complex_query);
 criterion_main!(benches);
 
 fn b_complex_query(c: &mut Criterion) {
-	let mut group = c.benchmark_group("b_complex_query");
+	let mut group = c.benchmark_group("Sparse Search");
 	// group.sample_size(10);
 	// group.measurement_time(Duration::from_secs(3));
 	// group.warm_up_time(Duration::from_millis(100));

@@ -21,7 +21,7 @@ criterion_group!(benches, b_paint_closest);
 criterion_main!(benches);
 
 fn b_paint_closest(c: &mut Criterion) {
-	let mut group = c.benchmark_group("b_paint_closest");
+	let mut group = c.benchmark_group("Find Nearest");
 	// group.sample_size(10);
 	// group.measurement_time(Duration::from_secs(3));
 	// group.warm_up_time(Duration::from_millis(100));

@@ -2,7 +2,7 @@ use std::fmt::format;
 use std::{env, path};
 
 use criterion::measurement::WallTime;
-use criterion::{BenchmarkGroup, BenchmarkId, Criterion};
+use criterion::{AxisScale, BenchmarkGroup, BenchmarkId, Criterion, PlotConfiguration};
 use ecs_test_game::simulation_settings::{BrainType, SimSettings};
 use ecs_test_game::test_controller::TestController;
 use ecs_test_game::MAP_SIZE;
@@ -21,7 +21,7 @@ pub fn gen_test_ctx() -> Context {
 	cb = cb.window_setup(ggez::conf::WindowSetup::default().title("Ecs Performance Benchmark"));
 	cb = cb.window_mode(ggez::conf::WindowMode::default().visible(false));
 
-	let (mut ctx, event_loop) = cb.build().unwrap();
+	let (ctx, event_loop) = cb.build().unwrap();
 	ctx
 }
 
@@ -30,7 +30,8 @@ pub fn benchmark(group: &mut BenchmarkGroup<WallTime>, settings: &SimSettings, f
 	let mut controller = TestController::gen_test_controller(&mut ctx, settings);
 	let mut entity_count = settings.entity_count;
 
-	let name = format!("{}, {}", settings.brain_type.to_string(), rand::thread_rng().gen_range(0..5000));
+	// let name = format!("{}, {}", settings.brain_type.to_string(), rand::thread_rng().gen_range(0..5000));
+	group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
 	group.bench_with_input(
 		BenchmarkId::new(settings.brain_type.to_string(), entity_count),
 		&mut entity_count,

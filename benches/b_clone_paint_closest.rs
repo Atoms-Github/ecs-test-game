@@ -10,7 +10,16 @@ mod bench_utils;
 use std::time::Duration;
 
 use criterion::measurement::WallTime;
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkGroup, BenchmarkId, Criterion};
+use criterion::{
+	black_box,
+	criterion_group,
+	criterion_main,
+	AxisScale,
+	BenchmarkGroup,
+	BenchmarkId,
+	Criterion,
+	PlotConfiguration,
+};
 use ecs_test_game::brains::brain_legion::{BrainLegion, BrainLegionCounted};
 use ecs_test_game::challenges::ch_units_shooting::ChallengeRts;
 use ecs_test_game::simulation_settings::{BrainType, Challenge, SimSettings};
@@ -23,7 +32,7 @@ criterion_group!(benches, b_clone_paint_closest);
 criterion_main!(benches);
 
 fn b_clone_paint_closest(c: &mut Criterion) {
-	let mut group = c.benchmark_group("Clone Paint Closest");
+	let mut group = c.benchmark_group("World Clone");
 	group.sample_size(10);
 	group.measurement_time(Duration::from_secs(3));
 	group.warm_up_time(Duration::from_millis(100));
@@ -58,6 +67,7 @@ pub fn benchmark_clone(group: &mut BenchmarkGroup<WallTime>, settings: &SimSetti
 		settings.brain_type.to_string(),
 		rand::thread_rng().gen_range(0..5000)
 	);
+	group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
 	group.bench_with_input(
 		BenchmarkId::new(settings.brain_type.to_string(), entity_count),
 		&mut entity_count,
