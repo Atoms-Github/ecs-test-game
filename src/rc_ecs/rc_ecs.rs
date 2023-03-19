@@ -281,6 +281,8 @@ impl RcEcs {
 					let new_index = index_from_component(&component);
 					let old_index = index_from_component(data_backup);
 
+					// internal_ent.sigs.clear();
+
 					if !is_grouped {
 						// Decrease the qty of the shelf
 						*qty -= 1;
