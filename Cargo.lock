@@ -1428,6 +1428,7 @@ dependencies = [
  "glam",
  "heapsize",
  "legion",
+ "nohash-hasher",
  "plotters",
  "rand",
  "rusqlite",

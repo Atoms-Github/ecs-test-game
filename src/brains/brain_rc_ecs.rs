@@ -130,7 +130,7 @@ impl Brain for BrainRcEcs {
 				// }
 				let mut matching_entities = self
 					.world
-					.query(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
+					.query_uniques(vec![TypeId::of::<PositionComp>(), TypeId::of::<VelocityComp>()]);
 
 				for entity in &matching_entities {
 					let mut position = self.world.get_component::<PositionComp>(*entity).unwrap();

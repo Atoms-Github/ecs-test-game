@@ -36,7 +36,7 @@ fn b_units_shooting(c: &mut Criterion) {
 		settings.entity_count = entity_count;
 		for test in [BrainType::Duck_DB, BrainType::Legion, BrainType::Sqlite_DB] {
 			settings.brain_type = test;
-			benchmark(&mut group, &settings, 3);
+			benchmark(&mut group, &settings, 10);
 		}
 	}
 }

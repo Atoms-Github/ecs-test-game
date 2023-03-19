@@ -41,7 +41,7 @@ fn b_paint_closest(c: &mut Criterion) {
 			BrainType::Sqlite_DB,
 		] {
 			settings.brain_type = test;
-			benchmark(&mut group, &settings, 3);
+			benchmark(&mut group, &settings, 10);
 		}
 	}
 }

@@ -4,6 +4,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
+use std::hint::black_box;
 
 use futures::stream::iter;
 use ggez::filesystem::create;
@@ -17,15 +18,18 @@ pub type TypeSig = BTreeSet<TypeId>;
 
 pub struct RcEcs {
 	pub cupboards: CloneTypeMap,
-	pub lentities: HashMap<Lentity, InternalEntity>,
+	pub lentities: HashMap<Lentity, InternalEntity, nohash_hasher::BuildNoHashHasher<usize>>,
 	pub archetypes: HashMap<TypeSig, Vec<Lentity>>,
-	pub uniques_by_type: HashMap<BTreeSet<(TypeId, ShelfRef)>, Vec<Lentity>>,
+	/// The u64 is a hashed BTreeSet<(TypeId, ShelfRef)>
+	pub uniques_by_type: HashMap<u64, Vec<Lentity>, nohash_hasher::BuildNoHashHasher<u64>>,
 	pub current_unique_type_ids: Vec<TypeId>,
 	pub indexes: HashMap<TypeId, HashMap<u32, HashSet<Lentity>>>,
 }
 
 pub struct InternalEntity {
 	pub shelves: HashMap<TypeId, ShelfRef>,
+	/// The u64 is a hashed Vec<TypeId> to a hashed BTreeSet<(TypeId, ShelfRef)>
+	pub sigs:    HashMap<u64, u64, nohash_hasher::BuildNoHashHasher<u64>>,
 }
 pub type Lentity = usize;
 pub type GroupedLentity = Lentity;
@@ -91,6 +95,7 @@ impl RcEcs {
 		let lentity = self.lentities.len();
 		self.lentities.insert(lentity, InternalEntity {
 			shelves: Default::default(),
+			sigs:    Default::default(),
 		});
 		return lentity;
 	}
@@ -141,19 +146,24 @@ impl RcEcs {
 		self.archetypes.entry(type_sig).or_insert_with(|| Vec::new()).push(lentity);
 	}
 
-	pub fn query_uniques(&mut self, type_sig: Vec<TypeId>) -> Vec<GroupedLentity> {
-		self.current_unique_type_ids = type_sig.clone();
+	pub fn query_uniques(&mut self, type_sig_vec: Vec<TypeId>) -> Vec<GroupedLentity> {
+		self.current_unique_type_ids = type_sig_vec.clone();
 		self.uniques_by_type.clear();
+		let type_sig_set_hashed = type_sig_vec.iter().cloned().collect::<Vec<TypeId>>().hash_me();
 
-		let query_results = self.query(type_sig.clone());
+		let query_results = self.query(type_sig_vec.clone());
 		for lentity in query_results {
-			let ent_internal = self.get_entity(lentity);
-			let mut uniques = BTreeSet::new();
-			for (type_id, shelf_ref) in ent_internal.shelves.iter() {
-				if type_sig.contains(type_id) {
-					uniques.insert((*type_id, *shelf_ref));
+			let ent_internal = self.get_entity(lentity); // 1ms
+			let mut uniques = *ent_internal.sigs.entry(type_sig_set_hashed).or_insert_with(|| {
+				let mut new_uniques = BTreeSet::new();
+				for (type_id, shelf_ref) in ent_internal.shelves.iter() {
+					if type_sig_vec.contains(type_id) {
+						new_uniques.insert((*type_id, *shelf_ref));
+					}
 				}
-			}
+				new_uniques.hash_me()
+			});
+
 			self.uniques_by_type.entry(uniques).or_insert_with(|| Vec::new()).push(lentity);
 		}
 		self.uniques_by_type
@@ -295,7 +305,8 @@ impl RcEcs {
 							.current_unique_type_ids
 							.iter()
 							.map(|x| (*x, *internal_ent.shelves.get(x).unwrap()))
-							.collect();
+							.collect::<BTreeSet<(TypeId, ShelfRef)>>()
+							.hash_me();
 						let duplicates = self.uniques_by_type.get_mut(&my_key).unwrap();
 
 						if *qty == duplicates.len() as u32 {
