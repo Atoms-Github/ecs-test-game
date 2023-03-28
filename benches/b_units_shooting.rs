@@ -29,8 +29,8 @@ fn b_units_shooting(c: &mut Criterion) {
 	let mut settings = SimSettings::default();
 	settings.challenge_type = Challenge::UnitsShooting;
 
-	// let entity_counts = [5, 30];
-	let entity_counts = [2, 4, 6, 10, 16, 30, 50, 76];
+	// let entity_counts = [5, 30, 76, 150, 300];
+	let entity_counts = [2, 4, 6, 10, 16, 30, 50, 76, 100, 140, 190, 250, 300];
 
 	for entity_count in entity_counts {
 		settings.entity_count = entity_count;

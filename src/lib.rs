@@ -20,4 +20,4 @@ pub mod utils;
 pub type Point = glam::Vec2;
 pub const MAP_SIZE: f32 = 600.0;
 pub const PROJECTILE_LIFETIME: f32 = 2.0;
-pub const SHOOT_SPEED: f32 = 0.5;
+pub const SHOOT_SPEED: f32 = 0.030;
