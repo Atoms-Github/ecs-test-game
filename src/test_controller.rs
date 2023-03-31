@@ -16,6 +16,7 @@ use crate::challenges::ch_complex_query::ChallengeQuery;
 use crate::challenges::ch_identical_entities::ChallengeIdenticalEntities;
 use crate::challenges::ch_image_editing::ChallengeImageEditing;
 use crate::challenges::ch_image_slideshow::ChallengeSlideshow;
+use crate::challenges::ch_non_identical_entities::ChallengeNonIdenticalEntities;
 use crate::challenges::ch_paint_closest::ChallengePaintClosest;
 use crate::challenges::ch_spatial_array::ChallengeSpatialArray;
 use crate::challenges::ch_units_shooting::ChallengeRts;
@@ -60,6 +61,7 @@ impl TestController {
 			Challenge::UnitsShooting => Box::new(ChallengeRts {}),
 			Challenge::PaintClosest => Box::new(ChallengePaintClosest {}),
 			Challenge::IdenticalEntities => Box::new(ChallengeIdenticalEntities {}),
+			Challenge::NonIdenticalEntities => Box::new(ChallengeNonIdenticalEntities {}),
 			Challenge::Slideshow => Box::new(ChallengeSlideshow {}),
 			Challenge::ImageEditing => Box::new(ChallengeImageEditing {}),
 			Challenge::ComplexQuery => Box::new(ChallengeQuery {}),

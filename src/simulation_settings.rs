@@ -46,6 +46,11 @@ impl SimSettings {
 				);
 				ui.selectable_value(
 					&mut self.challenge_type,
+					Challenge::NonIdenticalEntities,
+					"Non Identical Entities",
+				);
+				ui.selectable_value(
+					&mut self.challenge_type,
 					Challenge::IdenticalEntities,
 					"Identical Entities",
 				);
@@ -83,6 +88,7 @@ impl fmt::Display for BrainType {
 pub enum Challenge {
 	ComplexQuery,
 	IdenticalEntities,
+	NonIdenticalEntities,
 	ImageEditing,
 	PaintClosest,
 	Slideshow,

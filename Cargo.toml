@@ -32,6 +32,10 @@ name = "b_paint_closest"
 harness = false
 
 [[bench]]
+name = "b_non_identical_entities"
+harness = false
+
+[[bench]]
 name = "b_identical_entities"
 harness = false
 

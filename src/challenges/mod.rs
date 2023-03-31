@@ -8,6 +8,7 @@ pub mod ch_complex_query;
 pub mod ch_identical_entities;
 pub mod ch_image_editing;
 pub mod ch_image_slideshow;
+pub mod ch_non_identical_entities;
 pub mod ch_paint_closest;
 pub mod ch_spatial_array;
 pub mod ch_units_shooting;
